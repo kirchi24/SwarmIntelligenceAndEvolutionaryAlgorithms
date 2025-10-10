@@ -21,8 +21,9 @@ When you add a new homework/exercise, follow this schema so the repository stays
 - Add one Streamlit page in `pages/` named with a leading numeric index and a short descriptive name, e.g. `1_HillClimbingAlgorithm.py`, `2_ParticleSwarm.py`.
 - Add a corresponding folder under `src/` with the same numeric prefix and descriptive name, e.g. `src/1_HillClimbingAlgorithm/`.
 - Place implementation modules (library code, algorithms, helpers) inside that `src/<exercise>/` folder. Provide a small `main.py` or other modules that the Streamlit page can import.
-- Place data files (if any) inside a `data/` subfolder under the exercise folder, e.g. `src/2_ParticleSwarm/data/`.
 - Keep the Streamlit page file minimal: UI elements, parameter inputs, and imports from the matching `src/` package. Avoid putting heavy algorithm code directly in `pages/` files.
+- Place data files (if any) inside a `data/` subfolder under the exercise folder, e.g. `src/2_ParticleSwarm/data/`.
+- Place the description of the exercise (the `.pdf` file) inside that `src/<exercise>/` folder as well and name it `exercise_description.pdf`.
 
 This pattern keeps UI and logic separated and makes it easy to add, test, and reuse implementations.
 
