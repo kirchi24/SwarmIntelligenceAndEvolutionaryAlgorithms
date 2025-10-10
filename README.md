@@ -21,6 +21,7 @@ When you add a new homework/exercise, follow this schema so the repository stays
 - Add one Streamlit page in `pages/` named with a leading numeric index and a short descriptive name, e.g. `1_HillClimbingAlgorithm.py`, `2_ParticleSwarm.py`.
 - Add a corresponding folder under `src/` with the same numeric prefix and descriptive name, e.g. `src/1_HillClimbingAlgorithm/`.
 - Place implementation modules (library code, algorithms, helpers) inside that `src/<exercise>/` folder. Provide a small `main.py` or other modules that the Streamlit page can import.
+- Place data files (if any) inside a `data/` subfolder under the exercise folder, e.g. `src/2_ParticleSwarm/data/`.
 - Keep the Streamlit page file minimal: UI elements, parameter inputs, and imports from the matching `src/` package. Avoid putting heavy algorithm code directly in `pages/` files.
 
 This pattern keeps UI and logic separated and makes it easy to add, test, and reuse implementations.
@@ -30,12 +31,9 @@ This pattern keeps UI and logic separated and makes it easy to add, test, and re
 To keep files discoverable and ordered, use the following naming conventions for Streamlit pages and source folders/files:
 
 1. Numeric prefix: Start exercise folders and page filenames with a numeric prefix followed by an underscore, e.g. `1_`, `2_`, `10_`. This ensures pages are ordered in the Streamlit sidebar and folders are easy to read.
-
 2. Descriptive PascalCase for names: After the numeric prefix, use a concise PascalCase descriptive name without spaces, e.g. `HillClimbingAlgorithm`, `ParticleSwarm`. Combine with the numeric prefix like `3_ParticleSwarm.py` and `src/3_ParticleSwarm/`.
-
-5. Module names: Keep module filenames lowercase with underscores if they implement smaller components (e.g. `utils.py`, `evaluation.py`). Public entry points can be `main.py` or a package `__init__.py` when needed.
-
-6. Keep UI and logic separated: Pages in `pages/` should not contain large algorithm implementations. Instead they should import from `src/` so tests and automation can import algorithm code without starting Streamlit.
+3. Module names: Keep module filenames lowercase with underscores if they implement smaller components (e.g. `utils.py`, `evaluation.py`). Public entry points can be `main.py` or a package `__init__.py` when needed.
+4. Keep UI and logic separated: Pages in `pages/` should not contain large algorithm implementations. Instead they should import from `src/` so tests and automation can import algorithm code without starting Streamlit.
 
 Example mapping from this repository
 
