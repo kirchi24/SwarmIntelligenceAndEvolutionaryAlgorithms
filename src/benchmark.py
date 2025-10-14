@@ -157,3 +157,20 @@ def visualize_2d(
     ax2.set_title(f"{name} Contour")
 
     plt.show()
+
+
+if __name__ == "__main__":
+    # Quick demo to verify functions run and plots render
+    print("Quadratic(2) =", quadratic(2))
+    print("Sinusoidal(pi/2) =", sinusoidal(np.pi / 2))
+
+    # Ackley in 2D at origin (global minimum)
+    print("Ackley([0,0]) =", ackley([0.0, 0.0]))
+
+    # Rosenbrock and Rastrigin examples
+    print("Rosenbrock([1,1]) =", rosenbrock([1.0, 1.0]))
+    print("Rastrigin([0,0]) =", rastrigin([0.0, 0.0]))
+
+    # Visualizations (uncomment to show)
+    visualize_1d()
+    visualize_2d(ackley, name="Ackley")
