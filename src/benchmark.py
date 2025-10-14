@@ -5,21 +5,42 @@ import matplotlib.pyplot as plt
 
 
 def _as_array(x: Iterable) -> np.ndarray:
-    """Convert input to numpy array with at least 1-D shape.
+    """Convert input to a numpy array.
 
-    Accepts scalars or sequences. Keeps last axis as the variable axis for n-D inputs.
+    Parameters
+    ----------
+    x : Iterable
+        Scalar or array-like input.
+
+    Returns
+    -------
+    np.ndarray
+        Numpy array view of `x` with dtype float.
     """
     return np.asarray(x, dtype=float)
 
 
 def _as_batch(x: Iterable) -> Tuple[np.ndarray, int, int]:
-    """
-    Convert input x into a 2D array (num_samples, num_features) for batch evaluation.
+    """Prepare input for batched evaluation.
 
-    Returns:
-        xs : 2D np.ndarray of shape (num_samples, num_features)
-        n : number of features per sample (last axis)
-        orig_ndim : original number of dimensions of x
+    Converts `x` into a 2-D array ``xs`` with shape (K, n) where each row is
+    an evaluation vector of length ``n``. Also returns ``n`` and the original
+    number of dimensions of `x`.
+
+    Parameters
+    ----------
+    x : Iterable
+        Scalar, vector, or array-like input. The last axis is interpreted as
+        the variable axis (feature dimension).
+
+    Returns
+    -------
+    xs : np.ndarray
+        2-D array of shape (K, n) suitable for vectorized evaluation.
+    n : int
+        Number of features per sample (length of last axis).
+    orig_ndim : int
+        Original number of dimensions of the input `x`.
     """
     arr = np.asarray(x, dtype=float)
     orig_ndim = arr.ndim
@@ -29,18 +50,42 @@ def _as_batch(x: Iterable) -> Tuple[np.ndarray, int, int]:
 
 
 def quadratic(x: Iterable) -> np.ndarray:
-    """Quadratic function f(x) = x^2.
+    """Quadratic function (element-wise).
 
-    Works element-wise for arrays and supports scalar or vector inputs.
+    Formula
+    -------
+    f(x) = x^2
+
+    Parameters
+    ----------
+    x : Iterable
+        Scalar or array-like input.
+
+    Returns
+    -------
+    np.ndarray
+        Squared values with same shape as `x`.
     """
     arr = _as_array(x)
     return arr**2
 
 
 def sinusoidal(x: Iterable) -> np.ndarray:
-    """Sinusoidal function f(x) = sin(x).
+    """Sinusoidal function (element-wise).
 
-    Works element-wise for arrays and supports scalar or vector inputs.
+    Formula
+    -------
+    f(x) = sin(x)
+
+    Parameters
+    ----------
+    x : Iterable
+        Scalar or array-like input.
+
+    Returns
+    -------
+    np.ndarray
+        Sine of `x`, same shape as input.
     """
     arr = _as_array(x)
     return np.sin(arr)
@@ -49,13 +94,31 @@ def sinusoidal(x: Iterable) -> np.ndarray:
 def ackley(
     x: Iterable, a: float = 20.0, b: float = 0.2, c: float = 2 * np.pi
 ) -> np.ndarray:
-    """Ackley function.
+    """Ackley function for x ∈ R^n.
 
-    Standard form for x in R^n:
-      f(x) = -a * exp(-b * sqrt(1/n * sum(x_i^2)))
-             - exp(1/n * sum(cos(c * x_i))) + a + exp(1)
+    Formula
+    -------
+    f(x) = -a * exp(-b * sqrt((1/n) * sum_{i=1}^n x_i^2))
+           - exp((1/n) * sum_{i=1}^n cos(c * x_i)) + a + e
 
-    Accepts 1-D vectors or an array of vectors (last axis is the variable axis).
+    Parameters
+    ----------
+    x : Iterable
+        1-D array-like of length n (single vector) or array with last axis n.
+        If `x` has leading dimensions, the function returns values with the
+        corresponding leading shape.
+    a : float, optional
+        Overall scaling constant (default 20.0).
+    b : float, optional
+        Controls exponential decay (default 0.2).
+    c : float, optional
+        Frequency multiplier for the cosine term (default 2*pi).
+
+    Returns
+    -------
+    float or np.ndarray
+        Ackley value(s). Returns a scalar for single-vector input, or an array
+        matching the leading dimensions of `x` for batched input.
     """
     x_values, n, orig_ndim = _as_batch(x)
 
@@ -75,9 +138,21 @@ def ackley(
 
 
 def rosenbrock(x: Iterable) -> float:
-    """
-    Rosenbrock function for vector x in R^n.
+    """Rosenbrock function for x ∈ R^n.
+
+    Formula
+    -------
     f(x) = sum_{i=1}^{n-1} [100*(x_{i+1} - x_i^2)^2 + (1 - x_i)^2]
+
+    Parameters
+    ----------
+    x : Iterable
+        1-D array-like of length n. For n < 2 the function returns 0.0.
+
+    Returns
+    -------
+    float or np.ndarray
+        Rosenbrock value for the input vector, or array for batched input.
     """
     xs, n, orig_ndim = _as_batch(x)
 
@@ -91,9 +166,21 @@ def rosenbrock(x: Iterable) -> float:
 
 
 def rastrigin(x: Iterable) -> float:
-    """
-    Rastrigin function for vector x in R^n.
-    f(x) = 10*n + sum(x_i^2 - 10*cos(2*pi*x_i))
+    """Rastrigin function for x ∈ R^n.
+
+    Formula
+    -------
+    f(x) = 10*n + sum_{i=1}^n [x_i^2 - 10*cos(2*pi*x_i)]
+
+    Parameters
+    ----------
+    x : Iterable
+        1-D array-like of length n or an array with last axis n.
+
+    Returns
+    -------
+    float or np.ndarray
+        Rastrigin value for the input vector, or array for batched input.
     """
     xs, n, orig_ndim = _as_batch(x)
     result = 10.0 * n + np.sum(xs**2 - 10.0 * np.cos(2.0 * np.pi * xs), axis=1)
