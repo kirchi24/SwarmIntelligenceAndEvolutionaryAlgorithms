@@ -1,16 +1,33 @@
+from typing import Iterable, Optional, Tuple
+
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 
-def quadratic(x):
-    """Quadratic function f(x) = x^2"""
-    return x**2
+def _as_array(x: Iterable) -> np.ndarray:
+    """Convert input to numpy array with at least 1-D shape.
+
+    Accepts scalars or sequences. Keeps last axis as the variable axis for n-D inputs.
+    """
+    return np.asarray(x, dtype=float)
 
 
-def sinusoidal(x):
-    """Sinusoidal function f(x) = sin(x)"""
-    return np.sin(x)
+def quadratic(x: Iterable) -> np.ndarray:
+    """Quadratic function f(x) = x^2.
+
+    Works element-wise for arrays and supports scalar or vector inputs.
+    """
+    arr = _as_array(x)
+    return arr**2
+
+
+def sinusoidal(x: Iterable) -> np.ndarray:
+    """Sinusoidal function f(x) = sin(x).
+
+    Works element-wise for arrays and supports scalar or vector inputs.
+    """
+    arr = _as_array(x)
+    return np.sin(arr)
 
 
 def ackley(x, a=20, b=0.2, c=2 * np.pi):
