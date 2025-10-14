@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, Tuple
+from typing import Callable, Iterable, Optional, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -185,8 +185,27 @@ def rastrigin(x: Iterable) -> float:
     return float(result[0]) if orig_ndim <= 1 else result.reshape(xs.shape[:-1])
 
 
-def visualize_1d(xlim: Tuple[float, float] = (-5.0, 5.0), points: int = 400) -> Figure:
-    """Quick 1-D visualization for quadratic and sinusoidal functions."""
+def visualize_1d_functions(
+    xlim: Tuple[float, float] = (-5.0, 5.0), points: int = 400
+) -> Figure:
+    """
+    Visualize 1-D functions: quadratic and sinusoidal.
+
+    Plots the quadratic function f(x) = x^2 and the sinusoidal function f(x) = sin(x)
+    side by side over the specified range.
+
+    Parameters
+    ----------
+    xlim : tuple of float, optional
+        The (min, max) range for the x-axis. Default is (-5.0, 5.0).
+    points : int, optional
+        Number of points to evaluate for the plot. Default is 400.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure containing the two subplots.
+    """
     x = np.linspace(xlim[0], xlim[1], points)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
@@ -203,16 +222,35 @@ def visualize_1d(xlim: Tuple[float, float] = (-5.0, 5.0), points: int = 400) -> 
     return fig
 
 
-def visualize_2d(
-    func,
+def visualize_2d_function(
+    func: Callable[[np.ndarray], float],
     name: str = "Function",
     xlim: Tuple[float, float] = (-5.0, 5.0),
     ylim: Optional[Tuple[float, float]] = None,
     points: int = 200,
 ) -> Figure:
-    """Visualize a 2-D function with a surface and contour plot.
+    """
+    Visualize a 2-D function with a surface and a contour plot.
 
-    The function must accept a length-2 vector and return a scalar.
+    The function must accept a 2-element vector and return a scalar.
+
+    Parameters
+    ----------
+    func : callable
+        Function taking a 2-D vector (length-2) and returning a scalar.
+    name : str, optional
+        Name of the function, used in plot titles. Default is "Function".
+    xlim : tuple of float, optional
+        Range for x-axis. Default is (-5.0, 5.0).
+    ylim : tuple of float, optional
+        Range for y-axis. Default is equal to xlim.
+    points : int, optional
+        Number of points along each axis. Default is 200.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        Figure containing the surface plot (3D) and contour plot (2D).
     """
     if ylim is None:
         ylim = xlim
@@ -226,12 +264,13 @@ def visualize_2d(
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    # Replace axes[0] with a 3D axes
+    # Replace axes[0] with a 3D surface axes
     fig.delaxes(axes[0])
     axes[0] = fig.add_subplot(1, 2, 1, projection="3d")
     axes[0].plot_surface(X, Y, Z, cmap="viridis", linewidth=0, antialiased=True)
     axes[0].set_title(f"{name} Surface")
 
+    # 2D contour plot
     contour = axes[1].contourf(X, Y, Z, cmap="viridis", levels=50)
     fig.colorbar(contour, ax=axes[1])
     axes[1].set_title(f"{name} Contour")
@@ -253,5 +292,5 @@ if __name__ == "__main__":
     print("Rastrigin([0,0]) =", rastrigin([0.0, 0.0]))
 
     # Visualizations (uncomment to show)
-    visualize_1d()
-    visualize_2d(ackley, name="Ackley")
+    visualize_1d_functions()
+    visualize_2d_function(ackley, name="Ackley")
