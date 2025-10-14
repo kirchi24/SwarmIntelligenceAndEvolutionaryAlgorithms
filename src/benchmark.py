@@ -30,19 +30,43 @@ def sinusoidal(x: Iterable) -> np.ndarray:
     return np.sin(arr)
 
 
-def ackley(x, a=20, b=0.2, c=2 * np.pi):
+def ackley(
+    x: Iterable, a: float = 20.0, b: float = 0.2, c: float = 2 * np.pi
+) -> np.ndarray:
+    """Ackley function.
+
+    Standard form for x in R^n:
+      f(x) = -a * exp(-b * sqrt(1/n * sum(x_i^2)))
+             - exp(1/n * sum(cos(c * x_i))) + a + exp(1)
+
+    Accepts 1-D vectors or an array of vectors (last axis is the variable axis).
     """
-    Ackley function
-    f(x) = -a * exp(-b * sqrt(1/n * sum(x_i^2)))
-           - exp(1/n * sum(cos(c * x_i))) + a + exp(1)
-    """
-    x = np.asarray(x)
-    n = x.shape[-1] if x.ndim > 1 else 1
-    sum_sq = np.sum(x**2, axis=-1)
-    sum_cos = np.sum(np.cos(c * x), axis=-1)
+    arr = _as_array(x)
+    orig_ndim = arr.ndim
+
+    # ensure 2D (num_samples, num_features)
+    x_values = np.atleast_2d(arr)
+
+    # Ensure the last axis represents the variable dimension
+    if x_values.shape[-1] == 1 and orig_ndim == 1:
+        n = 1
+    else:
+        n = x_values.shape[-1]
+
+    # Core Ackley computation
+    sum_sq = np.sum(x_values**2, axis=1)
+    sum_cos = np.sum(np.cos(c * x_values), axis=1)
+
     term1 = -a * np.exp(-b * np.sqrt(sum_sq / n))
     term2 = -np.exp(sum_cos / n)
-    return term1 + term2 + a + np.e
+    result = term1 + term2 + a + np.e
+
+    # return right shape depending on input
+    if orig_ndim <= 1:
+        return float(result[0])
+    else:
+        return result.reshape(arr.shape[:-1])
+
 
 
 def rosenbrock(x):
