@@ -120,24 +120,40 @@ def visualize_1d(xlim: Tuple[float, float] = (-5.0, 5.0), points: int = 400) -> 
     plt.show()
 
 
-def visualize_2d(func, name):
-    x = np.linspace(-5, 5, 200)
-    y = np.linspace(-5, 5, 200)
+def visualize_2d(
+    func,
+    name: str = "Function",
+    xlim: Tuple[float, float] = (-5.0, 5.0),
+    ylim: Optional[Tuple[float, float]] = None,
+    points: int = 200,
+) -> None:
+    """Visualize a 2-D function with a surface and contour plot.
+
+    The function must accept a length-2 vector and return a scalar.
+    """
+    if ylim is None:
+        ylim = xlim
+
+    x = np.linspace(xlim[0], xlim[1], points)
+    y = np.linspace(ylim[0], ylim[1], points)
     X, Y = np.meshgrid(x, y)
-    Z = np.array([func(np.array([x, y])) for x, y in zip(X.flatten(), Y.flatten())])
+
+    # Evaluate func on the grid efficiently
+    pts = np.column_stack([X.ravel(), Y.ravel()])
+    Z = np.array([func(p) for p in pts])
     Z = Z.reshape(X.shape)
 
     fig = plt.figure(figsize=(12, 5))
 
     # Surface plot
     ax1 = fig.add_subplot(1, 2, 1, projection="3d")
-    ax1.plot_surface(X, Y, Z, cmap="viridis")
+    ax1.plot_surface(X, Y, Z, cmap="viridis", linewidth=0, antialiased=True)
     ax1.set_title(f"{name} Surface")
 
     # Contour plot
     ax2 = fig.add_subplot(1, 2, 2)
     contour = ax2.contourf(X, Y, Z, cmap="viridis", levels=50)
-    fig.colorbar(contour)
+    fig.colorbar(contour, ax=ax2)
     ax2.set_title(f"{name} Contour")
 
     plt.show()
