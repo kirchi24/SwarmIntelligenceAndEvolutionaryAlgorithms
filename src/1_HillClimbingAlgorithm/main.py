@@ -1,8 +1,25 @@
 import numpy as np
 
+# Import benchmark functions so this module can conveniently provide them if
+# other code wants a single import location. This also helps IDE completion.
+try:
+    from src.benchmark import (
+        quadratic,
+        sinusoidal,
+        ackley,
+        rosenbrock,
+        rastrigin,
+    )
+except Exception:
+    # If imported as a script during development, fall back to no-op names.
+    quadratic = sinusoidal = ackley = rosenbrock = rastrigin = None
+
 
 def continuous_neighborhood(x, step_size=0.1):
     return x + np.random.uniform(-step_size, step_size, size=x.shape)
+
+    arr = np.array(x, dtype=float)
+    return arr + np.random.uniform(-step_size, step_size, size=arr.shape)
 
 
 def hill_climbing(f, x0, neighborhood_fn, max_iter=1000, tol=1e-6):
@@ -35,3 +52,19 @@ def steepest_hill_climbing(f, x0, neighborhood_fn, max_iter=1000, samples=20, to
             f_current = f_values[best_idx]
             trajectory.append(x_current.copy())
     return x_current, f_current, np.array(trajectory), evaluations
+
+
+def get_benchmark(name: str):
+    """Return a benchmark function by name.
+
+    Supported names: 'quadratic', 'sinusoidal', 'ackley', 'rosenbrock', 'rastrigin'
+    """
+    name = name.lower()
+    mapping = {
+        "quadratic": quadratic,
+        "sinusoidal": sinusoidal,
+        "ackley": ackley,
+        "rosenbrock": rosenbrock,
+        "rastrigin": rastrigin,
+    }
+    return mapping.get(name)
