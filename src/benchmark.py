@@ -15,7 +15,7 @@ def _as_array(x: Iterable) -> np.ndarray:
 def _as_batch(x: Iterable) -> Tuple[np.ndarray, int, int]:
     """
     Convert input x into a 2D array (num_samples, num_features) for batch evaluation.
-    
+
     Returns:
         xs : 2D np.ndarray of shape (num_samples, num_features)
         n : number of features per sample (last axis)
@@ -26,7 +26,6 @@ def _as_batch(x: Iterable) -> Tuple[np.ndarray, int, int]:
     xs = np.atleast_2d(arr)
     n = xs.shape[-1] if not (xs.shape[-1] == 1 and orig_ndim == 1) else 1
     return xs, n, orig_ndim
-
 
 
 def quadratic(x: Iterable) -> np.ndarray:
@@ -75,17 +74,30 @@ def ackley(
         return result.reshape(x_values.shape[:-1])
 
 
+def rosenbrock(x: Iterable) -> float:
+    """
+    Rosenbrock function for vector x in R^n.
+    f(x) = sum_{i=1}^{n-1} [100*(x_{i+1} - x_i^2)^2 + (1 - x_i)^2]
+    """
+    xs, n, orig_ndim = _as_batch(x)
 
-def rosenbrock(x):
-    """Rosenbrock function"""
-    return np.sum(100 * (x[1:] - x[:-1] ** 2) ** 2 + (1 - x[:-1]) ** 2)
+    if n < 2:
+        result = np.zeros(xs.shape[0])
+    else:
+        vals = 100.0 * (xs[:, 1:] - xs[:, :-1] ** 2) ** 2 + (1.0 - xs[:, :-1]) ** 2
+        result = np.sum(vals, axis=1)
+
+    return float(result[0]) if orig_ndim <= 1 else result.reshape(xs.shape[:-1])
 
 
-def rastrigin(x):
-    """Rastrigin function"""
-    x = np.asarray(x)
-    n = x.size
-    return 10 * n + np.sum(x**2 - 10 * np.cos(2 * np.pi * x))
+def rastrigin(x: Iterable) -> float:
+    """
+    Rastrigin function for vector x in R^n.
+    f(x) = 10*n + sum(x_i^2 - 10*cos(2*pi*x_i))
+    """
+    xs, n, orig_ndim = _as_batch(x)
+    result = 10.0 * n + np.sum(xs**2 - 10.0 * np.cos(2.0 * np.pi * xs), axis=1)
+    return float(result[0]) if orig_ndim <= 1 else result.reshape(xs.shape[:-1])
 
 
 def visualize_1d():
