@@ -185,38 +185,40 @@ def rastrigin(x: Iterable) -> float:
     return float(result[0]) if orig_ndim <= 1 else result.reshape(xs.shape[:-1])
 
 
-def visualize_1d_functions(
-    xlim: Tuple[float, float] = (-5.0, 5.0), points: int = 400
+def visualize_1d_function(
+    func: Callable[[np.ndarray], np.ndarray],
+    name: str = "Function",
+    xlim: Tuple[float, float] = (-5.0, 5.0),
+    points: int = 400
 ) -> Figure:
     """
-    Visualize 1-D functions: quadratic and sinusoidal.
-
-    Plots the quadratic function f(x) = x^2 and the sinusoidal function f(x) = sin(x)
-    side by side over the specified range.
+    Visualize a single 1-D function over a specified range.
 
     Parameters
     ----------
+    func : callable
+        Function that takes a 1-D numpy array of x values and returns the corresponding y values.
+    name : str, optional
+        Name of the function, used in the plot title. Default is "Function".
     xlim : tuple of float, optional
-        The (min, max) range for the x-axis. Default is (-5.0, 5.0).
+        Range of x values (min, max). Default is (-5.0, 5.0).
     points : int, optional
-        Number of points to evaluate for the plot. Default is 400.
+        Number of points to evaluate the function. Default is 400.
 
     Returns
     -------
     fig : matplotlib.figure.Figure
-        The figure containing the two subplots.
+        The figure containing the 1-D function plot.
     """
     x = np.linspace(xlim[0], xlim[1], points)
+    y = func(x)
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-
-    axes[0].plot(x, quadratic(x))
-    axes[0].set_title("Quadratic Function f(x)=x²")
-    axes[0].grid(True)
-
-    axes[1].plot(x, sinusoidal(x))
-    axes[1].set_title("Sinusoidal Function f(x)=sin(x)")
-    axes[1].grid(True)
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(x, y)
+    ax.set_title(f"{name} (1-D Function)")
+    ax.set_xlabel("x")
+    ax.set_ylabel("f(x)")
+    ax.grid(True)
 
     fig.tight_layout()
     return fig
@@ -292,5 +294,5 @@ if __name__ == "__main__":
     print("Rastrigin([0,0]) =", rastrigin([0.0, 0.0]))
 
     # Visualizations (uncomment to show)
-    visualize_1d_functions()
+    visualize_1d_function()
     visualize_2d_function(ackley, name="Ackley")
