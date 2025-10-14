@@ -15,7 +15,7 @@ def _as_array(x: Iterable) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        Numpy array view of `x` with dtype float.
+        Array view of `x` with dtype float.
     """
     return np.asarray(x, dtype=float)
 
@@ -23,24 +23,23 @@ def _as_array(x: Iterable) -> np.ndarray:
 def _as_batch(x: Iterable) -> Tuple[np.ndarray, int, int]:
     """Prepare input for batched evaluation.
 
-    Converts `x` into a 2-D array ``xs`` with shape (K, n) where each row is
-    an evaluation vector of length ``n``. Also returns ``n`` and the original
+    Converts `x` to a 2-D array `xs` with shape (K, n) where each row is
+    an evaluation vector of length `n`. Also returns `n` and the original
     number of dimensions of `x`.
 
     Parameters
     ----------
     x : Iterable
-        Scalar, vector, or array-like input. The last axis is interpreted as
-        the variable axis (feature dimension).
+        Scalar, vector, or array-like input. The last axis is the feature axis.
 
     Returns
     -------
     xs : np.ndarray
-        2-D array of shape (K, n) suitable for vectorized evaluation.
+        2-D array of shape (K, n) for evaluation.
     n : int
-        Number of features per sample (length of last axis).
+        Number of features per sample.
     orig_ndim : int
-        Original number of dimensions of the input `x`.
+        Original number of dimensions of `x`.
     """
     arr = np.asarray(x, dtype=float)
     orig_ndim = arr.ndim
@@ -64,7 +63,7 @@ def quadratic(x: Iterable) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        Squared values with same shape as `x`.
+        Squared values, same shape as `x`.
     """
     arr = _as_array(x)
     return arr**2
@@ -104,21 +103,19 @@ def ackley(
     Parameters
     ----------
     x : Iterable
-        1-D array-like of length n (single vector) or array with last axis n.
-        If `x` has leading dimensions, the function returns values with the
-        corresponding leading shape.
+        1-D array-like of length `n` or array with last axis `n`. Leading
+        axes are treated as batch dimensions.
     a : float, optional
-        Overall scaling constant (default 20.0).
+        Scaling constant (default 20.0).
     b : float, optional
-        Controls exponential decay (default 0.2).
+        Exponential decay constant (default 0.2).
     c : float, optional
-        Frequency multiplier for the cosine term (default 2*pi).
+        Frequency multiplier for cosine term (default 2*pi).
 
     Returns
     -------
     float or np.ndarray
-        Ackley value(s). Returns a scalar for single-vector input, or an array
-        matching the leading dimensions of `x` for batched input.
+        Ackley value(s). Scalar for single-vector input, array for batched input.
     """
     x_values, n, orig_ndim = _as_batch(x)
 
@@ -147,12 +144,12 @@ def rosenbrock(x: Iterable) -> float:
     Parameters
     ----------
     x : Iterable
-        1-D array-like of length n. For n < 2 the function returns 0.0.
+        1-D array-like of length `n` or array with last axis `n`.
 
     Returns
     -------
     float or np.ndarray
-        Rosenbrock value for the input vector, or array for batched input.
+        Rosenbrock value(s) for the input vector(s).
     """
     xs, n, orig_ndim = _as_batch(x)
 
@@ -175,12 +172,12 @@ def rastrigin(x: Iterable) -> float:
     Parameters
     ----------
     x : Iterable
-        1-D array-like of length n or an array with last axis n.
+        1-D array-like of length `n` or array with last axis `n`.
 
     Returns
     -------
     float or np.ndarray
-        Rastrigin value for the input vector, or array for batched input.
+        Rastrigin value(s) for the input vector(s).
     """
     xs, n, orig_ndim = _as_batch(x)
     result = 10.0 * n + np.sum(xs**2 - 10.0 * np.cos(2.0 * np.pi * xs), axis=1)
