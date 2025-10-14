@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 def quadratic(x):
     """Quadratic function f(x) = x^2"""
     return x**2
@@ -12,10 +13,10 @@ def sinusoidal(x):
     return np.sin(x)
 
 
-def ackley(x, a=20, b=0.2, c=2*np.pi):
+def ackley(x, a=20, b=0.2, c=2 * np.pi):
     """
     Ackley function
-    f(x) = -a * exp(-b * sqrt(1/n * sum(x_i^2))) 
+    f(x) = -a * exp(-b * sqrt(1/n * sum(x_i^2)))
            - exp(1/n * sum(cos(c * x_i))) + a + exp(1)
     """
     x = np.asarray(x)
@@ -29,7 +30,7 @@ def ackley(x, a=20, b=0.2, c=2*np.pi):
 
 def rosenbrock(x):
     """Rosenbrock function"""
-    return np.sum(100 * (x[1:] - x[:-1]**2)**2 + (1 - x[:-1])**2)
+    return np.sum(100 * (x[1:] - x[:-1] ** 2) ** 2 + (1 - x[:-1]) ** 2)
 
 
 def rastrigin(x):
@@ -68,13 +69,13 @@ def visualize_2d(func, name):
     fig = plt.figure(figsize=(12, 5))
 
     # Surface plot
-    ax1 = fig.add_subplot(1, 2, 1, projection='3d')
-    ax1.plot_surface(X, Y, Z, cmap='viridis')
+    ax1 = fig.add_subplot(1, 2, 1, projection="3d")
+    ax1.plot_surface(X, Y, Z, cmap="viridis")
     ax1.set_title(f"{name} Surface")
 
     # Contour plot
     ax2 = fig.add_subplot(1, 2, 2)
-    contour = ax2.contourf(X, Y, Z, cmap='viridis', levels=50)
+    contour = ax2.contourf(X, Y, Z, cmap="viridis", levels=50)
     fig.colorbar(contour)
     ax2.set_title(f"{name} Contour")
 
