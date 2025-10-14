@@ -100,8 +100,9 @@ def rastrigin(x: Iterable) -> float:
     return float(result[0]) if orig_ndim <= 1 else result.reshape(xs.shape[:-1])
 
 
-def visualize_1d():
-    x = np.linspace(-5, 5, 400)
+def visualize_1d(xlim: Tuple[float, float] = (-5.0, 5.0), points: int = 400) -> None:
+    """Quick 1-D visualization for quadratic and sinusoidal functions."""
+    x = np.linspace(xlim[0], xlim[1], points)
 
     plt.figure(figsize=(10, 4))
 
