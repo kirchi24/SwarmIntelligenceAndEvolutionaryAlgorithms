@@ -2,6 +2,7 @@ from typing import Iterable, Optional, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 
 
 def _as_array(x: Iterable) -> np.ndarray:
@@ -184,24 +185,22 @@ def rastrigin(x: Iterable) -> float:
     return float(result[0]) if orig_ndim <= 1 else result.reshape(xs.shape[:-1])
 
 
-def visualize_1d(xlim: Tuple[float, float] = (-5.0, 5.0), points: int = 400) -> None:
+def visualize_1d(xlim: Tuple[float, float] = (-5.0, 5.0), points: int = 400) -> Figure:
     """Quick 1-D visualization for quadratic and sinusoidal functions."""
     x = np.linspace(xlim[0], xlim[1], points)
 
-    plt.figure(figsize=(10, 4))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
 
-    plt.subplot(1, 2, 1)
-    plt.plot(x, quadratic(x))
-    plt.title("Quadratic Function f(x)=x²")
-    plt.grid(True)
+    axes[0].plot(x, quadratic(x))
+    axes[0].set_title("Quadratic Function f(x)=x²")
+    axes[0].grid(True)
 
-    plt.subplot(1, 2, 2)
-    plt.plot(x, sinusoidal(x))
-    plt.title("Sinusoidal Function f(x)=sin(x)")
-    plt.grid(True)
+    axes[1].plot(x, sinusoidal(x))
+    axes[1].set_title("Sinusoidal Function f(x)=sin(x)")
+    axes[1].grid(True)
 
-    plt.tight_layout()
-    plt.show()
+    fig.tight_layout()
+    return fig
 
 
 def visualize_2d(
@@ -210,7 +209,7 @@ def visualize_2d(
     xlim: Tuple[float, float] = (-5.0, 5.0),
     ylim: Optional[Tuple[float, float]] = None,
     points: int = 200,
-) -> None:
+) -> Figure:
     """Visualize a 2-D function with a surface and contour plot.
 
     The function must accept a length-2 vector and return a scalar.
@@ -222,25 +221,23 @@ def visualize_2d(
     y = np.linspace(ylim[0], ylim[1], points)
     X, Y = np.meshgrid(x, y)
 
-    # Evaluate func on the grid efficiently
     pts = np.column_stack([X.ravel(), Y.ravel()])
-    Z = np.array([func(p) for p in pts])
-    Z = Z.reshape(X.shape)
+    Z = np.array([func(p) for p in pts]).reshape(X.shape)
 
-    fig = plt.figure(figsize=(12, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    # Surface plot
-    ax1 = fig.add_subplot(1, 2, 1, projection="3d")
-    ax1.plot_surface(X, Y, Z, cmap="viridis", linewidth=0, antialiased=True)
-    ax1.set_title(f"{name} Surface")
+    # Replace axes[0] with a 3D axes
+    fig.delaxes(axes[0])
+    axes[0] = fig.add_subplot(1, 2, 1, projection="3d")
+    axes[0].plot_surface(X, Y, Z, cmap="viridis", linewidth=0, antialiased=True)
+    axes[0].set_title(f"{name} Surface")
 
-    # Contour plot
-    ax2 = fig.add_subplot(1, 2, 2)
-    contour = ax2.contourf(X, Y, Z, cmap="viridis", levels=50)
-    fig.colorbar(contour, ax=ax2)
-    ax2.set_title(f"{name} Contour")
+    contour = axes[1].contourf(X, Y, Z, cmap="viridis", levels=50)
+    fig.colorbar(contour, ax=axes[1])
+    axes[1].set_title(f"{name} Contour")
 
-    plt.show()
+    fig.tight_layout()
+    return fig
 
 
 if __name__ == "__main__":
