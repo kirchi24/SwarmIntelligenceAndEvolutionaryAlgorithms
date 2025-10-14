@@ -12,6 +12,23 @@ def _as_array(x: Iterable) -> np.ndarray:
     return np.asarray(x, dtype=float)
 
 
+def _as_batch(x: Iterable) -> Tuple[np.ndarray, int, int]:
+    """
+    Convert input x into a 2D array (num_samples, num_features) for batch evaluation.
+    
+    Returns:
+        xs : 2D np.ndarray of shape (num_samples, num_features)
+        n : number of features per sample (last axis)
+        orig_ndim : original number of dimensions of x
+    """
+    arr = np.asarray(x, dtype=float)
+    orig_ndim = arr.ndim
+    xs = np.atleast_2d(arr)
+    n = xs.shape[-1] if not (xs.shape[-1] == 1 and orig_ndim == 1) else 1
+    return xs, n, orig_ndim
+
+
+
 def quadratic(x: Iterable) -> np.ndarray:
     """Quadratic function f(x) = x^2.
 
@@ -41,17 +58,7 @@ def ackley(
 
     Accepts 1-D vectors or an array of vectors (last axis is the variable axis).
     """
-    arr = _as_array(x)
-    orig_ndim = arr.ndim
-
-    # ensure 2D (num_samples, num_features)
-    x_values = np.atleast_2d(arr)
-
-    # Ensure the last axis represents the variable dimension
-    if x_values.shape[-1] == 1 and orig_ndim == 1:
-        n = 1
-    else:
-        n = x_values.shape[-1]
+    x_values, n, orig_ndim = _as_batch(x)
 
     # Core Ackley computation
     sum_sq = np.sum(x_values**2, axis=1)
@@ -65,7 +72,7 @@ def ackley(
     if orig_ndim <= 1:
         return float(result[0])
     else:
-        return result.reshape(arr.shape[:-1])
+        return result.reshape(x_values.shape[:-1])
 
 
 
