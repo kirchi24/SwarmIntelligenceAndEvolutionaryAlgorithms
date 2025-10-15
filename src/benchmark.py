@@ -233,7 +233,7 @@ def add_trajectory_1d(
             x=trajectory,
             y=y_vals,
             mode="lines+markers",
-            marker=dict(size=8, color="red", showscale=False),
+            marker=dict(size=6, color="red", showscale=False),
             line=dict(color="red", dash="dash"),
             name="Trajectory",
         )
@@ -317,6 +317,14 @@ def visualize_3d_function(
         ),
         template="plotly_white",
         margin=dict(l=0, r=0, b=0, t=40),
+        legend=dict(
+            x=1.2,  # move to the right outside the plot because overlaps with color scale
+            y=1,
+            xanchor="left",
+            yanchor="top",
+            bordercolor="black",
+            borderwidth=1,
+        ),
     )
     return fig
 
@@ -357,7 +365,7 @@ def add_trajectory_3d(
             y=trajectory[:, 1],
             z=z_vals,
             mode="lines+markers",
-            marker=dict(size=8, color="red", showscale=False),
+            marker=dict(size=6, color="red", showscale=False),
             line=dict(color="red", dash="dash"),
             name="Trajectory",
         )
