@@ -37,8 +37,10 @@ def hill_climbing(
     neighborhood_fn: Callable[[np.ndarray], np.ndarray],
     max_iter: int = 1000,
     tol: float = 1e-6,
+    patience: Optional[int] = None,
 ) -> Tuple[np.ndarray, float, np.ndarray, int]:
-    """First-improvement hill-climbing optimizer.
+    """
+    Simple first-improvement hill-climbing optimizer.
 
     Parameters
     ----------
@@ -47,35 +49,48 @@ def hill_climbing(
     x0 : array-like
         Initial solution.
     neighborhood_fn : callable
-        Function producing a single neighbor for a given solution.
-    max_iter : int, optional
-        Maximum iterations (default 1000).
-    tol : float, optional
-        Minimum improvement required to accept a move (default 1e-6).
+        Function producing neighbors.
+    max_iter : int
+        Maximum iterations.
+    tol : float
+        Minimum improvement to accept a move.
+    patience : int or None
+        Maximum consecutive non-improving steps before stopping.
 
     Returns
     -------
     x_best : np.ndarray
-        Best found solution.
+        Best solution found.
     f_best : float
-        Objective value at `x_best`.
+        Objective value at x_best.
     trajectory : np.ndarray
-        Array of visited solutions with shape (k, n).
+        Visited solutions.
     evaluations : int
-        Number of objective evaluations performed.
+        Number of objective evaluations.
     """
     x_current = np.array(x0, dtype=float)
     f_current = f(x_current)
     trajectory = [x_current.copy()]
     evaluations = 1
+    no_improve = 0
+
     for _ in range(max_iter):
         x_new = neighborhood_fn(x_current)
         f_new = f(x_new)
         evaluations += 1
+
         if f_new < f_current - tol:
             x_current, f_current = x_new, f_new
             trajectory.append(x_current.copy())
-    return x_current, f_current, np.array(trajectory), evaluations
+            no_improve = 0
+        else:
+            no_improve += 1
+
+        if patience is not None and no_improve >= patience:
+            break
+
+    trajectory = np.array(trajectory)
+    return (x_current, f_current, trajectory, evaluations)
 
 
 def steepest_hill_climbing(
@@ -85,8 +100,10 @@ def steepest_hill_climbing(
     max_iter: int = 1000,
     samples: int = 20,
     tol: float = 1e-6,
+    patience: Optional[int] = None
 ) -> Tuple[np.ndarray, float, np.ndarray, int]:
-    """Steepest-ascent hill-climbing (best-of-sample).
+    """
+    Steepest-ascent hill-climbing (best-of-sample).
 
     Parameters
     ----------
@@ -96,31 +113,53 @@ def steepest_hill_climbing(
         Initial solution.
     neighborhood_fn : callable
         Function producing a single neighbor.
-    max_iter : int, optional
-        Maximum iterations (default 1000).
-    samples : int, optional
-        Number of neighbors sampled each iteration (default 20).
-    tol : float, optional
-        Minimum improvement required to accept a move (default 1e-6).
+    max_iter : int
+        Maximum iterations.
+    samples : int
+        Number of neighbors sampled per iteration.
+    tol : float
+        Minimum improvement to accept a move.
+    patience : int or None
+        Maximum consecutive non-improving steps before stopping.
 
     Returns
     -------
-    x_best, f_best, trajectory, evaluations
-        Same as returned by :func:`hill_climbing`.
+    x_best : np.ndarray
+        Best solution found.
+    f_best : float
+        Objective value at x_best.
+    trajectory : np.ndarray
+        Array of visited solutions.
+    evaluations : int
+        Number of function evaluations.
     """
     x_current = np.array(x0, dtype=float)
     f_current = f(x_current)
     trajectory = [x_current.copy()]
     evaluations = 1
+    no_improve = 0
+
     for _ in range(max_iter):
         neighbors = np.array([neighborhood_fn(x_current) for _ in range(samples)])
         f_values = np.array([f(x) for x in neighbors])
         evaluations += samples
         best_idx = np.argmin(f_values)
+
         if f_values[best_idx] < f_current - tol:
             x_current = neighbors[best_idx]
             f_current = f_values[best_idx]
             trajectory.append(x_current.copy())
+            no_improve = 0
+        else:
+            no_improve += 1
+
+        if patience is not None and no_improve >= patience:
+            break
+
+    trajectory = np.array(trajectory)
+    return x_current, f_current, trajectory, evaluations
+
+
     return x_current, f_current, np.array(trajectory), evaluations
 
 
