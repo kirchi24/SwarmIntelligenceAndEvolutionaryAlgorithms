@@ -179,7 +179,7 @@ def steepest_hill_climbing(
     no_improve = 0
 
     for _ in range(max_iter):
-        x_neighbors = neighborhood_fn(x_current, step_size, samples=1)
+        x_neighbors = neighborhood_fn(x_current, step_size, samples=samples)
         f_neighbors = f(x_neighbors)
         evaluations += samples
         best_idx = np.argmin(f_neighbors)
