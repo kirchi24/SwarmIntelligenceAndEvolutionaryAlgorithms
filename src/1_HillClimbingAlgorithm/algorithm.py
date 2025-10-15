@@ -72,33 +72,36 @@ def hill_climbing(
     patience: Optional[int] = None,
 ) -> Tuple[np.ndarray, float, np.ndarray, int]:
     """
-    Simple first-improvement hill-climbing optimizer.
+    First-improvement hill-climbing optimizer using a batch-capable neighbor function.
 
     Parameters
     ----------
     f : callable
         Objective function to minimize; accepts a vector and returns a scalar.
     x0 : array-like
-        Initial solution.
+        Initial solution vector.
     neighborhood_fn : callable
-        Function producing neighbors.
-    max_iter : int
-        Maximum iterations.
-    tol : float
-        Minimum improvement to accept a move.
-    patience : int or None
-        Maximum consecutive non-improving steps before stopping.
+        Function producing neighbors, with signature 
+        `neighborhood_fn(x, step_size, samples) -> np.ndarray`.
+    step_size : float, optional
+        Maximum perturbation applied to each component when generating neighbors (default 0.1).
+    max_iter : int, optional
+        Maximum number of iterations (default 1000).
+    tol : float, optional
+        Minimum improvement required to accept a move (default 1e-6).
+    patience : int or None, optional
+        Maximum consecutive non-improving iterations before stopping (default None).
 
     Returns
     -------
     x_best : np.ndarray
         Best solution found.
     f_best : float
-        Objective value at x_best.
+        Objective value at `x_best`.
     trajectory : np.ndarray
-        Visited solutions.
+        Array of visited solutions with shape `(num_steps, n_features)`.
     evaluations : int
-        Number of objective evaluations.
+        Number of function evaluations performed.
     """
     x_current = np.array(x0, dtype=float)
     f_current = f(x_current)
@@ -136,35 +139,38 @@ def steepest_hill_climbing(
     patience: Optional[int] = None
 ) -> Tuple[np.ndarray, float, np.ndarray, int]:
     """
-    Steepest-ascent hill-climbing (best-of-sample).
+    Steepest-ascent hill-climbing (best-of-sample) optimizer using a batch-capable neighbor function.
 
     Parameters
     ----------
     f : callable
-        Objective function to minimize.
+        Objective function to minimize; accepts a vector and returns a scalar.
     x0 : array-like
-        Initial solution.
+        Initial solution vector.
     neighborhood_fn : callable
-        Function producing a single neighbor.
-    max_iter : int
-        Maximum iterations.
-    samples : int
-        Number of neighbors sampled per iteration.
-    tol : float
-        Minimum improvement to accept a move.
-    patience : int or None
-        Maximum consecutive non-improving steps before stopping.
+        Function producing neighbors, with signature 
+        `neighborhood_fn(x, step_size, samples) -> np.ndarray`.
+    step_size : float, optional
+        Maximum perturbation applied to each component when generating neighbors (default 0.1).
+    max_iter : int, optional
+        Maximum number of iterations (default 1000).
+    samples : int, optional
+        Number of neighbors to generate per iteration (default 20).
+    tol : float, optional
+        Minimum improvement required to accept a move (default 1e-6).
+    patience : int or None, optional
+        Maximum consecutive non-improving iterations before stopping (default None).
 
     Returns
     -------
     x_best : np.ndarray
         Best solution found.
     f_best : float
-        Objective value at x_best.
+        Objective value at `x_best`.
     trajectory : np.ndarray
-        Array of visited solutions.
+        Array of visited solutions with shape `(num_steps, n_features)`.
     evaluations : int
-        Number of function evaluations.
+        Number of function evaluations performed.
     """
     x_current = np.array(x0, dtype=float)
     f_current = f(x_current)
