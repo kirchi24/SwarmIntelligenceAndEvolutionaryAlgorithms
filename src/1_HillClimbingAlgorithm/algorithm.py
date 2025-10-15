@@ -197,30 +197,3 @@ def steepest_hill_climbing(
 
     trajectory = np.array(trajectory)
     return x_current, f_current, trajectory, evaluations
-
-
-    return x_current, f_current, np.array(trajectory), evaluations
-
-
-def get_benchmark(name: str) -> Optional[Callable]:
-    """Return a benchmark function by name.
-
-    Parameters
-    ----------
-    name : str
-        One of 'quadratic', 'sinusoidal', 'ackley', 'rosenbrock', 'rastrigin'.
-
-    Returns
-    -------
-    callable or None
-        The matching function or `None` if unknown.
-    """
-    name = name.lower()
-    mapping = {
-        "quadratic": quadratic,
-        "sinusoidal": sinusoidal,
-        "ackley": ackley,
-        "rosenbrock": rosenbrock,
-        "rastrigin": rastrigin,
-    }
-    return mapping.get(name)
