@@ -10,10 +10,13 @@ from src.benchmark import (
 )
 
 
-def continuous_neighborhood(
-    x: Union[Iterable[float], np.ndarray], step_size: float = 0.1
+def continuous_neighborhood_batch(
+    x: Union[Iterable[float], np.ndarray], 
+    step_size: float = 0.1, 
+    samples: int = 1
 ) -> np.ndarray:
-    """Sample a continuous neighbor of `x`.
+    """
+    Sample multiple continuous neighbors of `x`.
 
     Parameters
     ----------
@@ -21,20 +24,26 @@ def continuous_neighborhood(
         Current solution (vector-like).
     step_size : float, optional
         Maximum uniform perturbation per component (default 0.1).
+    samples : int, optional
+        Number of neighbors to generate (default 1).
 
     Returns
     -------
     np.ndarray
-        Neighbor with same shape as `x`.
+        Array of shape (samples, n) where each row is a perturbed neighbor 
+        of `x`. `n` is the dimensionality of `x`.
     """
-    arr = np.array(x, dtype=float)
-    return arr + np.random.uniform(-step_size, step_size, size=arr.shape)
+    x = np.array(x, dtype=float)
+    perturbations = np.random.uniform(-step_size, step_size, size=(samples, x.size))
+    neighbors = x + perturbations
+    return neighbors
 
 
 def hill_climbing(
     f: Callable[[Union[np.ndarray, Iterable[float]]], float],
     x0: Union[np.ndarray, Iterable[float]],
-    neighborhood_fn: Callable[[np.ndarray], np.ndarray],
+    neighborhood_fn: Callable[[Union[np.ndarray, Iterable[float]], float, int], np.ndarray],
+    step_size: float = 0.1,
     max_iter: int = 1000,
     tol: float = 1e-6,
     patience: Optional[int] = None,
@@ -75,12 +84,12 @@ def hill_climbing(
     no_improve = 0
 
     for _ in range(max_iter):
-        x_new = neighborhood_fn(x_current)
-        f_new = f(x_new)
+        x_neighbor = neighborhood_fn(x_current, step_size, 1)[0]
+        f_neighbor = f(x_neighbor)
         evaluations += 1
 
-        if f_new < f_current - tol:
-            x_current, f_current = x_new, f_new
+        if f_neighbor < f_current - tol:
+            x_current, f_current = x_neighbor, f_neighbor
             trajectory.append(x_current.copy())
             no_improve = 0
         else:
@@ -96,7 +105,8 @@ def hill_climbing(
 def steepest_hill_climbing(
     f: Callable[[Union[np.ndarray, Iterable[float]]], float],
     x0: Union[np.ndarray, Iterable[float]],
-    neighborhood_fn: Callable[[np.ndarray], np.ndarray],
+    neighborhood_fn: Callable[[Union[np.ndarray, Iterable[float]], float, int], np.ndarray],
+    step_size: float = 0.1,
     max_iter: int = 1000,
     samples: int = 20,
     tol: float = 1e-6,
@@ -140,14 +150,14 @@ def steepest_hill_climbing(
     no_improve = 0
 
     for _ in range(max_iter):
-        neighbors = np.array([neighborhood_fn(x_current) for _ in range(samples)])
-        f_values = np.array([f(x) for x in neighbors])
+        x_neighbors = neighborhood_fn(x_current, step_size, samples=1)[0]
+        f_neighbors = f(x_neighbors)
         evaluations += samples
-        best_idx = np.argmin(f_values)
+        best_idx = np.argmin(f_neighbors)
 
-        if f_values[best_idx] < f_current - tol:
-            x_current = neighbors[best_idx]
-            f_current = f_values[best_idx]
+        if f_neighbors[best_idx] < f_current - tol:
+            x_current = x_neighbors[best_idx]
+            f_current = f_neighbors[best_idx]
             trajectory.append(x_current.copy())
             no_improve = 0
         else:
