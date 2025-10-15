@@ -12,9 +12,9 @@ from src.benchmark import (
     rosenbrock,
     rastrigin,
     visualize_1d_function,
-    visualize_2d_function,
+    visualize_3d_function,
     add_trajectory_1d,
-    add_trajectory_2d,
+    add_trajectory_3d,
 )
 
 from src.HillClimbingAlgorithm.algorithm import (
@@ -125,12 +125,12 @@ st.write(f"Function Evaluations: {evals}")
 st.subheader("Search Trajectory Visualization")
 if dim == 1:
     fig = visualize_1d_function(f, name=func_choice, xlim=(-5, 5))
-    fig_overlay = add_trajectory_1d(fig, traj, f)
-    st.pyplot(fig_overlay)
+    fig = add_trajectory_1d(fig, traj, f)
+    st.plotly_chart(fig, use_container_width=True)
 elif dim == 2:
-    fig = visualize_2d_function(f, name=func_choice, xlim=(-5, 5))
-    fig_overlay = add_trajectory_2d(fig, traj, f)
-    st.pyplot(fig_overlay)
+    fig = visualize_3d_function(f, name=func_choice, xlim=(-5, 5))
+    fig= add_trajectory_3d(fig, traj, f)
+    st.plotly_chart(fig, use_container_width=True)
 else:
     st.write("Visualization not available.")
 
