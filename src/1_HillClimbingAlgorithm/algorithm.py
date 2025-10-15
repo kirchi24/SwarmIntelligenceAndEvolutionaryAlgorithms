@@ -1,19 +1,13 @@
 import numpy as np
 from typing import Callable, Iterable, Optional, Tuple, Union
 
-# Import benchmark functions so this module can conveniently provide them if
-# other code wants a single import location. This also helps IDE completion.
-try:
-    from src.benchmark import (
-        quadratic,
-        sinusoidal,
-        ackley,
-        rosenbrock,
-        rastrigin,
-    )
-except Exception:
-    # If imported as a script during development, fall back to no-op names.
-    quadratic = sinusoidal = ackley = rosenbrock = rastrigin = None
+from src.benchmark import (
+    quadratic,
+    sinusoidal,
+    ackley,
+    rosenbrock,
+    rastrigin,
+)
 
 
 def continuous_neighborhood(
