@@ -189,7 +189,7 @@ def visualize_1d_function(
     func: Callable[[np.ndarray], np.ndarray],
     name: str = "Function",
     xlim: Tuple[float, float] = (-5.0, 5.0),
-    points: int = 400
+    points: int = 400,
 ) -> Figure:
     """
     Visualize a single 1-D function over a specified range.
@@ -221,6 +221,36 @@ def visualize_1d_function(
     ax.grid(True)
 
     fig.tight_layout()
+    return fig
+
+
+def add_trajectory_1d(
+    fig: Figure, trajectory: np.ndarray, func: Callable[[np.ndarray], np.ndarray]
+) -> Figure:
+    """
+    Overlay a 1D optimization trajectory on an existing function plot.
+
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        Figure created by `visualize_1d_function`.
+    trajectory : np.ndarray
+        Optimization trajectory of shape (num_steps, 1) or (num_steps,).
+    func : callable
+        The 1D function, used to compute y-values of the trajectory points.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        Figure with trajectory overlaid.
+    """
+    trajectory = np.array(trajectory).reshape(-1)
+    ax = fig.axes[0]
+
+    y_vals = func(trajectory)
+    ax.plot(trajectory, y_vals, "o-", color="red", label="Trajectory")
+    ax.legend()
+
     return fig
 
 
@@ -278,6 +308,51 @@ def visualize_2d_function(
     axes[1].set_title(f"{name} Contour")
 
     fig.tight_layout()
+    return fig
+
+
+def add_trajectory_2d(
+    fig: Figure, trajectory: np.ndarray, func: Callable[[np.ndarray], float]
+) -> Figure:
+    """
+    Overlay a 2D optimization trajectory on an existing function plot.
+
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        Figure created by `visualize_2d_function`.
+    trajectory : np.ndarray
+        Optimization trajectory of shape (num_steps, 2).
+    func : callable
+        The 2D function, used to compute z-values for the trajectory.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        Figure with trajectory overlaid.
+    """
+    trajectory = np.array(trajectory)
+    if trajectory.shape[1] != 2:
+        raise ValueError("Trajectory must have shape (num_steps, 2) for 2D plotting.")
+
+    # 3D surface axes
+    ax3d = [ax for ax in fig.axes if hasattr(ax, "zaxis")][0]
+    z_vals = np.array([func(p) for p in trajectory])
+    ax3d.plot(
+        trajectory[:, 0],
+        trajectory[:, 1],
+        z_vals,
+        "o-",
+        color="red",
+        label="Trajectory",
+    )
+    ax3d.legend()
+
+    # 2D contour axes
+    ax2d = [ax for ax in fig.axes if not hasattr(ax, "zaxis")][0]
+    ax2d.plot(trajectory[:, 0], trajectory[:, 1], "o-", color="red", label="Trajectory")
+    ax2d.legend()
+
     return fig
 
 
