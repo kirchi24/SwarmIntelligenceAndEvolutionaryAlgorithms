@@ -121,8 +121,8 @@ def ackley(
     x_values, n, orig_ndim = _as_batch(x)
 
     # Core Ackley computation
-    sum_sq = np.sum(x_values**2, axis=1)
-    sum_cos = np.sum(np.cos(c * x_values), axis=1)
+    sum_sq = np.sum(x_values**2, axis=-1)
+    sum_cos = np.sum(np.cos(c * x_values), axis=-1)
 
     term1 = -a * np.exp(-b * np.sqrt(sum_sq / n))
     term2 = -np.exp(sum_cos / n)
@@ -158,7 +158,7 @@ def rosenbrock(x: Iterable) -> float:
         result = np.zeros(xs.shape[0])
     else:
         vals = 100.0 * (xs[:, 1:] - xs[:, :-1] ** 2) ** 2 + (1.0 - xs[:, :-1]) ** 2
-        result = np.sum(vals, axis=1)
+        result = np.sum(vals, axis=-1)
 
     return float(result[0]) if orig_ndim <= 1 else result.reshape(xs.shape[:-1])
 
@@ -181,7 +181,7 @@ def rastrigin(x: Iterable) -> float:
         Rastrigin value(s) for the input vector(s).
     """
     xs, n, orig_ndim = _as_batch(x)
-    result = 10.0 * n + np.sum(xs**2 - 10.0 * np.cos(2.0 * np.pi * xs), axis=1)
+    result = 10.0 * n + np.sum(xs**2 - 10.0 * np.cos(2.0 * np.pi * xs), axis=-1)
     return float(result[0]) if orig_ndim <= 1 else result.reshape(xs.shape[:-1])
 
 
