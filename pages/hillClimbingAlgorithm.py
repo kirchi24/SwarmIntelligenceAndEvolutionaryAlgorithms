@@ -53,13 +53,13 @@ st.markdown(
     """
 ### Implementation Details
 The Hill Climbing algorithm can be customized with the following parameters:
-- **Initial Solution (x₀)**: Starting point for the search.
+- **Initial Solution (x0)**: Starting point for the search.
 - **Benchmark Function (f)**: Objective function to minimize.
 - **Neighborhood Function**: Defines the search space around the current solution.
 - **Step Size**: Controls the magnitude of changes.
 - **Max Iterations**: Limits the number of steps.
-- **Tolerance**: Determines the stopping criterion.
-- **Patience**: Early stopping if no improvement is observed.
+- **Tolerance**: Determines the stopping criterion. Be aware the slider input is the exponent of 10, e.g., -3 means 0.001.
+- **Patience**: Early stopping if no improvement is observed after a certain number of iterations.
 - **Neighbors per Iteration**: (For Steepest HC) Number of neighbors evaluated.
 """
 )
@@ -88,7 +88,7 @@ step_size = st.sidebar.slider("Step Size", 0.01, 1.0, 0.1, 0.01)
 samples = st.sidebar.slider("Neighbors per Iteration (Steepest)", 1, 50, 10)
 patience = st.sidebar.slider("Patience (early stopping)", 1, 50, 10)
 tol = 10 ** st.sidebar.slider(
-    "log10 (improvement tolerance)", min_value=-6.0, max_value=-2.0, value=-3.0, step=0.1
+    "log10 (improvement tolerance)", min_value=-6.0, max_value=0.0, value=-3.0, step=0.1
 )
 seed = st.sidebar.number_input("Random Seed", 0, 9999, 42)
 np.random.seed(seed)
