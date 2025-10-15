@@ -157,7 +157,7 @@ def visualize_1d_function(
     points: int = 400,
 ) -> go.Figure:
     """
-    Visualize a single 1-D function as an interactive Plotly line chart.
+    Visualize a 1D function as an interactive Plotly line chart.
 
     Parameters
     ----------
@@ -166,13 +166,13 @@ def visualize_1d_function(
     name : str, optional
         Plot title. Default is "Function".
     xlim : tuple of float, optional
-        Range of x values. Default is (-5.0, 5.0).
+        Range of x values. Default is (-5, 5).
     points : int, optional
         Number of x points to evaluate. Default is 400.
 
     Returns
     -------
-    fig : plotly.graph_objects.Figure
+    fig : go.Figure
         Interactive 1D function plot.
     """
     x = np.linspace(xlim[0], xlim[1], points)
@@ -180,8 +180,15 @@ def visualize_1d_function(
 
     fig = go.Figure()
     fig.add_trace(
-        go.Scatter(x=x, y=y, mode="lines", name=name, line=dict(color="royalblue"))
+        go.Scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            name=name,
+            line=dict(color="royalblue"),
+        )
     )
+
     fig.update_layout(
         title=f"{name} (1D Function)",
         xaxis_title="x",
@@ -203,31 +210,55 @@ def add_trajectory_1d(
 
     Parameters
     ----------
-    fig : plotly.graph_objects.Figure
+    fig : go.Figure
         Figure created by `visualize_1d_function`.
     trajectory : np.ndarray
-        Optimization trajectory of shape (num_steps,) or (num_steps, 1).
+        Optimization trajectory (num_steps,) or (num_steps, 1).
     func : callable
         Function used to compute y-values along the trajectory.
 
     Returns
     -------
-    fig : plotly.graph_objects.Figure
-        Updated figure with the trajectory overlay.
+    fig : go.Figure
+        Updated figure with trajectory overlay.
     """
     trajectory = np.array(trajectory).reshape(-1)
     y_vals = func(trajectory)
+    num_steps = len(y_vals)
+    colors = np.linspace(0, 1, num_steps)
 
+    # Trajectory line with gradient
     fig.add_trace(
         go.Scatter(
             x=trajectory,
             y=y_vals,
-            mode="markers+lines",
-            name="Trajectory",
-            marker=dict(color="red", size=6),
+            mode="lines+markers",
+            marker=dict(size=8, color="red", showscale=False),
             line=dict(color="red", dash="dash"),
+            name="Trajectory",
         )
     )
+
+    # Start and end markers
+    fig.add_trace(
+        go.Scatter(
+            x=[trajectory[0]],
+            y=[y_vals[0]],
+            mode="markers",
+            marker=dict(size=10, color="blue"),
+            name="Start",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=[trajectory[-1]],
+            y=[y_vals[-1]],
+            mode="markers",
+            marker=dict(size=10, color="green"),
+            name="End",
+        )
+    )
+
     return fig
 
 
@@ -259,7 +290,7 @@ def visualize_3d_function(
 
     Returns
     -------
-    fig : plotly.graph_objects.Figure
+    fig : go.Figure
         Interactive 3D surface plot.
     """
     if ylim is None:
@@ -268,21 +299,14 @@ def visualize_3d_function(
     x = np.linspace(xlim[0], xlim[1], points)
     y = np.linspace(ylim[0], ylim[1], points)
     X, Y = np.meshgrid(x, y)
-    pts = np.column_stack([X.ravel(), Y.ravel()])
-    Z = np.array([func(p) for p in pts]).reshape(X.shape)
-
-    fig = go.Figure(
-        data=[
-            go.Surface(
-                x=X,
-                y=Y,
-                z=Z,
-                colorscale="Viridis",
-                showscale=True,
-                name=name,
-            )
-        ]
+    Z = np.array([func([xi, yi]) for xi, yi in zip(X.ravel(), Y.ravel())]).reshape(
+        X.shape
     )
+
+    surface = go.Surface(
+        x=X, y=Y, z=Z, colorscale="Viridis", opacity=0.9, showscale=True, name=name
+    )
+    fig = go.Figure(data=[surface])
 
     fig.update_layout(
         title=f"{name} (3D Surface)",
@@ -307,7 +331,7 @@ def add_trajectory_3d(
 
     Parameters
     ----------
-    fig : plotly.graph_objects.Figure
+    fig : go.Figure
         Figure created by `visualize_3d_function`.
     trajectory : np.ndarray
         Optimization trajectory of shape (num_steps, 2).
@@ -316,26 +340,51 @@ def add_trajectory_3d(
 
     Returns
     -------
-    fig : plotly.graph_objects.Figure
-        Updated 3D figure with the trajectory overlay.
+    fig : go.Figure
+        Updated 3D figure with trajectory overlay.
     """
     trajectory = np.array(trajectory)
     if trajectory.shape[1] != 2:
         raise ValueError("Trajectory must have shape (num_steps, 2).")
 
     z_vals = np.array([func(p) for p in trajectory])
+    num_steps = len(z_vals)
+    colors = np.linspace(0, 1, num_steps)
 
     fig.add_trace(
         go.Scatter3d(
             x=trajectory[:, 0],
             y=trajectory[:, 1],
             z=z_vals,
-            mode="markers+lines",
+            mode="lines+markers",
+            marker=dict(size=8, color="red", showscale=False),
+            line=dict(color="red", dash="dash"),
             name="Trajectory",
-            marker=dict(size=4, color="red"),
-            line=dict(color="red", width=3),
         )
     )
+
+    # Start and end points
+    fig.add_trace(
+        go.Scatter3d(
+            x=[trajectory[0, 0]],
+            y=[trajectory[0, 1]],
+            z=[z_vals[0]],
+            mode="markers",
+            marker=dict(size=8, color="blue"),
+            name="Start",
+        )
+    )
+    fig.add_trace(
+        go.Scatter3d(
+            x=[trajectory[-1, 0]],
+            y=[trajectory[-1, 1]],
+            z=[z_vals[-1]],
+            mode="markers",
+            marker=dict(size=8, color="green"),
+            name="End",
+        )
+    )
+
     return fig
 
 
