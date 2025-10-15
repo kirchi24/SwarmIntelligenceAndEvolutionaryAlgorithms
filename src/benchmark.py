@@ -42,11 +42,11 @@ def _as_batch(x: Iterable) -> Tuple[np.ndarray, int, int]:
     orig_ndim : int
         Original number of dimensions of `x`.
     """
-    arr = np.asarray(x, dtype=float)
+    arr = _as_array(x)
     orig_ndim = arr.ndim
-    xs = np.atleast_2d(arr)
-    n = xs.shape[-1] if not (xs.shape[-1] == 1 and orig_ndim == 1) else 1
-    return xs, n, orig_ndim
+    x_values = np.atleast_2d(arr)
+    n = x_values.shape[-1] if not (x_values.shape[-1] == 1 and orig_ndim == 1) else 1
+    return x_values, n, orig_ndim
 
 
 def quadratic(x: Iterable) -> np.ndarray:
