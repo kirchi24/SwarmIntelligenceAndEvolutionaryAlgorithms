@@ -25,33 +25,42 @@ from src.HillClimbingAlgorithm.algorithm import (
 
 
 # title & introduction
-st.title("Hill Climbing Algorithm - Interactive Documentation")
+st.title("Hill Climbing Algorithm Documentation")
 
 st.markdown(
     """
-### Introduction
-Hill Climbing (HC) is a local search optimization algorithm.
-It iteratively moves to better neighboring solutions to minimize an objective function.
+## Introduction
+Hill Climbing is a fundamental optimization algorithm that iteratively improves a solution by exploring its neighbors. It is widely used due to its simplicity and efficiency in solving low-dimensional problems.
 
-Key Points:
-- Simple HC: samples one neighbor per iteration
-- Steepest HC: samples multiple neighbors and moves to the best
-- Strengths: simple, efficient in low dimensions
-- Weaknesses: local minima, sensitive to initialization and step size
+### Key Features:
+- **Simple Hill Climbing**: Evaluates one neighbor per iteration.
+- **Steepest Ascent Hill Climbing**: Considers multiple neighbors and selects the best.
+
+#### Advantages:
+- Easy to implement.
+- Effective for unimodal functions.
+
+#### Limitations:
+- Prone to getting stuck in local minima.
+- Performance depends on initialization and step size.
 """
 )
 
 
 # methods
-st.header("Methods - Implementation Details")
+st.header("Methods")
 st.markdown(
     """
-Parameters for both variants:
-- Initial solution x0 (1D or nD)
-- Benchmark function f
-- Neighborhood function continuous_neighborhood
-- Max iterations, tolerance, step size, patience
-- Number of neighbors per iteration (Steepest HC)
+### Implementation Details
+The Hill Climbing algorithm can be customized with the following parameters:
+- **Initial Solution (x₀)**: Starting point for the search.
+- **Benchmark Function (f)**: Objective function to minimize.
+- **Neighborhood Function**: Defines the search space around the current solution.
+- **Step Size**: Controls the magnitude of changes.
+- **Max Iterations**: Limits the number of steps.
+- **Tolerance**: Determines the stopping criterion.
+- **Patience**: Early stopping if no improvement is observed.
+- **Neighbors per Iteration**: (For Steepest HC) Number of neighbors evaluated.
 """
 )
 
@@ -146,28 +155,23 @@ else:
 
 
 # discussion
-st.header("Discussion / Insights")
+st.header("Discussion")
 st.markdown(
     """
-Observations:
-- Simple HC is fast but can get trapped in local minima.
-- Steepest HC explores better but requires more evaluations.
-- Trajectory shows the algorithm's path in search space.
+### Insights and Analysis
+- **Performance**: Simple HC is faster but less thorough; Steepest HC is more robust but computationally expensive.
+- **Parameter Sensitivity**: Results vary significantly with step size, tolerance, and initialization.
+- **Limitations**: Struggles with multimodal functions and high-dimensional spaces.
 
-Parameter Sensitivity:
-- Step size affects convergence.
-- Max iterations and tolerance control stopping.
-- Random seed affects initialization.
-
-Potential Improvements:
-- Adaptive step size
-- Random restarts
-- Hybrid algorithms (e.g., with Simulated Annealing)
+### Potential Improvements
+- Adaptive step size.
+- Random restarts to escape local minima.
+- Hybrid approaches combining HC with other algorithms.
 """
 )
 
 st.markdown("---")
 st.markdown(
-    "<small>Note: ChatGPT assisted in generating this page.</small>",
+    "<small>Note: This documentation was generated with the assistance of ChatGPT.</small>",
     unsafe_allow_html=True,
 )
