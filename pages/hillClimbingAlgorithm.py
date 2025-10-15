@@ -50,7 +50,7 @@ Parameters for both variants:
 - Initial solution x0 (1D or nD)
 - Benchmark function f
 - Neighborhood function continuous_neighborhood
-- Max iterations, tolerance, step size
+- Max iterations, tolerance, step size, patience
 - Number of neighbors per iteration (Steepest HC)
 """
 )
@@ -76,8 +76,11 @@ func_choice = st.sidebar.selectbox(
 )
 max_iter = st.sidebar.slider("Max Iterations", 50, 2000, 300, 50)
 step_size = st.sidebar.slider("Step Size", 0.01, 1.0, 0.1, 0.01)
-samples = st.sidebar.slider("Neighbors per Iteration (Steepest)", 2, 50, 10)
-tol = st.sidebar.number_input("Improvement Tolerance", 1e-8, 1e-2, 1e-6, format="%.1e")
+samples = st.sidebar.slider("Neighbors per Iteration (Steepest)", 1, 50, 10)
+patience = st.sidebar.slider("Patience (early stopping)", 1, 50, 10)
+tol = 10 ** st.sidebar.slider(
+    "log10 (improvement tolerance)", min_value=-6.0, max_value=-2.0, value=-3.0, step=0.1
+)
 seed = st.sidebar.number_input("Random Seed", 0, 9999, 42)
 np.random.seed(seed)
 
@@ -98,7 +101,13 @@ elif func_choice == "Rastrigin (2D)":
 # run algorithm
 if algo_choice == "Simple Hill Climbing":
     x_best, f_best, traj, evals = hill_climbing(
-        f, x0, continuous_neighborhood, step_size=step_size, max_iter=max_iter, tol=tol
+        f,
+        x0,
+        continuous_neighborhood,
+        step_size=step_size,
+        max_iter=max_iter,
+        tol=tol,
+        patience=patience,
     )
 else:
     x_best, f_best, traj, evals = steepest_hill_climbing(
@@ -109,6 +118,7 @@ else:
         max_iter=max_iter,
         samples=samples,
         tol=tol,
+        patience=patience,
     )
 
 f_best_display = f_best.item() if isinstance(f_best, np.ndarray) else f_best
@@ -129,7 +139,7 @@ if dim == 1:
     st.plotly_chart(fig, use_container_width=True)
 elif dim == 2:
     fig = visualize_3d_function(f, name=func_choice, xlim=(-5, 5))
-    fig= add_trajectory_3d(fig, traj, f)
+    fig = add_trajectory_3d(fig, traj, f)
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.write("Visualization not available.")
@@ -142,7 +152,7 @@ st.markdown(
 Observations:
 - Simple HC is fast but can get trapped in local minima.
 - Steepest HC explores better but requires more evaluations.
-- Trajectory shows the algorithm’s path in search space.
+- Trajectory shows the algorithm's path in search space.
 
 Parameter Sensitivity:
 - Step size affects convergence.
