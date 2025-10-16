@@ -417,5 +417,5 @@ if __name__ == "__main__":
     print("Rastrigin([0,0]) =", rastrigin([0.0, 0.0]))
 
     # Visualizations (uncomment to show)
-    visualize_1d_function()
-    visualize_3d_function(ackley, name="Ackley")
+    # visualize_1d_input()
+    visualize_2d_input_surface(ackley, name="Ackley")
