@@ -24,45 +24,81 @@ from src.HillClimbingAlgorithm.algorithm import (
 )
 
 
+st.set_page_config(page_title="Hill Climbing Algorithm", layout="wide")
+
 # title & introduction
 st.title("Hill Climbing Algorithm Documentation")
 
 st.markdown(
     """
-## Introduction
-Hill Climbing is a fundamental optimization algorithm that iteratively improves a solution by exploring its neighbors. It is widely used due to its simplicity and efficiency in solving low-dimensional problems.
+## Overview
 
-### Key Features:
-- **Simple Hill Climbing**: Evaluates one neighbor per iteration.
-- **Steepest Ascent Hill Climbing**: Considers multiple neighbors and selects the best.
+Hill Climbing is a **local search optimization algorithm** that iteratively improves a solution by exploring its neighboring solutions. It is widely used for its simplicity and efficiency in low-dimensional problems.
 
-#### Advantages:
-- Easy to implement.
-- Effective for unimodal functions.
+### How It Works
+1. Start with an initial solution.
+2. Evaluate neighboring solutions.
+3. Move to the neighbor with the best improvement.
+4. Repeat until no further improvement is possible or max iterations (m) is reached.
 
-#### Limitations:
-- Prone to getting stuck in local minima.
-- Performance depends on initialization and step size.
+### Variants
+- **Simple Hill Climbing**: Examines one neighbor at a time and moves if it improves the solution.
+- **Steepest Ascent Hill Climbing**: Evaluates all neighbors and selects the one with the maximum improvement.
+
+### Advantages
+- Easy to implement and understand.
+- Efficient for **unimodal functions** with a single global optimum.
+- Low memory requirements.
+
+### Limitations
+- Can get stuck in **local maxima or plateaus**.  
+- Sensitive to the choice of **initial solution** and **step size**.
+- Not suitable for **high-dimensional or complex landscapes**.
+
+### Use Cases
+- Function optimization in low-dimensional spaces.
+- Problems where a **good-enough solution** is acceptable.
+- Situations requiring **fast, lightweight algorithms**.
 """
 )
-
+st.markdown("---")
 
 # methods
 st.header("Methods")
 st.markdown(
     """
-### Implementation Details
-The Hill Climbing algorithm can be customized with the following parameters:
-- **Initial Solution (x0)**: Starting point for the search.
-- **Benchmark Function (f)**: Objective function to minimize.
-- **Neighborhood Function**: Defines the search space around the current solution.
-- **Step Size**: Controls the magnitude of changes.
-- **Max Iterations**: Limits the number of steps.
-- **Tolerance**: Determines the stopping criterion. Be aware the slider input is the exponent of 10, e.g., -3 means 0.001.
-- **Patience**: Early stopping if no improvement is observed after a certain number of iterations.
-- **Neighbors per Iteration**: (For Steepest HC) Number of neighbors evaluated.
+## Hill Climbing Implementation Overview
+
+This module provides **two variants of the Hill Climbing algorithm** for continuous optimization problems:
+
+### 1. First-Improvement Hill Climbing (`hill_climbing`)
+- Evaluates **one neighbor at a time** and moves to the first improving solution.
+- Lightweight and memory-efficient (memory only for one neighbor).
+- Parameters: `x0`, `step_size`, `max_iter`, `tol`, `patience`, and a **batch-capable neighborhood function**.
+
+### 2. Steepest-Ascent Hill Climbing (`steepest_hill_climbing`)
+- Evaluates a **batch of neighbors** per iteration and selects the best one.
+- More robust but computationally heavier (memory for several neighbors).
+- Parameters: same as above, plus `samples` for neighbors per iteration.
+
+### Key Features
+- **Customizable Neighborhoods**: `continuous_neighborhood_batch` generates perturbed solutions for exploration.
+- **Stopping Criteria**: Supports `max_iter`, minimum improvement (`tol`), and lack of progress (`patience`).
+- **Trajectory Tracking**: Returns the full path of solutions, best solution, its value, and total function evaluations.
+
+### Pros & Cons
+
+**Pros:**  
+- Simple, flexible, and suitable for low-dimensional continuous problems.  
+- Tracks optimization progress via trajectories.
+
+**Cons:**  
+- Susceptible to local optima.  
+- Performance depends on initialization, step size, and neighbor sampling.  
+- Steepest variant has higher per-iteration cost.
 """
 )
+st.markdown("---")
 
 
 # interactive Playground
@@ -158,15 +194,21 @@ else:
 st.header("Discussion")
 st.markdown(
     """
-### Insights and Analysis
-- **Performance**: Simple HC is faster but less thorough; Steepest HC is more robust but computationally expensive.
-- **Parameter Sensitivity**: Results vary significantly with step size, tolerance, and initialization.
-- **Limitations**: Struggles with multimodal functions and high-dimensional spaces.
+## Insights and Analysis
 
-### Potential Improvements
-- Adaptive step size.
-- Random restarts to escape local minima.
-- Hybrid approaches combining HC with other algorithms.
+**Performance:**  
+- Simple HC is faster but may get stuck in local minima.  
+- Steepest HC explores more neighbors, yielding better solutions but at higher cost.
+
+**Parameter Sensitivity:**  
+- Step size, tolerance, and initial solution strongly affect results.
+
+**Limitations:**  
+- Struggles with multimodal and high-dimensional functions.
+
+**Potential Improvements:**  
+- Adaptive step size.  
+- Several runs with random restarts to escape local minima.
 """
 )
 
