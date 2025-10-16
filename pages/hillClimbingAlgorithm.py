@@ -30,7 +30,7 @@ st.set_page_config(page_title="Hill Climbing Algorithm", layout="wide")
 st.title("Hill Climbing Algorithm Documentation")
 
 st.markdown(
-    """
+"""
 ## Overview
 
 Hill Climbing is a **local search optimization algorithm** that iteratively improves a solution by exploring its neighboring solutions. It is widely used for its simplicity and efficiency in low-dimensional problems.
@@ -64,9 +64,8 @@ Hill Climbing is a **local search optimization algorithm** that iteratively impr
 st.markdown("---")
 
 # methods
-st.header("Methods")
 st.markdown(
-    """
+"""
 ## Hill Climbing Implementation Overview
 
 This module provides **two variants of the Hill Climbing algorithm** for continuous optimization problems:
@@ -191,9 +190,8 @@ else:
 
 
 # discussion
-st.header("Discussion")
 st.markdown(
-    """
+"""
 ## Insights and Analysis
 
 **Performance:**  
