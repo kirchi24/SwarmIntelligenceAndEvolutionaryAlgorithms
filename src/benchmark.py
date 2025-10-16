@@ -146,29 +146,28 @@ def rastrigin(x: Iterable) -> float:
 
 
 # ----------------------------------------------------------------------
-# 1D Visualization
+# 1D Visualization (input dimension = 1)
 # ----------------------------------------------------------------------
 
-
-def visualize_1d_function(
+def visualize_1d_input(
     func: Callable[[np.ndarray], np.ndarray],
     name: str = "Function",
     xlim: Tuple[float, float] = (-5.0, 5.0),
     points: int = 400,
 ) -> go.Figure:
     """
-    Visualize a 1D function as an interactive Plotly line chart.
+    Visualize a 1D input function (scalar → scalar) as an interactive Plotly line chart.
 
     Parameters
     ----------
     func : callable
         Function taking a 1D numpy array of x values and returning y values.
     name : str, optional
-        Plot title. Default is "Function".
+        Plot title.
     xlim : tuple of float, optional
-        Range of x values. Default is (-5, 5).
+        Range of x values.
     points : int, optional
-        Number of x points to evaluate. Default is 400.
+        Number of x points to evaluate.
 
     Returns
     -------
@@ -190,7 +189,7 @@ def visualize_1d_function(
     )
 
     fig.update_layout(
-        title=f"{name} (1D Function)",
+        title=f"{name} (1D Input Function)",
         xaxis_title="x",
         yaxis_title="f(x)",
         template="plotly_white",
@@ -200,18 +199,18 @@ def visualize_1d_function(
     return fig
 
 
-def add_trajectory_1d(
+def add_trajectory_1d_input(
     fig: go.Figure,
     trajectory: np.ndarray,
     func: Callable[[np.ndarray], np.ndarray],
 ) -> go.Figure:
     """
-    Overlay a 1D optimization trajectory on a Plotly function plot.
+    Overlay a 1D optimization trajectory on a 1D input function plot.
 
     Parameters
     ----------
     fig : go.Figure
-        Figure created by `visualize_1d_function`.
+        Figure created by `visualize_1d_input`.
     trajectory : np.ndarray
         Optimization trajectory (num_steps,) or (num_steps, 1).
     func : callable
@@ -224,16 +223,14 @@ def add_trajectory_1d(
     """
     trajectory = np.array(trajectory).reshape(-1)
     y_vals = func(trajectory)
-    num_steps = len(y_vals)
-    colors = np.linspace(0, 1, num_steps)
 
-    # Trajectory line with gradient
+    # Trajectory line
     fig.add_trace(
         go.Scatter(
             x=trajectory,
             y=y_vals,
             mode="lines+markers",
-            marker=dict(size=6, color="red", showscale=False),
+            marker=dict(size=6, color="red"),
             line=dict(color="red", dash="dash"),
             name="Trajectory",
         )
@@ -241,33 +238,21 @@ def add_trajectory_1d(
 
     # Start and end markers
     fig.add_trace(
-        go.Scatter(
-            x=[trajectory[0]],
-            y=[y_vals[0]],
-            mode="markers",
-            marker=dict(size=10, color="blue"),
-            name="Start",
-        )
+        go.Scatter(x=[trajectory[0]], y=[y_vals[0]], mode="markers",
+                   marker=dict(size=10, color="blue"), name="Start")
     )
     fig.add_trace(
-        go.Scatter(
-            x=[trajectory[-1]],
-            y=[y_vals[-1]],
-            mode="markers",
-            marker=dict(size=10, color="green"),
-            name="End",
-        )
+        go.Scatter(x=[trajectory[-1]], y=[y_vals[-1]], mode="markers",
+                   marker=dict(size=10, color="green"), name="End")
     )
-
     return fig
 
 
 # ----------------------------------------------------------------------
-# 3D Visualization
+# 2D Input Function Visualization (visualized as 3D surface)
 # ----------------------------------------------------------------------
 
-
-def visualize_3d_function(
+def visualize_2d_input_surface(
     func: Callable[[np.ndarray], float],
     name: str = "Function",
     xlim: Tuple[float, float] = (-5.0, 5.0),
@@ -275,18 +260,18 @@ def visualize_3d_function(
     points: int = 200,
 ) -> go.Figure:
     """
-    Visualize a 2D function as an interactive 3D surface.
+    Visualize a 2D input function (vector → scalar) as a 3D surface.
 
     Parameters
     ----------
     func : callable
         Function taking a 2D vector (x, y) and returning a scalar f(x, y).
     name : str, optional
-        Plot title. Default is "Function".
+        Plot title.
     xlim, ylim : tuple of float, optional
-        Axis limits for x and y. Default is (-5, 5).
+        Axis limits for x and y.
     points : int, optional
-        Grid resolution. Default is 200.
+        Grid resolution.
 
     Returns
     -------
@@ -299,48 +284,30 @@ def visualize_3d_function(
     x = np.linspace(xlim[0], xlim[1], points)
     y = np.linspace(ylim[0], ylim[1], points)
     X, Y = np.meshgrid(x, y)
-    Z = np.array([func([xi, yi]) for xi, yi in zip(X.ravel(), Y.ravel())]).reshape(
-        X.shape
-    )
+    Z = np.array([func([xi, yi]) for xi, yi in zip(X.ravel(), Y.ravel())]).reshape(X.shape)
 
-    surface = go.Surface(
-        x=X, y=Y, z=Z, colorscale="Viridis", opacity=0.9, showscale=True, name=name
-    )
-    fig = go.Figure(data=[surface])
-
+    fig = go.Figure(go.Surface(x=X, y=Y, z=Z, colorscale="Viridis", opacity=0.9, name=name))
     fig.update_layout(
-        title=f"{name} (3D Surface)",
-        scene=dict(
-            xaxis_title="x",
-            yaxis_title="y",
-            zaxis_title="f(x, y)",
-        ),
+        title=f"{name} (2D Input Function → 3D Surface)",
+        scene=dict(xaxis_title="x", yaxis_title="y", zaxis_title="f(x, y)"),
         template="plotly_white",
         margin=dict(l=0, r=0, b=0, t=40),
-        legend=dict(
-            x=1.2,  # move to the right outside the plot because overlaps with color scale
-            y=1,
-            xanchor="left",
-            yanchor="top",
-            bordercolor="black",
-            borderwidth=1,
-        ),
     )
     return fig
 
 
-def add_trajectory_3d(
+def add_trajectory_2d_input_surface(
     fig: go.Figure,
     trajectory: np.ndarray,
     func: Callable[[np.ndarray], float],
 ) -> go.Figure:
     """
-    Overlay a 3D optimization trajectory on a Plotly surface plot.
+    Overlay a 2D optimization trajectory on a 2D input function surface.
 
     Parameters
     ----------
     fig : go.Figure
-        Figure created by `visualize_3d_function`.
+        Figure created by `visualize_2d_input_surface`.
     trajectory : np.ndarray
         Optimization trajectory of shape (num_steps, 2).
     func : callable
@@ -349,15 +316,13 @@ def add_trajectory_3d(
     Returns
     -------
     fig : go.Figure
-        Updated 3D figure with trajectory overlay.
+        Updated 3D surface figure with trajectory overlay.
     """
     trajectory = np.array(trajectory)
     if trajectory.shape[1] != 2:
         raise ValueError("Trajectory must have shape (num_steps, 2).")
 
     z_vals = np.array([func(p) for p in trajectory])
-    num_steps = len(z_vals)
-    colors = np.linspace(0, 1, num_steps)
 
     fig.add_trace(
         go.Scatter3d(
@@ -365,35 +330,24 @@ def add_trajectory_3d(
             y=trajectory[:, 1],
             z=z_vals,
             mode="lines+markers",
-            marker=dict(size=6, color="red", showscale=False),
+            marker=dict(size=6, color="red"),
             line=dict(color="red", dash="dash"),
             name="Trajectory",
         )
     )
 
     # Start and end points
-    fig.add_trace(
-        go.Scatter3d(
-            x=[trajectory[0, 0]],
-            y=[trajectory[0, 1]],
-            z=[z_vals[0]],
-            mode="markers",
-            marker=dict(size=8, color="blue"),
-            name="Start",
-        )
-    )
-    fig.add_trace(
-        go.Scatter3d(
-            x=[trajectory[-1, 0]],
-            y=[trajectory[-1, 1]],
-            z=[z_vals[-1]],
-            mode="markers",
-            marker=dict(size=8, color="green"),
-            name="End",
-        )
-    )
+    fig.add_trace(go.Scatter3d(
+        x=[trajectory[0, 0]], y=[trajectory[0, 1]], z=[z_vals[0]],
+        mode="markers", marker=dict(size=8, color="blue"), name="Start"
+    ))
+    fig.add_trace(go.Scatter3d(
+        x=[trajectory[-1, 0]], y=[trajectory[-1, 1]], z=[z_vals[-1]],
+        mode="markers", marker=dict(size=8, color="green"), name="End"
+    ))
 
     return fig
+
 
 
 # ----------------------------------------------------------------------

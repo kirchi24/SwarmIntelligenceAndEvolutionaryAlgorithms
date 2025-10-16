@@ -8,8 +8,8 @@ from src.benchmark import (
     ackley,
     rosenbrock,
     rastrigin,
-    visualize_1d_function,
-    visualize_3d_function,
+    visualize_1d_input,
+    visualize_2d_input_surface,
 )
 
 st.set_page_config(page_title="Function Explorer", layout="wide")
@@ -44,11 +44,11 @@ two_d_choice = st.sidebar.selectbox(
 two_d_func = two_d_options[two_d_choice]
 
 st.subheader(f"1D Function (input dimension = 1): {one_d_choice}")
-fig_1d = visualize_1d_function(one_d_func, name=one_d_choice, xlim=(-5, 5))
+fig_1d = visualize_1d_input(one_d_func, name=one_d_choice, xlim=(-5, 5))
 st.plotly_chart(fig_1d, use_container_width=True)
 
 st.subheader(f"2D Function (visualized as 3D surface): {two_d_choice}")
-fig_3d = visualize_3d_function(
+fig_3d = visualize_2d_input_surface(
     two_d_func, name=two_d_choice, xlim=(-5, 5), ylim=(-5, 5), points=150
 )
 st.plotly_chart(fig_3d, use_container_width=True)

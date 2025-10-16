@@ -11,10 +11,10 @@ from src.benchmark import (
     ackley,
     rosenbrock,
     rastrigin,
-    visualize_1d_function,
-    visualize_3d_function,
-    add_trajectory_1d,
-    add_trajectory_3d,
+    visualize_1d_input,
+    visualize_2d_input_surface,
+    add_trajectory_1d_input,
+    add_trajectory_2d_input_surface,
 )
 
 from src.HillClimbingAlgorithm.algorithm import (
@@ -179,12 +179,12 @@ st.write(f"Function Evaluations: {evals}")
 # visualization
 st.subheader("Search Trajectory Visualization")
 if dim == 1:
-    fig = visualize_1d_function(f, name=func_choice, xlim=(-5, 5))
-    fig = add_trajectory_1d(fig, traj, f)
+    fig = visualize_1d_input(f, name=func_choice, xlim=(-5, 5))
+    fig = add_trajectory_1d_input(fig, traj, f)
     st.plotly_chart(fig, use_container_width=True)
 elif dim == 2:
-    fig = visualize_3d_function(f, name=func_choice, xlim=(-5, 5))
-    fig = add_trajectory_3d(fig, traj, f)
+    fig = visualize_2d_input_surface(f, name=func_choice, xlim=(-5, 5))
+    fig = add_trajectory_2d_input_surface(fig, traj, f)
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.write("Visualization not available.")
