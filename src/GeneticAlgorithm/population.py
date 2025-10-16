@@ -146,4 +146,41 @@ class Population:
         return parents
 
 
-   
+    def evolve(self, crossover_rate: float = 0.8, mutation_rate: float = 0.2) -> None:
+        """
+        Evolve the population through selection, crossover, and mutation.
+
+        A new generation is created by:
+          1. Selecting parents using tournament selection.
+          2. Applying crossover between parent pairs (with probability `crossover_rate`).
+          3. Mutating offspring (with probability `mutation_rate`).
+          4. Evaluating all new individuals.
+
+        Parameters
+        ----------
+        crossover_rate : float, optional
+            Probability of applying crossover to each parent pair (default 0.8).
+        mutation_rate : float, optional
+            Probability of mutating each offspring (default 0.2).
+        """
+        new_gen: List[CoffeeChromosome] = []
+
+        # Selection
+        parents = self.select_parents()
+
+        # Crossover
+        for i in range(0, len(parents), 2):
+            if np.random.rand() < crossover_rate:
+                c1, c2 = CoffeeChromosome.crossover(parents[i], parents[i + 1])
+            else:
+                c1, c2 = parents[i].copy(), parents[i + 1].copy()
+            new_gen += [c1, c2]
+
+        # Mutation
+        for ind in new_gen:
+            if np.random.rand() < mutation_rate:
+                ind.mutate()
+
+        # Update population and evaluate
+        self.individuals = new_gen[: len(self.individuals)]
+        self.evaluate()
