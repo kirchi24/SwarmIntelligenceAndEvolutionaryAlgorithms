@@ -1,3 +1,4 @@
+import numpy as np
 from typing import List
 
 from GeneticAlgorithm.chromosome import CoffeeChromosome
@@ -29,3 +30,24 @@ class Population:
         self.individuals: List[CoffeeChromosome] = [
             CoffeeChromosome() for _ in range(size)
         ]
+
+    def evaluate(self) -> None:
+        """
+        Evaluate the fitness of all individuals in the population.
+
+        Each individual's fitness is computed using the `coffee_fitness_4d`
+        function defined inside the `CoffeeChromosome` class.
+        """
+        for ind in self.individuals:
+            ind.evaluate()
+
+    def best(self) -> CoffeeChromosome:
+        """
+        Return the best individual in the current population.
+
+        Returns
+        -------
+        CoffeeChromosome
+            The individual with the highest fitness score.
+        """
+        return max(self.individuals, key=lambda x: x.fitness)
