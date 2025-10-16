@@ -1,5 +1,6 @@
+from typing import List
+
 from GeneticAlgorithm.chromosome import CoffeeChromosome
-import numpy as np
 
 
 class Population:
@@ -16,7 +17,7 @@ class Population:
         List containing all individuals in the current generation.
     """
 
-    def __init__(self, size=30):
+    def __init__(self, size: int = 30) -> None:
         """
         Initialize a population with random individuals.
 
@@ -25,4 +26,6 @@ class Population:
         size : int, optional
             Number of individuals in the population (default is 30).
         """
-        self.individuals = [CoffeeChromosome() for _ in range(size)]
+        self.individuals: List[CoffeeChromosome] = [
+            CoffeeChromosome() for _ in range(size)
+        ]

@@ -1,4 +1,6 @@
+from __future__ import annotations
 import numpy as np
+from typing import Optional, Tuple
 
 from GeneticAlgorithm.coffee_fitness import coffee_fitness_4d
 
@@ -21,10 +23,16 @@ class CoffeeChromosome:
         Fitness score (quality) of this configuration. None if unevaluated.
     """
 
-    INT_RANGES = {"roast": (0, 20), "blend": (0, 100), "grind": (0, 10)}
-    FLOAT_RANGES = {"brew_time": (0.0, 5.0)}
+    INT_RANGES: dict[str, Tuple[int, int]] = {"roast": (0, 20), "blend": (0, 100), "grind": (0, 10)}
+    FLOAT_RANGES: dict[str, Tuple[float, float]] = {"brew_time": (0.0, 5.0)}
 
-    def __init__(self, roast=None, blend=None, grind=None, brew_time=None):
+    def __init__(
+        self,
+        roast: Optional[int] = None,
+        blend: Optional[int] = None,
+        grind: Optional[int] = None,
+        brew_time: Optional[float] = None,
+    ) -> None:
         """
         Initialize a CoffeeChromosome with given or random parameters.
 
@@ -39,13 +47,13 @@ class CoffeeChromosome:
         brew_time : float, optional
             Brew time in minutes (default random float in [0.0, 5.0]).
         """
-        self.roast = np.random.randint(0, 21) if roast is None else roast
-        self.blend = np.random.randint(0, 101) if blend is None else blend
-        self.grind = np.random.randint(0, 11) if grind is None else grind
-        self.brew_time = np.random.uniform(0.0, 5.0) if brew_time is None else brew_time
-        self.fitness = None
+        self.roast: int = np.random.randint(0, 21) if roast is None else roast
+        self.blend: int = np.random.randint(0, 101) if blend is None else blend
+        self.grind: int = np.random.randint(0, 11) if grind is None else grind
+        self.brew_time: float = np.random.uniform(0.0, 5.0) if brew_time is None else brew_time
+        self.fitness: Optional[float] = None
 
-    def evaluate(self):
+    def evaluate(self) -> float:
         """
         Compute and store the coffee fitness score for this chromosome.
 
@@ -59,7 +67,7 @@ class CoffeeChromosome:
         )
         return self.fitness
 
-    def mutate(self, p_int=0.3, p_float=0.3):
+    def mutate(self, p_int: float = 0.3, p_float: float = 0.3) -> None:
         """
         Mutate chromosome parameters with mixed integer and continuous rules.
 
@@ -74,18 +82,18 @@ class CoffeeChromosome:
             Probability of mutating the continuous variable (default 0.3).
         """
         if np.random.rand() < p_int:
-            self.roast = np.clip(self.roast + np.random.choice([-1, 1]), 0, 20)
+            self.roast = int(np.clip(self.roast + np.random.choice([-1, 1]), 0, 20))
         if np.random.rand() < p_int:
-            self.blend = np.clip(self.blend + np.random.choice([-1, 1, -2, 2]), 0, 100)
+            self.blend = int(np.clip(self.blend + np.random.choice([-1, 1, -2, 2]), 0, 100))
         if np.random.rand() < p_int:
-            self.grind = np.clip(self.grind + np.random.choice([-1, 1]), 0, 10)
+            self.grind = int(np.clip(self.grind + np.random.choice([-1, 1]), 0, 10))
         if np.random.rand() < p_float:
-            self.brew_time = np.clip(
-                self.brew_time + np.random.normal(0, 0.1), 0.0, 5.0
+            self.brew_time = float(
+                np.clip(self.brew_time + np.random.normal(0, 0.1), 0.0, 5.0)
             )
 
     @staticmethod
-    def crossover(parent1, parent2):
+    def crossover(parent1: CoffeeChromosome, parent2: CoffeeChromosome) -> Tuple[CoffeeChromosome, CoffeeChromosome]:
         """
         Perform crossover between two parent chromosomes.
 
@@ -119,7 +127,7 @@ class CoffeeChromosome:
 
         return child1, child2
 
-    def copy(self):
+    def copy(self) -> CoffeeChromosome:
         """
         Create an exact copy of this chromosome.
 
@@ -130,7 +138,7 @@ class CoffeeChromosome:
         """
         return CoffeeChromosome(self.roast, self.blend, self.grind, self.brew_time)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Developer-friendly string representation of the chromosome.
 
