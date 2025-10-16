@@ -23,7 +23,11 @@ class CoffeeChromosome:
         Fitness score (quality) of this configuration. None if unevaluated.
     """
 
-    INT_RANGES: dict[str, Tuple[int, int]] = {"roast": (0, 20), "blend": (0, 100), "grind": (0, 10)}
+    INT_RANGES: dict[str, Tuple[int, int]] = {
+        "roast": (0, 20),
+        "blend": (0, 100),
+        "grind": (0, 10),
+    }
     FLOAT_RANGES: dict[str, Tuple[float, float]] = {"brew_time": (0.0, 5.0)}
 
     def __init__(
@@ -50,7 +54,9 @@ class CoffeeChromosome:
         self.roast: int = np.random.randint(0, 21) if roast is None else roast
         self.blend: int = np.random.randint(0, 101) if blend is None else blend
         self.grind: int = np.random.randint(0, 11) if grind is None else grind
-        self.brew_time: float = np.random.uniform(0.0, 5.0) if brew_time is None else brew_time
+        self.brew_time: float = (
+            np.random.uniform(0.0, 5.0) if brew_time is None else brew_time
+        )
         self.fitness: Optional[float] = None
 
     def evaluate(self) -> float:
@@ -84,7 +90,9 @@ class CoffeeChromosome:
         if np.random.rand() < p_int:
             self.roast = int(np.clip(self.roast + np.random.choice([-1, 1]), 0, 20))
         if np.random.rand() < p_int:
-            self.blend = int(np.clip(self.blend + np.random.choice([-1, 1, -2, 2]), 0, 100))
+            self.blend = int(
+                np.clip(self.blend + np.random.choice([-1, 1, -2, 2]), 0, 100)
+            )
         if np.random.rand() < p_int:
             self.grind = int(np.clip(self.grind + np.random.choice([-1, 1]), 0, 10))
         if np.random.rand() < p_float:
@@ -93,7 +101,9 @@ class CoffeeChromosome:
             )
 
     @staticmethod
-    def crossover(parent1: CoffeeChromosome, parent2: CoffeeChromosome) -> Tuple[CoffeeChromosome, CoffeeChromosome]:
+    def crossover(
+        parent1: CoffeeChromosome, parent2: CoffeeChromosome
+    ) -> Tuple[CoffeeChromosome, CoffeeChromosome]:
         """
         Perform crossover between two parent chromosomes.
 

@@ -9,6 +9,7 @@ from src.benchmark import (
     rastrigin,
 )
 
+
 def get_benchmark(name: str) -> Optional[Callable]:
     """Return a benchmark function by name.
 
@@ -34,9 +35,7 @@ def get_benchmark(name: str) -> Optional[Callable]:
 
 
 def continuous_neighborhood_batch(
-    x: Union[Iterable[float], np.ndarray], 
-    step_size: float = 0.1, 
-    samples: int = 1
+    x: Union[Iterable[float], np.ndarray], step_size: float = 0.1, samples: int = 1
 ) -> np.ndarray:
     """
     Sample multiple continuous neighbors of `x`.
@@ -53,7 +52,7 @@ def continuous_neighborhood_batch(
     Returns
     -------
     np.ndarray
-        Array of shape (samples, n) where each row is a perturbed neighbor 
+        Array of shape (samples, n) where each row is a perturbed neighbor
         of `x`. `n` is the dimensionality of `x`.
     """
     x = np.array(x, dtype=float)
@@ -65,7 +64,9 @@ def continuous_neighborhood_batch(
 def hill_climbing(
     f: Callable[[Union[np.ndarray, Iterable[float]]], float],
     x0: Union[np.ndarray, Iterable[float]],
-    neighborhood_fn: Callable[[Union[np.ndarray, Iterable[float]], float, int], np.ndarray],
+    neighborhood_fn: Callable[
+        [Union[np.ndarray, Iterable[float]], float, int], np.ndarray
+    ],
     step_size: float = 0.1,
     max_iter: int = 1000,
     tol: float = 1e-6,
@@ -81,7 +82,7 @@ def hill_climbing(
     x0 : array-like
         Initial solution vector.
     neighborhood_fn : callable
-        Function producing neighbors, with signature 
+        Function producing neighbors, with signature
         `neighborhood_fn(x, step_size, samples) -> np.ndarray`.
     step_size : float, optional
         Maximum perturbation applied to each component when generating neighbors (default 0.1).
@@ -131,12 +132,14 @@ def hill_climbing(
 def steepest_hill_climbing(
     f: Callable[[Union[np.ndarray, Iterable[float]]], float],
     x0: Union[np.ndarray, Iterable[float]],
-    neighborhood_fn: Callable[[Union[np.ndarray, Iterable[float]], float, int], np.ndarray],
+    neighborhood_fn: Callable[
+        [Union[np.ndarray, Iterable[float]], float, int], np.ndarray
+    ],
     step_size: float = 0.1,
     max_iter: int = 1000,
     samples: int = 20,
     tol: float = 1e-6,
-    patience: Optional[int] = None
+    patience: Optional[int] = None,
 ) -> Tuple[np.ndarray, float, np.ndarray, int]:
     """
     Steepest-ascent hill-climbing (best-of-sample) optimizer using a batch-capable neighbor function.
@@ -148,7 +151,7 @@ def steepest_hill_climbing(
     x0 : array-like
         Initial solution vector.
     neighborhood_fn : callable
-        Function producing neighbors, with signature 
+        Function producing neighbors, with signature
         `neighborhood_fn(x, step_size, samples) -> np.ndarray`.
     step_size : float, optional
         Maximum perturbation applied to each component when generating neighbors (default 0.1).

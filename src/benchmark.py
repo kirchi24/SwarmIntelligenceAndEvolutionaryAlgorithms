@@ -149,6 +149,7 @@ def rastrigin(x: Iterable) -> float:
 # 1D Visualization (input dimension = 1)
 # ----------------------------------------------------------------------
 
+
 def visualize_1d_input(
     func: Callable[[np.ndarray], np.ndarray],
     name: str = "Function",
@@ -238,12 +239,22 @@ def add_trajectory_1d_input(
 
     # Start and end markers
     fig.add_trace(
-        go.Scatter(x=[trajectory[0]], y=[y_vals[0]], mode="markers",
-                   marker=dict(size=10, color="blue"), name="Start")
+        go.Scatter(
+            x=[trajectory[0]],
+            y=[y_vals[0]],
+            mode="markers",
+            marker=dict(size=10, color="blue"),
+            name="Start",
+        )
     )
     fig.add_trace(
-        go.Scatter(x=[trajectory[-1]], y=[y_vals[-1]], mode="markers",
-                   marker=dict(size=10, color="green"), name="End")
+        go.Scatter(
+            x=[trajectory[-1]],
+            y=[y_vals[-1]],
+            mode="markers",
+            marker=dict(size=10, color="green"),
+            name="End",
+        )
     )
     return fig
 
@@ -251,6 +262,7 @@ def add_trajectory_1d_input(
 # ----------------------------------------------------------------------
 # 2D Input Function Visualization (visualized as 3D surface)
 # ----------------------------------------------------------------------
+
 
 def visualize_2d_input_surface(
     func: Callable[[np.ndarray], float],
@@ -284,9 +296,13 @@ def visualize_2d_input_surface(
     x = np.linspace(xlim[0], xlim[1], points)
     y = np.linspace(ylim[0], ylim[1], points)
     X, Y = np.meshgrid(x, y)
-    Z = np.array([func([xi, yi]) for xi, yi in zip(X.ravel(), Y.ravel())]).reshape(X.shape)
+    Z = np.array([func([xi, yi]) for xi, yi in zip(X.ravel(), Y.ravel())]).reshape(
+        X.shape
+    )
 
-    fig = go.Figure(go.Surface(x=X, y=Y, z=Z, colorscale="Viridis", opacity=0.9, name=name))
+    fig = go.Figure(
+        go.Surface(x=X, y=Y, z=Z, colorscale="Viridis", opacity=0.9, name=name)
+    )
     fig.update_layout(
         title=f"{name} (2D Input Function → 3D Surface)",
         scene=dict(xaxis_title="x", yaxis_title="y", zaxis_title="f(x, y)"),
@@ -337,17 +353,28 @@ def add_trajectory_2d_input_surface(
     )
 
     # Start and end points
-    fig.add_trace(go.Scatter3d(
-        x=[trajectory[0, 0]], y=[trajectory[0, 1]], z=[z_vals[0]],
-        mode="markers", marker=dict(size=8, color="blue"), name="Start"
-    ))
-    fig.add_trace(go.Scatter3d(
-        x=[trajectory[-1, 0]], y=[trajectory[-1, 1]], z=[z_vals[-1]],
-        mode="markers", marker=dict(size=8, color="green"), name="End"
-    ))
+    fig.add_trace(
+        go.Scatter3d(
+            x=[trajectory[0, 0]],
+            y=[trajectory[0, 1]],
+            z=[z_vals[0]],
+            mode="markers",
+            marker=dict(size=8, color="blue"),
+            name="Start",
+        )
+    )
+    fig.add_trace(
+        go.Scatter3d(
+            x=[trajectory[-1, 0]],
+            y=[trajectory[-1, 1]],
+            z=[z_vals[-1]],
+            mode="markers",
+            marker=dict(size=8, color="green"),
+            name="End",
+        )
+    )
 
     return fig
-
 
 
 # ----------------------------------------------------------------------
