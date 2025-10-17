@@ -117,7 +117,8 @@ with tabs[2]:
     fig.update_layout(
         xaxis_title="Generation",
         yaxis_title="Fitness",
-        title="Best Fitness Across Generations"
+        title="Best Fitness Across Generations",
+        yaxis=dict(range=[0, 100]) 
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -126,51 +127,69 @@ with tabs[2]:
     # -------------------
     st.subheader("Fitness Landscape (Contour)")
 
-    fixed_dims = st.multiselect(
-        "Select two parameters to fix",
-        options=["roast", "blend", "grind", "brew_time"],
-        default=["grind", "brew_time"]
+    # --- Parameterwahl mit Dropdowns ---
+    col1, col2 = st.columns(2)
+    all_dims = ["roast", "blend", "grind", "brew_time"]
+
+    with col1:
+        fixed_dim1 = st.selectbox("First fixed parameter", all_dims, index=2)
+    with col2:
+        remaining_dims = [d for d in all_dims if d != fixed_dim1]
+        fixed_dim2 = st.selectbox("Second fixed parameter", remaining_dims, index=2)
+
+    fixed_dims = [fixed_dim1, fixed_dim2]
+    variable_dims = [d for d in all_dims if d not in fixed_dims]
+
+    # --- Eingabe der fixierten Werte ---
+    st.markdown("#### Fixed Values")
+
+    def get_input_for_param(param_name):
+        """Erzeugt passenden Input je nach Parameter"""
+        if param_name == "roast":
+            return st.slider(f"Fixed value for {param_name}", 0, 20, 5, step=1)
+        elif param_name == "blend":
+            return st.slider(f"Fixed value for {param_name}", 0, 100, 50, step=1)
+        elif param_name == "grind":
+            return st.slider(f"Fixed value for {param_name}", 0, 10, 5, step=1)
+        elif param_name == "brew_time":
+            return st.slider(f"Fixed value for {param_name}", 0.0, 5.0, 2.5, step=0.1)
+
+    fixed_values = {
+        fixed_dims[0]: get_input_for_param(fixed_dims[0]),
+        fixed_dims[1]: get_input_for_param(fixed_dims[1]),
+    }
+
+    # --- Grid-Erstellung (50 Punkte pro Achse) ---
+    limits = {"roast": 20, "blend": 100, "grind": 10, "brew_time": 5.0}
+    x_vals = np.linspace(0, limits[variable_dims[0]], 50)
+    y_vals = np.linspace(0, limits[variable_dims[1]], 50)
+    X, Y = np.meshgrid(x_vals, y_vals)
+    Z = np.zeros_like(X)
+
+    for i in range(50):
+        for j in range(50):
+            args = {**fixed_values}
+            args[variable_dims[0]] = int(X[i, j]) if variable_dims[0] in ["roast", "blend", "grind"] else X[i, j]
+            args[variable_dims[1]] = int(Y[i, j]) if variable_dims[1] in ["roast", "blend", "grind"] else Y[i, j]
+            Z[i, j] = coffee_fitness_4d(**args)
+
+    # --- Plotly Contour Plot ---
+    fig = go.Figure(data=
+        go.Contour(
+            z=Z,
+            x=x_vals,
+            y=y_vals,
+            colorscale='Viridis',
+            contours=dict(showlabels=True),
+            colorbar=dict(title='Fitness')
+        )
     )
-
-    if len(fixed_dims) == 2:
-        fixed_values = [
-            st.number_input(f"Fixed value for {fixed_dims[0]}", 0.0, 100.0, 5.0),
-            st.number_input(f"Fixed value for {fixed_dims[1]}", 0.0, 100.0, 4.0),
-        ]
-
-        all_dims = ["roast", "blend", "grind", "brew_time"]
-        variable_dims = [d for d in all_dims if d not in fixed_dims]
-        limits = {"roast": 20, "blend": 100, "grind": 10, "brew_time": 5.0}
-        x_vals = np.linspace(0, limits[variable_dims[0]], 50)
-        y_vals = np.linspace(0, limits[variable_dims[1]], 50)
-        X, Y = np.meshgrid(x_vals, y_vals)
-        Z = np.zeros_like(X)
-
-        for i in range(50):
-            for j in range(50):
-                args = {fixed_dims[0]: fixed_values[0], fixed_dims[1]: fixed_values[1]}
-                args[variable_dims[0]] = X[i, j]
-                args[variable_dims[1]] = Y[i, j]
-                Z[i, j] = coffee_fitness_4d(**args)
-
-        contour = go.Figure(data=
-            go.Contour(
-                z=Z,
-                x=x_vals,
-                y=y_vals,
-                colorscale='Viridis',
-                contours=dict(showlabels=True),
-                colorbar=dict(title='Fitness')
-            )
-        )
-        contour.update_layout(
-            xaxis_title=variable_dims[0],
-            yaxis_title=variable_dims[1],
-            title="Fitness Landscape Contour"
-        )
-        st.plotly_chart(contour, use_container_width=True)
-    else:
-        st.write("Please select exactly two parameters to fix.")
+    fig.update_layout(
+        xaxis_title=variable_dims[0],
+        yaxis_title=variable_dims[1],
+        title="Fitness Landscape Contour"
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 # ------------------------
 # Discussion
