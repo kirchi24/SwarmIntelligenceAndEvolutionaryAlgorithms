@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from typing import Optional, Tuple
 
-from GeneticAlgorithm.coffee_fitness import coffee_fitness_4d
+from src.GeneticAlgorithm.coffee_fitness import coffee_fitness_4d
 
 
 class CoffeeChromosome:

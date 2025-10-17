@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List
 
-from GeneticAlgorithm.chromosome import CoffeeChromosome
+from src.GeneticAlgorithm.chromosome import CoffeeChromosome
 
 
 class Population:
