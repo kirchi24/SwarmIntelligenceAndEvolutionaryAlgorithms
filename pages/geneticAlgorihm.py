@@ -99,12 +99,22 @@ with tabs[2]:
 
     # Best solution
     st.subheader("Best Solution Found")
-    best_overall = max(
-        (ind for ind in best_individual_history if ind is not None and ind.fitness is not None),
-        key=lambda x: x.fitness,
-        default=None
-    )
-    st.write(best_overall)
+
+    if best_individual_history:
+        # Fallback auf Fitnesswert, falls best() kein valides Objekt gibt
+        valid_inds = [ind for ind in best_individual_history if ind is not None and getattr(ind, "fitness", None) is not None]
+
+        if valid_inds:
+            best_overall = max(valid_inds, key=lambda x: x.fitness)
+            st.write(f"**Best Fitness:** {best_overall.fitness:.2f}")
+            try:
+                st.write("**Parameters:**", best_overall.__dict__)
+            except Exception:
+                st.write("Could not display parameters for this individual.")
+        else:
+            st.warning("No valid individuals with fitness found.")
+    else:
+        st.warning("No individuals were recorded.")
 
     # Fitness over generations (Plotly)
     st.subheader("Fitness Over Generations")
@@ -197,12 +207,38 @@ with tabs[2]:
 with tabs[3]:
     st.header("Discussion & Analysis")
     st.markdown("""
-    - GA successfully finds high-fitness coffee configurations.
-    - Fitness improves steadily over generations, with occasional plateaus due to local optima.
-    - Selection method, population size, mutation, and crossover rates significantly influence convergence speed.
-    - Limitations: stochastic behavior; results can vary between runs.
-    - Potential improvements:
-        - Adaptive mutation or crossover rates.
-        - Elitism to retain top individuals.
-        - Hybrid approach with Hill Climbing for local refinement.
+    ## Discussion
+
+    The Genetic Algorithm (GA) demonstrates its effectiveness in exploring the search space and identifying high-fitness coffee configurations.  
+    Across generations, the **fitness typically improves steadily**, occasionally reaching **plateaus** when the population converges around local optima.
+
+    ### Influence of Selection Methods
+    - **Tournament Selection:**  
+    This method consistently favors the fittest individuals from small random subsets of the population.  
+    It promotes **strong selection pressure**, leading to **faster convergence** and more stable improvement in early generations.  
+    However, excessive pressure can reduce diversity, causing the population to converge prematurely on suboptimal solutions.
+
+    - **Roulette Wheel Selection:**  
+    This probabilistic approach gives **every individual a chance** proportional to its fitness.  
+    It maintains **higher diversity** and encourages broader exploration, which can help escape local optima.  
+    However, progress per generation may be **slower** and more **stochastic**, leading to greater variability across runs.
+
+    ### Observations from the Results
+    - The GA generally finds **high-fitness configurations**, validating that the fitness function provides a meaningful gradient for optimization.  
+    - **Tournament selection** tends to reach good solutions faster, while **roulette selection** explores more widely and can yield better results over longer runs.  
+    - **Population size**, **mutation rate**, and **crossover rate** critically affect convergence speed and stability.  
+    - Higher mutation maintains diversity but can destabilize convergence.  
+    - Lower mutation speeds convergence but risks stagnation.  
+    - Balanced crossover (around 0.7–0.9) helps combine traits effectively.
+
+    ### Limitations and Future Improvements
+    - Due to its **stochastic nature**, performance varies between runs, especially with small populations.  
+    - Adaptive mechanisms could improve robustness:
+    - **Adaptive mutation/crossover rates** to balance exploration and exploitation dynamically.  
+    - **Elitism** to ensure top individuals persist across generations.  
+    - **Hybrid approaches**, e.g., combining GA with **Hill Climbing**, could refine the best individuals locally for even higher fitness.
+
+    In summary, both selection strategies are valuable:  
+    **Tournament selection** excels at rapid optimization, while **Roulette selection** maintains genetic diversity for long-term improvement.  
+    Choosing between them depends on whether **speed** or **robustness** is prioritized.
     """)
