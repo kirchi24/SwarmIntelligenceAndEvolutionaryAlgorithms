@@ -59,7 +59,7 @@ class CoffeeChromosome:
             np.random.uniform(0.0, 5.0) if brew_time is None else brew_time
         )
         self.fitness: Optional[float] = None
-        if self.fitness_fn is None:
+        if fitness_fn is None:
             raise ValueError("No fitness function provided for CoffeeChromosome.")
         self.fitness_fn = fitness_fn
 
@@ -78,11 +78,24 @@ class CoffeeChromosome:
         return self.fitness
 
     def mutate(self, p_int: float = 0.3, p_float: float = 0.3) -> None:
+        """
+        Mutate the chromosome's genes with given probabilities.
+
+        Integer genes (`roast`, `blend`, `grind`) are changed by ±1 or ±2.
+        The continuous gene (`brew_time`) is perturbed with Gaussian noise.
+
+        Parameters
+        ----------
+        p_int : float
+            Probability of mutating each integer gene (default 0.3).
+        p_float : float
+            Probability of mutating the continuous gene (default 0.3).
+        """
         if np.random.rand() < p_int:
             self.roast = int(np.clip(self.roast + np.random.choice([-1, 1]), 0, 20))
         if np.random.rand() < p_int:
             self.blend = int(
-                np.clip(self.blend + np.random.choice([-1, 1, -2, 2]), 0, 100)
+                np.clip(self.blend + np.random.choice([-2, -1, 1, 2]), 0, 100)
             )
         if np.random.rand() < p_int:
             self.grind = int(np.clip(self.grind + np.random.choice([-1, 1]), 0, 10))
@@ -95,7 +108,24 @@ class CoffeeChromosome:
     def crossover(
         parent1: CoffeeChromosome, parent2: CoffeeChromosome
     ) -> Tuple[CoffeeChromosome, CoffeeChromosome]:
+        """
+        Create two offspring by recombining genes from two parents.
 
+        Integer genes are randomly inherited from either parent.
+        The continuous gene (`brew_time`) is linearly interpolated.
+
+        Parameters
+        ----------
+        parent1 : CoffeeChromosome
+            The first parent chromosome.
+        parent2 : CoffeeChromosome
+            The second parent chromosome.
+
+        Returns
+        -------
+        Tuple[CoffeeChromosome, CoffeeChromosome]
+            Two offspring chromosomes generated from the parents.
+        """
         child1 = CoffeeChromosome(fitness_fn=parent1.fitness_fn)
         child2 = CoffeeChromosome(fitness_fn=parent2.fitness_fn)
 
@@ -107,7 +137,7 @@ class CoffeeChromosome:
         child1.grind = np.random.choice([parent1.grind, parent2.grind])
         child2.grind = np.random.choice([parent1.grind, parent2.grind])
 
-        # Continuous gene (blend crossover)
+        # Continuous gene
         alpha = np.random.rand()
         child1.brew_time = alpha * parent1.brew_time + (1 - alpha) * parent2.brew_time
         child2.brew_time = (1 - alpha) * parent1.brew_time + alpha * parent2.brew_time
@@ -115,11 +145,31 @@ class CoffeeChromosome:
         return child1, child2
 
     def copy(self) -> CoffeeChromosome:
+        """
+        Create an exact copy of this chromosome.
+
+        Returns
+        -------
+        CoffeeChromosome
+            Independent clone of the current chromosome.
+        """
         return CoffeeChromosome(
-            self.roast, self.blend, self.grind, self.brew_time, self.fitness_fn
+            fitness_fn=self.fitness_fn,
+            roast=self.roast,
+            blend=self.blend,
+            grind=self.grind,
+            brew_time=self.brew_time,
         )
 
     def __repr__(self) -> str:
+        """
+        Return a developer-friendly string representation of the chromosome.
+
+        Returns
+        -------
+        str
+            Text summary including genes and, if evaluated, the fitness value.
+        """
         base = (
             f"CoffeeChromosome(roast={self.roast}, blend={self.blend}, grind={self.grind}, "
             f"brew_time={self.brew_time:.2f}"
