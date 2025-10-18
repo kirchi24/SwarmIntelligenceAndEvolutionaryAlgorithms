@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 from src.GeneticAlgorithm.coffee_fitness import coffee_fitness_4d
-from src.GeneticAlgorithm.population import Population  
+from src.GeneticAlgorithm.population import Population
 
 st.set_page_config(page_title="Genetic Algorithm - Coffee Optimization", layout="wide")
 
@@ -75,7 +75,7 @@ with tabs[2]:
 
     # Sidebar parameters
     st.sidebar.header("GA Parameters")
-    pop_size = st.sidebar.slider("Population Size", 10, 100, 30)
+    pop_size = st.sidebar.slider("Population Size", 10, 100, 20)
     generations = st.sidebar.slider("Generations", 10, 200, 50)
     crossover_rate = st.sidebar.slider("Crossover Rate", 0.0, 1.0, 0.8)
     mutation_rate = st.sidebar.slider("Mutation Rate", 0.0, 1.0, 0.2)
@@ -84,7 +84,7 @@ with tabs[2]:
     np.random.seed(seed)
 
     # Initialize population
-    population = Population(size=pop_size, selection_method=selection_method)
+    population = Population(size=pop_size, selection_method=selection_method, fitness_fn=coffee_fitness_4d)
     population.evaluate()
 
     # Track best fitness
