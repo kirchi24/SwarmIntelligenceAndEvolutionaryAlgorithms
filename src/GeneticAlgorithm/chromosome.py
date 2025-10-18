@@ -30,17 +30,19 @@ class CoffeeChromosome:
 
     def __init__(
         self,
+        fitness_fn: Optional[Callable[[int, int, int, float], float]],
         roast: Optional[int] = None,
         blend: Optional[int] = None,
         grind: Optional[int] = None,
         brew_time: Optional[float] = None,
-        fitness_fn: Optional[Callable[[int, int, int, float], float]] = None,
     ) -> None:
         """
         Initialize a CoffeeChromosome with given or random parameters.
 
         Parameters
         ----------
+        fitness_fn : callable
+            Function to compute fitness. Should accept (roast, blend, grind, brew_time).
         roast : int, optional
             Roast level (default random integer in [0, 20]).
         blend : int, optional
@@ -49,8 +51,6 @@ class CoffeeChromosome:
             Grind coarseness (default random integer in [0, 10]).
         brew_time : float, optional
             Brew time in minutes (default random float in [0.0, 5.0]).
-        fitness_fn : callable, optional
-            Function to compute fitness. Should accept (roast, blend, grind, brew_time).
         """
         self.roast: int = np.random.randint(0, 21) if roast is None else roast
         self.blend: int = np.random.randint(0, 101) if blend is None else blend
