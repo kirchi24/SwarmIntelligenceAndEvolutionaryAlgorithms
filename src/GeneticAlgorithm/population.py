@@ -1,6 +1,5 @@
 import numpy as np
-from typing import List
-
+from typing import List, Callable
 from src.GeneticAlgorithm.chromosome import CoffeeChromosome
 
 
@@ -8,51 +7,54 @@ class Population:
     """
     Population of candidate coffee chromosomes for the genetic algorithm.
 
-    This class manages a collection of `CoffeeChromosome` individuals,
-    handling their evaluation, selection, crossover, and mutation during
-    evolutionary optimization.
-
-    Attributes
-    ----------
-    individuals : list of CoffeeChromosome
-        List containing all individuals in the current generation.
+    Manages a collection of `CoffeeChromosome` individuals, handling their
+    evaluation, selection, crossover, and mutation during evolutionary optimization.
     """
 
     VALID_SELECTION_METHODS = ("tournament", "roulette")
 
-    def __init__(self, size: int = 30, selection_method: str = "tournament") -> None:
+    def __init__(
+        self,
+        size: int = 30,
+        selection_method: str = "tournament",
+        fitness_fn: Callable[[int, int, int, float], float] = None,
+    ) -> None:
         """
         Initialize a population with random individuals.
 
         Parameters
         ----------
-        size : int, optional
-            Number of individuals in the population (default 30).
-        selection_method : str, optional
-            Method for parent selection ('tournament' or 'roulette'), default 'tournament'.
+        size : int
+            Number of individuals (default 30).
+        selection_method : str
+            'tournament' or 'roulette' (default 'tournament').
+        fitness_fn : callable
+            Fitness function that takes (roast, blend, grind, brew_time) and returns a float.
 
         Raises
         ------
         ValueError
-            If `selection_method` is not 'tournament' or 'roulette'.
+            If selection_method is invalid or fitness_fn is None.
         """
         if selection_method not in self.VALID_SELECTION_METHODS:
             raise ValueError(
                 f"Invalid selection_method '{selection_method}'. "
                 f"Valid options are: {self.VALID_SELECTION_METHODS}"
             )
+        if fitness_fn is None:
+            raise ValueError("Population requires a fitness function.")
 
-        self.individuals: List[CoffeeChromosome] = [
-            CoffeeChromosome() for _ in range(size)
-        ]
         self.selection_method: str = selection_method
+        self.fitness_fn = fitness_fn
+        self.individuals: List[CoffeeChromosome] = [
+            CoffeeChromosome(fitness_fn=fitness_fn) for _ in range(size)
+        ]
 
     def evaluate(self) -> None:
         """
         Evaluate the fitness of all individuals in the population.
 
-        Each individual's fitness is computed using the `coffee_fitness_4d`
-        function defined inside the `CoffeeChromosome` class.
+        Each individual's fitness is computed using the population's fitness function.
         """
         for ind in self.individuals:
             ind.evaluate()
@@ -86,18 +88,10 @@ class Population:
             return self._tournament_selection(k)
         elif self.selection_method == "roulette":
             return self._roulette_selection()
-        else:
-            raise ValueError(
-                "Unknown selection method. Use 'tournament' or 'roulette'."
-            )
 
     def _tournament_selection(self, k: int) -> List[CoffeeChromosome]:
         """
         Perform tournament selection to choose parent individuals.
-
-        In each tournament, `k` random individuals compete, and the one
-        with the highest fitness is selected as a parent. This is repeated
-        until the number of selected parents equals the population size.
 
         Parameters
         ----------
@@ -115,15 +109,9 @@ class Population:
             parents.append(max(contenders, key=lambda x: x.fitness))
         return parents
 
-
     def _roulette_selection(self) -> List[CoffeeChromosome]:
         """
         Perform roulette wheel (fitness-proportionate) selection.
-
-        Each individual is assigned a probability proportional to its fitness.
-        Parents are sampled according to these probabilities. Fitness values
-        are shifted if negative to ensure all probabilities are non-negative.
-        If all fitnesses are zero, selection is uniform.
 
         Returns
         -------
@@ -133,25 +121,23 @@ class Population:
         fitnesses = np.array([ind.fitness for ind in self.individuals])
         min_fit = fitnesses.min()
         if min_fit < 0:
-            fitnesses -= min_fit  # shift so all fitnesses are >= 0
-
+            fitnesses -= min_fit  # shift so all fitnesses >= 0
         total_fitness = fitnesses.sum()
         if total_fitness == 0:
             probabilities = np.full(len(self.individuals), 1 / len(self.individuals))
         else:
             probabilities = fitnesses / total_fitness
-
-        selected_indices = np.random.choice(len(self.individuals), size=len(self.individuals), p=probabilities)
-        parents = [self.individuals[i] for i in selected_indices]
-        return parents
-
+        selected_indices = np.random.choice(
+            len(self.individuals), size=len(self.individuals), p=probabilities
+        )
+        return [self.individuals[i] for i in selected_indices]
 
     def evolve(self, crossover_rate: float = 0.8, mutation_rate: float = 0.2) -> None:
         """
         Evolve the population through selection, crossover, and mutation.
 
         A new generation is created by:
-          1. Selecting parents using tournament selection.
+          1. Selecting parents using the population's selection method.
           2. Applying crossover between parent pairs (with probability `crossover_rate`).
           3. Mutating offspring (with probability `mutation_rate`).
           4. Evaluating all new individuals.
