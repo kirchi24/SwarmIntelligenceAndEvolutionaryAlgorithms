@@ -59,12 +59,38 @@ with tabs[1]:
         - `brew_time` interpolated linearly between parents.
 
     ### Selection Methods
-    - Tournament selection (default)
-    - Roulette wheel (fitness-proportionate)
+    **1. Tournament Selection (default)**  
+    - Randomly choose `k` individuals from the population (a “tournament”).  
+    - The one with the highest fitness wins and is selected as a parent.  
+    - Repeat until enough parents are selected.  
+    - **Pros:** Strong selection pressure → fast convergence.  
+    - **Cons:** Can reduce population diversity → risk of premature convergence.
+
+    **2. Roulette Wheel Selection (Fitness-Proportionate)**  
+    - Each individual gets a probability proportional to its fitness.  
+    - Randomly select parents according to these probabilities (like spinning a roulette wheel).  
+    - **Pros:** Maintains diversity → less risk of local optima.  
+    - **Cons:** Progress can be slower; very low fitness values can reduce effectiveness.
+
+    **Comparison of Methods**
+
+    | Method     | Selection Pressure | Diversity | Convergence Speed |
+    |------------|-----------------|-----------|-----------------|
+    | Tournament | High            | Low       | Fast            |
+    | Roulette   | Medium          | High      | Slower          |
 
     ### Population
-    - Default size: 30
-    - Evolves via selection → crossover → mutation → evaluation
+    **Basic Concept of Population**
+
+    The population represents a collection of **individual candidate solutions** that collectively explore the search space. In the context of coffee optimization, each individual represents a specific coffee configuration with the four parameters: roast level, blend ratio, grind size, and brew time.
+
+    **Population Size**
+
+    - **Default size**: 30 individuals
+    - **Configurable range**: 10 to 100 individuals
+    - **Impact of size**:
+        - **Small populations** (10-20): Faster convergence, but higher risk of premature convergence to local optima
+        - **Large populations** (50-100): Better exploration of the search space, but higher computational cost
     """)
 
 # ------------------------
@@ -151,18 +177,22 @@ with tabs[2]:
                 st.metric("Best Fitness", f"{best_overall.fitness:.2f}")
             
             with col2:
+                # Korrekte Datentypen für die Tabelle - alle Werte als String
                 params = {
-                    "Roast": getattr(best_overall, "roast", "N/A"),
-                    "Blend": getattr(best_overall, "blend", "N/A"),
-                    "Grind": getattr(best_overall, "grind", "N/A"),
+                    "Roast": str(getattr(best_overall, "roast", "N/A")),
+                    "Blend": str(getattr(best_overall, "blend", "N/A")),
+                    "Grind": str(getattr(best_overall, "grind", "N/A")),
                     "Brew Time": f"{getattr(best_overall, 'brew_time', 0):.2f}",
                 }
                 
                 st.markdown("#### Parameters")
-                st.table({
+                # Verwende ein DataFrame mit korrekten Datentypen
+                import pandas as pd
+                df_params = pd.DataFrame({
                     "Parameter": list(params.keys()),
-                    "Value": list(params.values()),
+                    "Value": list(params.values())
                 })
+                st.dataframe(df_params, use_container_width=True, hide_index=True)
                 
             # Fitness-Verlauf plotten
             st.subheader("Fitness Progress")
