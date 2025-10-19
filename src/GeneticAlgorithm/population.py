@@ -19,36 +19,26 @@ class Population:
         selection_method: str = "tournament",
         fitness_fn: Callable[[int, int, int, float], float] = None,
     ) -> None:
-        """
-        Initialize a population with random individuals.
-
-        Parameters
-        ----------
-        size : int
-            Number of individuals (default 30).
-        selection_method : str
-            'tournament' or 'roulette' (default 'tournament').
-        fitness_fn : callable
-            Fitness function that takes (roast, blend, grind, brew_time) and returns a float.
-
-        Raises
-        ------
-        ValueError
-            If selection_method is invalid or fitness_fn is None.
-        """
         if selection_method not in self.VALID_SELECTION_METHODS:
             raise ValueError(
                 f"Invalid selection_method '{selection_method}'. "
-                f"Valid options are: {self.VALID_SELECTION_METHODS}"
+                f"Valid options: {self.VALID_SELECTION_METHODS}"
             )
         if fitness_fn is None:
-            raise ValueError("Population requires a fitness function.")
+            raise ValueError("Population requires a valid fitness function.")
 
-        self.selection_method: str = selection_method
+        self.size = size
+        self.selection_method = selection_method
         self.fitness_fn = fitness_fn
+
+        # --- create initial random population
         self.individuals: List[CoffeeChromosome] = [
-            CoffeeChromosome(fitness_fn=fitness_fn) for _ in range(size)
+            CoffeeChromosome(fitness_fn=self.fitness_fn) for _ in range(size)
         ]
+
+        # --- evaluate immediately so each has fitness
+        self.evaluate()
+
 
     def evaluate(self) -> None:
         """
@@ -57,7 +47,21 @@ class Population:
         Each individual's fitness is computed using the population's fitness function.
         """
         for ind in self.individuals:
-            ind.evaluate()
+            try:
+                ind.evaluate()
+                if ind.fitness is None:
+                    # Fallback falls coffee_fitness_4d nichts zurückgibt
+                    ind.fitness = float(
+                        self.fitness_fn(
+                            roast=float(ind.roast),
+                            blend=float(ind.blend),
+                            grind=float(ind.grind),
+                            brew_time=float(ind.brew_time),
+                        )
+                    )
+            except Exception as e:
+                print(f"[WARN] Evaluation failed for {ind}: {e}")
+                ind.fitness = -np.inf  # schlechtester Wert, aber kein None
 
     def best(self) -> CoffeeChromosome:
         """
@@ -68,7 +72,10 @@ class Population:
         CoffeeChromosome
             The individual with the highest fitness score.
         """
-        return max(self.individuals, key=lambda x: x.fitness)
+        valid_inds = [ind for ind in self.individuals if ind.fitness is not None]
+        if not valid_inds:
+            return None
+        return max(valid_inds, key=lambda x: x.fitness)
 
     def select_parents(self, k: int = 3) -> List[CoffeeChromosome]:
         """
@@ -119,21 +126,24 @@ class Population:
             List of selected parent chromosomes.
         """
         fitnesses = np.array([ind.fitness for ind in self.individuals])
+        if np.any(np.isnan(fitnesses)):
+            fitnesses = np.nan_to_num(fitnesses, nan=0.0)
+
         min_fit = fitnesses.min()
         if min_fit < 0:
             fitnesses -= min_fit  # shift so all fitnesses >= 0
-        total_fitness = fitnesses.sum()
+        total = fitnesses.sum()
 
-        if total_fitness == 0:
-            probabilities = np.full(len(self.individuals), 1 / len(self.individuals))
+        if total == 0:
+            probabilities = np.ones(len(fitnesses)) / len(fitnesses)
         else:
-            probabilities = fitnesses / total_fitness
+            probabilities = fitnesses / total
 
-        selected_indices = np.random.choice(
+        indices = np.random.choice(
             len(self.individuals), size=len(self.individuals), p=probabilities
         )
-        return [self.individuals[i] for i in selected_indices]
-
+        return [self.individuals[i] for i in indices]
+    
     def evolve(
         self,
         crossover_rate: float = 0.8,
@@ -164,39 +174,63 @@ class Population:
         parents = self.select_parents()
         n_parents = len(parents)
         new_generation: List[CoffeeChromosome] = []
+        offspring: List[CoffeeChromosome] = []
 
-        i = 0
-        while i < n_parents - 1:
+        # i = 0
+        # while i < n_parents - 1:
+        #     if np.random.rand() < crossover_rate:
+        #         child1, child2 = CoffeeChromosome.crossover(parents[i], parents[i + 1])
+        #     else:
+        #         child1, child2 = parents[i].copy(), parents[i + 1].copy()
+
+        #     child1.fitness_fn = self.fitness_fn
+        #     child2.fitness_fn = self.fitness_fn
+
+        #     if np.random.rand() < mutation_rate:
+        #         child1.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
+        #     if np.random.rand() < mutation_rate:
+        #         child2.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
+
+        #     new_generation += [child1, child2]
+        #     i += 2
+
+        # if n_parents % 2 == 1:
+        #     last_child = parents[-1].copy()
+        #     last_child.fitness_fn = self.fitness_fn
+        #     if np.random.rand() < mutation_rate:
+        #         last_child.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
+        #     new_generation.append(last_child)
+
+        # combined_population = self.individuals + new_generation
+
+        # for ind in combined_population:
+        #     if ind.fitness is None:
+        #         ind.evaluate()
+
+        # combined_sorted = sorted(
+        #     combined_population, key=lambda x: x.fitness, reverse=True
+        # )
+        # self.individuals = combined_sorted[: len(self.individuals)]
+
+        for i in range(0, len(parents) - 1, 2):
             if np.random.rand() < crossover_rate:
-                child1, child2 = CoffeeChromosome.crossover(parents[i], parents[i + 1])
+                c1, c2 = CoffeeChromosome.crossover(parents[i], parents[i + 1])
             else:
-                child1, child2 = parents[i].copy(), parents[i + 1].copy()
+                c1, c2 = parents[i].copy(), parents[i + 1].copy()
 
-            child1.fitness_fn = self.fitness_fn
-            child2.fitness_fn = self.fitness_fn
+            for child in (c1, c2):
+                child.fitness_fn = self.fitness_fn
+                if np.random.rand() < mutation_rate:
+                    child.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
+                child.evaluate()
+                offspring.append(child)
 
-            if np.random.rand() < mutation_rate:
-                child1.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
-            if np.random.rand() < mutation_rate:
-                child2.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
+        # Survivor selection: keep the best N individuals
+        combined = self.individuals + offspring
+        combined = [ind for ind in combined if ind.fitness is not None]
+        combined.sort(key=lambda x: x.fitness, reverse=True)
+        self.individuals = combined[: self.size]
 
-            new_generation += [child1, child2]
-            i += 2
-
-        if n_parents % 2 == 1:
-            last_child = parents[-1].copy()
-            last_child.fitness_fn = self.fitness_fn
-            if np.random.rand() < mutation_rate:
-                last_child.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
-            new_generation.append(last_child)
-
-        combined_population = self.individuals + new_generation
-
-        for ind in combined_population:
+        for ind in self.individuals:
             if ind.fitness is None:
                 ind.evaluate()
-
-        combined_sorted = sorted(
-            combined_population, key=lambda x: x.fitness, reverse=True
-        )
-        self.individuals = combined_sorted[: len(self.individuals)]

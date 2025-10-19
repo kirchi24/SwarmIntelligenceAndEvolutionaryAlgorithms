@@ -91,46 +91,99 @@ with tabs[2]:
     best_fitness_history = []
     best_individual_history = []
 
+    # Evolution loop
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+
+
+    # Debug: Test the fitness function directly
+    st.sidebar.header("Debug Fitness Function")
+    test_roast = st.sidebar.slider("Test Roast", 0, 20, 10)
+    test_blend = st.sidebar.slider("Test Blend", 0, 100, 50)
+    test_grind = st.sidebar.slider("Test Grind", 0, 10, 5)
+    test_brew = st.sidebar.slider("Test Brew Time", 0.0, 5.0, 2.5)
+
+    test_fitness = coffee_fitness_4d(
+        roast=test_roast,
+        blend=test_blend,
+        grind=test_grind, 
+        brew_time=test_brew
+    )
+    st.sidebar.metric("Test Fitness", f"{test_fitness:.2f}")
+
+
+
     for gen in range(generations):
+        status_text.text(f"Generation {gen+1}/{generations}")
+        progress_bar.progress((gen + 1) / generations)
+        
         population.evolve(crossover_rate=crossover_rate, mutation_rate=mutation_rate)
+        
+        # Stelle sicher, dass alle Individuen evaluiert sind
+        for ind in population.individuals:
+            if ind.fitness is None:
+                ind.evaluate()
+        
         best = population.best()
-        best_fitness_history.append(best.fitness)
-        best_individual_history.append(best.copy())
+        if best and best.fitness is not None:
+            best_fitness_history.append(best.fitness)
+            best_individual_history.append(best.copy())
+        else:
+            # Fallback: nimm das erste Individuum
+            if population.individuals and population.individuals[0].fitness is not None:
+                best_fitness_history.append(population.individuals[0].fitness)
+                best_individual_history.append(population.individuals[0].copy())
 
     # Best solution
     st.subheader("Best Solution Found")
 
     if best_individual_history:
-        # Fallback auf Fitnesswert, falls best() kein valides Objekt gibt
-        valid_inds = [ind for ind in best_individual_history if ind is not None and getattr(ind, "fitness", None) is not None]
-
+        # Finde das beste Individuum über alle Generationen
+        valid_inds = [ind for ind in best_individual_history if ind and getattr(ind, "fitness", None) is not None]
+        
         if valid_inds:
             best_overall = max(valid_inds, key=lambda x: x.fitness)
-            st.write(f"**Best Fitness:** {best_overall.fitness:.2f}")
-            try:
-                st.write("**Parameters:**", best_overall.__dict__)
-            except Exception:
-                st.write("Could not display parameters for this individual.")
+            
+            # Ausgabe der besten Lösung
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.metric("Best Fitness", f"{best_overall.fitness:.2f}")
+            
+            with col2:
+                params = {
+                    "Roast": getattr(best_overall, "roast", "N/A"),
+                    "Blend": getattr(best_overall, "blend", "N/A"),
+                    "Grind": getattr(best_overall, "grind", "N/A"),
+                    "Brew Time": f"{getattr(best_overall, 'brew_time', 0):.2f}",
+                }
+                
+                st.markdown("#### Parameters")
+                st.table({
+                    "Parameter": list(params.keys()),
+                    "Value": list(params.values()),
+                })
+                
+            # Fitness-Verlauf plotten
+            st.subheader("Fitness Progress")
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                y=best_fitness_history,
+                mode='lines+markers',
+                name='Best Fitness'
+            ))
+            fig.update_layout(
+                xaxis_title="Generation",
+                yaxis_title="Fitness",
+                title="Best Fitness per Generation"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
         else:
-            st.warning("No valid individuals with fitness found.")
+            st.error("No valid individuals with fitness found in any generation.")
     else:
-        st.warning("No individuals were recorded.")
+        st.error("No evolution history recorded.")
 
-    # Fitness over generations (Plotly)
-    st.subheader("Fitness Over Generations")
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        y=best_fitness_history,
-        mode='lines+markers',
-        name='Best Fitness'
-    ))
-    fig.update_layout(
-        xaxis_title="Generation",
-        yaxis_title="Fitness",
-        title="Best Fitness Across Generations",
-        yaxis=dict(range=[0, 100]) 
-    )
-    st.plotly_chart(fig, use_container_width=True)
 
     # -------------------
     # Fitness Landscape (Contour)

@@ -72,10 +72,20 @@ class CoffeeChromosome:
         float
             Fitness (quality) value between 0 and 100.
         """
-        self.fitness = self.fitness_fn(
-            self.roast, self.blend, self.grind, self.brew_time
-        )
-        return self.fitness
+        try:
+            # WICHTIG: Verwende keyword arguments wie von coffee_fitness_4d erwartet
+            self.fitness = self.fitness_fn(
+                roast=self.roast,
+                blend=self.blend, 
+                grind=self.grind,
+                brew_time=self.brew_time
+            )
+            return self.fitness
+        except Exception as e:
+            print(f"Error in evaluate: {e}")
+            self.fitness = 0.0  # Fallback statt None
+            return self.fitness
+
 
     def mutate(self, p_int: float = 0.3, p_float: float = 0.3) -> None:
         """
@@ -153,13 +163,15 @@ class CoffeeChromosome:
         CoffeeChromosome
             Independent clone of the current chromosome.
         """
-        return CoffeeChromosome(
+        new_chromosome = CoffeeChromosome(
             fitness_fn=self.fitness_fn,
             roast=self.roast,
             blend=self.blend,
             grind=self.grind,
-            brew_time=self.brew_time,
-        )
+            brew_time=self.brew_time
+            )
+        new_chromosome.fitness = self.fitness  # Fitness auch kopieren!
+        return new_chromosome
 
     def __repr__(self) -> str:
         """
