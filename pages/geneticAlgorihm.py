@@ -44,53 +44,66 @@ with tabs[1]:
     st.header("Implementation Overview")
     st.markdown("""
     ### Encoding
-    Each coffee candidate (chromosome) has 4 genes:
-    - `roast` (int, 0-20)
-    - `blend` (int, 0-100)
-    - `grind` (int, 0-10)
-    - `brew_time` (float, 0.0-5.0)
 
-    Integer genes are handled with discrete mutation, while `brew_time` uses Gaussian noise.
+    Each coffee candidate (chromosome) consists of four genes:
+    - `roast` (int, 0–20)  
+    - `blend` (int, 0–100)  
+    - `grind` (int, 0–10)  
+    - `brew_time` (float, 0.0–5.0)  
+
+    Integer genes are handled with **discrete mutation**, while `brew_time` uses **Gaussian noise** for smoother variation.
+
+    ---
 
     ### Genetic Operators
-    - **Mutation**: ±1 or ±2 for integers; small Gaussian perturbation for `brew_time`.
-    - **Crossover**: 
-        - Integers randomly inherited from parents.
-        - `brew_time` interpolated linearly between parents.
+
+    **Crossover (range: 0.0-1.0, standard 0.8)**  
+    Crossover represents **recombination** — it combines genetic information from two parent individuals to create offspring.  
+    In this implementation:
+    - Integer genes (`roast`, `blend`, `grind`) are randomly inherited from either parent.  
+    - The continuous gene (`brew_time`) is interpolated linearly between the two parent values.  
+    A higher crossover rate (e.g., 0.8) increases the probability that offspring are formed by mixing traits from two parents, promoting exploration of new combinations.
+
+    **Mutation (range: 0.0-1.0, int rate: 0.2, float rate: 0.2)**  
+    Mutation introduces **small random changes** to maintain diversity and prevent premature convergence.  
+    - Integer genes mutate by adding or subtracting small values (±1 or ±2).  
+    - The `brew_time` gene receives a small Gaussian perturbation.  
+    Separate mutation rates for integers and floats allow finer control over how often each type of gene changes.
+
+    ---
 
     ### Selection Methods
+
     **1. Tournament Selection (default)**  
-    - Randomly choose `k` individuals from the population (a “tournament”).  
-    - The one with the highest fitness wins and is selected as a parent.  
-    - Repeat until enough parents are selected.  
+    - Randomly selects `k` individuals from the population (a “tournament”).  
+    - The fittest among them is chosen as a parent.  
     - **Pros:** Strong selection pressure → fast convergence.  
-    - **Cons:** Can reduce population diversity → risk of premature convergence.
+    - **Cons:** Can reduce diversity and risk premature convergence.
 
     **2. Roulette Wheel Selection (Fitness-Proportionate)**  
-    - Each individual gets a probability proportional to its fitness.  
-    - Randomly select parents according to these probabilities (like spinning a roulette wheel).  
-    - **Pros:** Maintains diversity → less risk of local optima.  
-    - **Cons:** Progress can be slower; very low fitness values can reduce effectiveness.
-
-    **Comparison of Methods**
+    - Each individual’s chance of selection is proportional to its fitness.  
+    - **Pros:** Maintains population diversity → less risk of local optima.  
+    - **Cons:** Progress can be slower and more stochastic.
 
     | Method     | Selection Pressure | Diversity | Convergence Speed |
-    |------------|-----------------|-----------|-----------------|
-    | Tournament | High            | Low       | Fast            |
-    | Roulette   | Medium          | High      | Slower          |
+    |------------|--------------------|------------|-------------------|
+    | Tournament | High               | Low        | Fast              |
+    | Roulette   | Medium             | High       | Slower            |
+
+    ---
 
     ### Population
-    **Basic Concept of Population**
 
-    The population represents a collection of **individual candidate solutions** that collectively explore the search space. In the context of coffee optimization, each individual represents a specific coffee configuration with the four parameters: roast level, blend ratio, grind size, and brew time.
+    The **population** is a collection of candidate coffee configurations that explore the search space together.  
+    Each individual represents one potential solution, defined by the four coffee parameters.
 
     **Population Size**
+    - Default: 30 individuals  
+    - Configurable range: 10–100  
 
-    - **Default size**: 30 individuals
-    - **Configurable range**: 10 to 100 individuals
-    - **Impact of size**:
-        - **Small populations** (10-20): Faster convergence, but higher risk of premature convergence to local optima
-        - **Large populations** (50-100): Better exploration of the search space, but higher computational cost
+    **Effects of Size**
+    - **Small populations (10–20):** Faster convergence but higher risk of local optima.  
+    - **Large populations (50–100):** Better exploration but higher computational cost.
     """)
 
 # ------------------------
