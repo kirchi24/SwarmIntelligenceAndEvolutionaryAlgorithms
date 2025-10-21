@@ -171,6 +171,14 @@ with tabs[2]:
 
     # Best solution
     st.subheader("Best Solution Found")
+    st.markdown("""
+   Displays the **best coffee configuration** discovered after the genetic evolution — defined by the parameters **Roast**, **Blend**, **Grind**, and **Brew Time**.
+
+    Includes:
+    - **Best Fitness:** The highest fitness value achieved.  
+    - **Parameter Table:** A summary of the four parameters of the best-performing solution.  
+    - **Fitness Progress Plot:** A line chart showing how the best fitness evolved over generations.         
+    """)
 
     if best_individual_history:
         # Finde das beste Individuum über alle Generationen
@@ -227,7 +235,17 @@ with tabs[2]:
     # Fitness Landscape (Contour)
     # -------------------
     st.subheader("Fitness Landscape (Contour)")
+    st.markdown("""
+    Allows exploration of the **fitness landscape** across any two chosen parameter axes.  
+    For example: *Grind vs. Brew Time* while keeping *Roast* and *Blend* fixed.
 
+    Usage:
+    1. Select two **fixed parameters** (kept constant).  
+    2. Set their **specific values** using sliders.      
+                
+    The algorithm evaluates a **50×50 grid** of fitness values using `coffee_fitness_4d`  
+    and visualizes them in a **Plotly contour plot**, showing the fitness elevation across the selected dimensions.
+    """)
     # --- Parameterwahl mit Dropdowns ---
     col1, col2 = st.columns(2)
     all_dims = ["roast", "blend", "grind", "brew_time"]
