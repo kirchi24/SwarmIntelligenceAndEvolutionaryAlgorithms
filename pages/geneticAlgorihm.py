@@ -102,16 +102,21 @@ with tabs[2]:
     # Sidebar parameters
     st.sidebar.header("GA Parameters")
     pop_size = st.sidebar.slider("Population Size", 10, 100, 20)
-    generations = st.sidebar.slider("Generations", 10, 200, 50)
+    generations = st.sidebar.slider("Generations", 10, 300, 50)
     crossover_rate = st.sidebar.slider("Crossover Rate", 0.0, 1.0, 0.8)
-    mutation_rate = st.sidebar.slider("Mutation Rate", 0.0, 1.0, 0.2)
+    mutation_rate_int = st.sidebar.slider("Mutation Rate (Int)", 0.0, 1.0, 0.2)
+    mutation_rate_float = st.sidebar.slider("Mutation Rate (Float)", 0.0, 1.0, 0.2)
     selection_method = st.sidebar.selectbox("Selection Method", ["tournament", "roulette"])
     seed = st.sidebar.number_input("Random Seed", 0, 9999, 42)
     np.random.seed(seed)
 
     # Initialize population
     population = Population(size=pop_size, selection_method=selection_method, fitness_fn=coffee_fitness_4d)
-    population.evaluate()
+    population.evolve(
+            crossover_rate=crossover_rate,
+            mutation_int_prob=mutation_rate_int,
+            mutation_float_prob=mutation_rate_float
+        ) 
 
     # Track best fitness
     best_fitness_history = []
@@ -123,20 +128,20 @@ with tabs[2]:
 
 
 
-    # Debug: Test the fitness function directly
-    st.sidebar.header("Debug Fitness Function")
-    test_roast = st.sidebar.slider("Test Roast", 0, 20, 10)
-    test_blend = st.sidebar.slider("Test Blend", 0, 100, 50)
-    test_grind = st.sidebar.slider("Test Grind", 0, 10, 5)
-    test_brew = st.sidebar.slider("Test Brew Time", 0.0, 5.0, 2.5)
+    # # Debug: Test the fitness function directly
+    # st.sidebar.header("Debug Fitness Function")
+    # test_roast = st.sidebar.slider("Test Roast", 0, 20, 10)
+    # test_blend = st.sidebar.slider("Test Blend", 0, 100, 50)
+    # test_grind = st.sidebar.slider("Test Grind", 0, 10, 5)
+    # test_brew = st.sidebar.slider("Test Brew Time", 0.0, 5.0, 2.5)
 
-    test_fitness = coffee_fitness_4d(
-        roast=test_roast,
-        blend=test_blend,
-        grind=test_grind, 
-        brew_time=test_brew
-    )
-    st.sidebar.metric("Test Fitness", f"{test_fitness:.2f}")
+    # test_fitness = coffee_fitness_4d(
+    #     roast=test_roast,
+    #     blend=test_blend,
+    #     grind=test_grind, 
+    #     brew_time=test_brew
+    # )
+    # st.sidebar.metric("Test Fitness", f"{test_fitness:.2f}")
 
 
 
@@ -144,8 +149,11 @@ with tabs[2]:
         status_text.text(f"Generation {gen+1}/{generations}")
         progress_bar.progress((gen + 1) / generations)
         
-        population.evolve(crossover_rate=crossover_rate, mutation_rate=mutation_rate)
-        
+        population.evolve(
+                crossover_rate=crossover_rate,
+                mutation_int_prob=mutation_rate_int,
+                mutation_float_prob=mutation_rate_float
+            )        
         # Stelle sicher, dass alle Individuen evaluiert sind
         for ind in population.individuals:
             if ind.fitness is None:
