@@ -84,7 +84,6 @@ def run_hill_climb(
     generations: int = 50,
     samples: int = 40,
     step_size: float = 2.0,
-    seed: int = 42,
 ) -> Tuple[dict, List[np.ndarray]]:
     """
     Run hill climbing for a number of generations (iterations) and return
@@ -100,7 +99,6 @@ def run_hill_climb(
 
     for i in range(generations):
         x_best, f_best, traj, evals = run_single_restart(
-            seed=seed + i,
             step_size=step_size,
             samples=samples,
             max_iter=1,  # 1 iteration per generation for stepping

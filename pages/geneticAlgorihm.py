@@ -392,17 +392,16 @@ with tabs[2]:
     from src.GeneticAlgorithm.hill_climbing_coffee import run_hill_climb
 
     # --- Sidebar ---
-    samples = st.sidebar.slider("Neighbors per Iteration", 10, 100, 40)
-    step_size = st.sidebar.slider("Step Size", 0.1, 5.0, 2.0)
+    samples = st.sidebar.slider("Neighbors per - Iteration Steepest HC", 10, 100, 40)
+    step_size = st.sidebar.slider("Step Size - Steepest HC", 0.1, 5.0, 2.0)
     # --- Run hill climbing ---
     best, trajectories = run_hill_climb(
         generations=generations,
         samples=samples,
         step_size=step_size,
-        seed=seed
     )
 
-    st.write("### Best Hill-Climbing Result")
+    st.write("### Best Hill-Climbing Result - just to compare, no perfect visualization and integration yet")
     st.json(best)
 
 
