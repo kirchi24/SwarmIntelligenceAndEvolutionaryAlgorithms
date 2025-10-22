@@ -212,5 +212,4 @@ class Population:
         # update population and evaluate fitness
         self.individuals = combined[: self.size]
         for ind in self.individuals:
-            if ind.fitness is None:
-                ind.evaluate()
+            ind.evaluate()
