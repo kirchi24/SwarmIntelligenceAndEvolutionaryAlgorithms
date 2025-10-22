@@ -58,7 +58,7 @@ class CoffeeChromosome:
         self.brew_time: float = (
             np.random.uniform(0.0, 5.0) if brew_time is None else brew_time
         )
-        self.fitness: Optional[float] = None
+        self.fitness = 0.0
         if fitness_fn is None:
             raise ValueError("No fitness function provided for CoffeeChromosome.")
         self.fitness_fn = fitness_fn
@@ -72,20 +72,13 @@ class CoffeeChromosome:
         float
             Fitness (quality) value between 0 and 100.
         """
-        try:
-            # WICHTIG: Verwende keyword arguments wie von coffee_fitness_4d erwartet
-            self.fitness = self.fitness_fn(
-                roast=self.roast,
-                blend=self.blend, 
-                grind=self.grind,
-                brew_time=self.brew_time
-            )
-            return self.fitness
-        except Exception as e:
-            print(f"Error in evaluate: {e}")
-            self.fitness = 0.0  # Fallback statt None
-            return self.fitness
-
+        self.fitness = self.fitness_fn(
+            roast=self.roast,
+            blend=self.blend,
+            grind=self.grind,
+            brew_time=self.brew_time,
+        )
+        return self.fitness
 
     def mutate(self, p_int: float = 0.3, p_float: float = 0.3) -> None:
         """
@@ -168,8 +161,8 @@ class CoffeeChromosome:
             roast=self.roast,
             blend=self.blend,
             grind=self.grind,
-            brew_time=self.brew_time
-            )
+            brew_time=self.brew_time,
+        )
         new_chromosome.fitness = self.fitness  # Fitness auch kopieren!
         return new_chromosome
 

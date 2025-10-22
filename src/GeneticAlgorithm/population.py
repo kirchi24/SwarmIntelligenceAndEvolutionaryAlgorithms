@@ -35,10 +35,7 @@ class Population:
         self.individuals: List[CoffeeChromosome] = [
             CoffeeChromosome(fitness_fn=self.fitness_fn) for _ in range(size)
         ]
-
-        # --- evaluate immediately so each has fitness
         self.evaluate()
-
 
     def evaluate(self) -> None:
         """
@@ -49,19 +46,9 @@ class Population:
         for ind in self.individuals:
             try:
                 ind.evaluate()
-                if ind.fitness is None:
-                    # Fallback falls coffee_fitness_4d nichts zurückgibt
-                    ind.fitness = float(
-                        self.fitness_fn(
-                            roast=float(ind.roast),
-                            blend=float(ind.blend),
-                            grind=float(ind.grind),
-                            brew_time=float(ind.brew_time),
-                        )
-                    )
             except Exception as e:
                 print(f"[WARN] Evaluation failed for {ind}: {e}")
-                ind.fitness = -np.inf  # schlechtester Wert, aber kein None
+                ind.fitness = 0  # return worst fitness on failure
 
     def best(self) -> CoffeeChromosome:
         """
@@ -72,10 +59,11 @@ class Population:
         CoffeeChromosome
             The individual with the highest fitness score.
         """
-        valid_inds = [ind for ind in self.individuals if ind.fitness is not None]
-        if not valid_inds:
-            return None
-        return max(valid_inds, key=lambda x: x.fitness)
+        # All individuals should have a fitness (evaluate() sets fitness to 0 on error)
+        fitness_values = np.array([ind.fitness for ind in self.individuals])
+        best_index = np.argmax(fitness_values)
+
+        return self.individuals[best_index]
 
     def select_parents(self, k: int = 3) -> List[CoffeeChromosome]:
         """
@@ -110,10 +98,15 @@ class Population:
         List[CoffeeChromosome]
             List of selected parent chromosomes.
         """
+        n = len(self.individuals)
+        fitness = np.array([ind.fitness for ind in self.individuals])
         parents: List[CoffeeChromosome] = []
-        for _ in range(len(self.individuals)):
-            contenders = np.random.choice(self.individuals, k)
-            parents.append(max(contenders, key=lambda x: x.fitness))
+
+        for _ in range(n):
+            idx = np.random.choice(n, size=k, replace=False)
+            best_idx = idx[np.argmax(fitness[idx])]
+            parents.append(self.individuals[best_idx])
+
         return parents
 
     def _roulette_selection(self) -> List[CoffeeChromosome]:
@@ -125,25 +118,28 @@ class Population:
         List[CoffeeChromosome]
             List of selected parent chromosomes.
         """
-        fitnesses = np.array([ind.fitness for ind in self.individuals])
-        if np.any(np.isnan(fitnesses)):
-            fitnesses = np.nan_to_num(fitnesses, nan=0.0)
+        fitnesses = np.array([ind.fitness for ind in self.individuals], dtype=float)
+        fitnesses = np.nan_to_num(fitnesses, nan=0.0)
 
+        # shift fitnesses if there are negative values
         min_fit = fitnesses.min()
         if min_fit < 0:
-            fitnesses -= min_fit  # shift so all fitnesses >= 0
-        total = fitnesses.sum()
+            fitnesses -= min_fit
 
-        if total == 0:
-            probabilities = np.ones(len(fitnesses)) / len(fitnesses)
+        total = fitnesses.sum()
+        if total <= 0:
+            # if all fitnesses are zero, select uniformly
+            probabilities = np.full_like(fitnesses, 1 / len(fitnesses))
         else:
             probabilities = fitnesses / total
 
         indices = np.random.choice(
-            len(self.individuals), size=len(self.individuals), p=probabilities
+            len(self.individuals),
+            size=len(self.individuals),
+            p=probabilities,
         )
         return [self.individuals[i] for i in indices]
-    
+
     def evolve(
         self,
         crossover_rate: float = 0.8,
@@ -171,66 +167,50 @@ class Population:
         mutation_int_prob : float
             Probability of mutating integer genes (e.g., roast, blend, grind).
         """
+
+        # parent selection
         parents = self.select_parents()
         n_parents = len(parents)
-        new_generation: List[CoffeeChromosome] = []
-        offspring: List[CoffeeChromosome] = []
 
-        # i = 0
-        # while i < n_parents - 1:
-        #     if np.random.rand() < crossover_rate:
-        #         child1, child2 = CoffeeChromosome.crossover(parents[i], parents[i + 1])
-        #     else:
-        #         child1, child2 = parents[i].copy(), parents[i + 1].copy()
-
-        #     child1.fitness_fn = self.fitness_fn
-        #     child2.fitness_fn = self.fitness_fn
-
-        #     if np.random.rand() < mutation_rate:
-        #         child1.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
-        #     if np.random.rand() < mutation_rate:
-        #         child2.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
-
-        #     new_generation += [child1, child2]
-        #     i += 2
-
-        # if n_parents % 2 == 1:
-        #     last_child = parents[-1].copy()
-        #     last_child.fitness_fn = self.fitness_fn
-        #     if np.random.rand() < mutation_rate:
-        #         last_child.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
-        #     new_generation.append(last_child)
-
-        # combined_population = self.individuals + new_generation
-
-        # for ind in combined_population:
-        #     if ind.fitness is None:
-        #         ind.evaluate()
-
-        # combined_sorted = sorted(
-        #     combined_population, key=lambda x: x.fitness, reverse=True
-        # )
-        # self.individuals = combined_sorted[: len(self.individuals)]
-
-        for i in range(0, len(parents) - 1, 2):
+        # offspring creation (crossover & mutation)
+        offspring: list[CoffeeChromosome] = []
+        for i in range(0, n_parents - 1, 2):
+            # crossover
             if np.random.rand() < crossover_rate:
                 c1, c2 = CoffeeChromosome.crossover(parents[i], parents[i + 1])
             else:
                 c1, c2 = parents[i].copy(), parents[i + 1].copy()
 
+            # mutation + evaluation
             for child in (c1, c2):
                 child.fitness_fn = self.fitness_fn
                 if np.random.rand() < mutation_rate:
-                    child.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
+                    child.mutate(
+                        p_float=mutation_float_prob,
+                        p_int=mutation_int_prob,
+                    )
                 child.evaluate()
                 offspring.append(child)
 
-        # Survivor selection: keep the best N individuals
+        # handle odd number of parents
+        if n_parents % 2 == 1:
+            last = parents[-1].copy()
+            last.fitness_fn = self.fitness_fn
+            if np.random.rand() < mutation_rate:
+                last.mutate(
+                    p_float=mutation_float_prob,
+                    p_int=mutation_int_prob,
+                )
+            last.evaluate()
+            offspring.append(last)
+
+        # combine old + new individuals and select survivors
         combined = self.individuals + offspring
         combined = [ind for ind in combined if ind.fitness is not None]
         combined.sort(key=lambda x: x.fitness, reverse=True)
-        self.individuals = combined[: self.size]
 
+        # update population and evaluate fitness
+        self.individuals = combined[: self.size]
         for ind in self.individuals:
             if ind.fitness is None:
                 ind.evaluate()
