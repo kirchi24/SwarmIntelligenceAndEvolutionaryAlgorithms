@@ -3,6 +3,7 @@ import numpy as np
 import plotly.graph_objects as go
 from src.GeneticAlgorithm.coffee_fitness import coffee_fitness_4d
 from src.GeneticAlgorithm.population import Population
+from src.GeneticAlgorithm.chromosome import CoffeeChromosome
 
 st.set_page_config(page_title="Genetic Algorithm - Coffee Optimization", layout="wide")
 
@@ -17,7 +18,8 @@ tabs = st.tabs(["Introduction", "Methods", "Results", "Discussion"])
 # Introduction
 # ------------------------
 with tabs[0]:
-    st.markdown("""
+    st.markdown(
+        """
     ## Introduction
 
     Genetic Algorithms (GAs) are **population-based optimization algorithms** inspired by natural selection.  
@@ -25,6 +27,8 @@ with tabs[0]:
     - **Selection**: Preferentially choose fitter individuals as parents.
     - **Crossover**: Combine genetic information from parents to produce offspring.
     - **Mutation**: Introduce small random variations to maintain diversity.
+                
+    The main challenge in applying genetic algorithms often lies in designing an appropriate fitness function, which quantitatively evaluates how well a candidate solution meets the problem's objectives.
 
     **Strengths:**
     - Good for multimodal landscapes.
@@ -35,14 +39,16 @@ with tabs[0]:
     - Computationally expensive.
     - Convergence depends on population size and mutation/crossover rates.
     - No guarantee to find global optimum.
-    """)
+    """
+    )
 
 # ------------------------
 # Methods
 # ------------------------
 with tabs[1]:
     st.header("Implementation Overview")
-    st.markdown("""
+    st.markdown(
+        """
     ### Encoding
 
     Each coffee candidate (chromosome) consists of four genes:
@@ -104,7 +110,8 @@ with tabs[1]:
     **Effects of Size**
     - **Small populations (10-20):** Faster convergence but higher risk of local optima.  
     - **Large populations (50-100):** Better exploration but higher computational cost.
-    """)
+    """
+    )
 
 # ------------------------
 # Results
@@ -119,17 +126,21 @@ with tabs[2]:
     crossover_rate = st.sidebar.slider("Crossover Rate", 0.0, 1.0, 0.8)
     mutation_rate_int = st.sidebar.slider("Mutation Rate (Int)", 0.0, 1.0, 0.2)
     mutation_rate_float = st.sidebar.slider("Mutation Rate (Float)", 0.0, 1.0, 0.2)
-    selection_method = st.sidebar.selectbox("Selection Method", ["tournament", "roulette"])
+    selection_method = st.sidebar.selectbox(
+        "Selection Method", ["tournament", "roulette"]
+    )
     seed = st.sidebar.number_input("Random Seed", 0, 9999, 42)
     np.random.seed(seed)
 
     # Initialize population
-    population = Population(size=pop_size, selection_method=selection_method, fitness_fn=coffee_fitness_4d)
+    population = Population(
+        size=pop_size, selection_method=selection_method, fitness_fn=coffee_fitness_4d
+    )
     population.evolve(
-            crossover_rate=crossover_rate,
-            mutation_int_prob=mutation_rate_int,
-            mutation_float_prob=mutation_rate_float
-        ) 
+        crossover_rate=crossover_rate,
+        mutation_int_prob=mutation_rate_int,
+        mutation_float_prob=mutation_rate_float,
+    )
 
     # Track best fitness
     best_fitness_history = []
@@ -138,8 +149,6 @@ with tabs[2]:
     # Evolution loop
     progress_bar = st.progress(0)
     status_text = st.empty()
-
-
 
     # # Debug: Test the fitness function directly
     # st.sidebar.header("Debug Fitness Function")
@@ -151,27 +160,21 @@ with tabs[2]:
     # test_fitness = coffee_fitness_4d(
     #     roast=test_roast,
     #     blend=test_blend,
-    #     grind=test_grind, 
+    #     grind=test_grind,
     #     brew_time=test_brew
     # )
     # st.sidebar.metric("Test Fitness", f"{test_fitness:.2f}")
 
-
-
     for gen in range(generations):
         status_text.text(f"Generation {gen+1}/{generations}")
         progress_bar.progress((gen + 1) / generations)
-        
+
         population.evolve(
-                crossover_rate=crossover_rate,
-                mutation_int_prob=mutation_rate_int,
-                mutation_float_prob=mutation_rate_float
-            )        
-        # Stelle sicher, dass alle Individuen evaluiert sind
-        for ind in population.individuals:
-            if ind.fitness is None:
-                ind.evaluate()
-        
+            crossover_rate=crossover_rate,
+            mutation_int_prob=mutation_rate_int,
+            mutation_float_prob=mutation_rate_float,
+        )
+
         best = population.best()
         if best and best.fitness is not None:
             best_fitness_history.append(best.fitness)
@@ -184,27 +187,33 @@ with tabs[2]:
 
     # Best solution
     st.subheader("Best Solution Found")
-    st.markdown("""
+    st.markdown(
+        """
    Displays the **best coffee configuration** discovered after the genetic evolution — defined by the parameters **Roast**, **Blend**, **Grind**, and **Brew Time**.
 
     Includes:
     - **Best Fitness:** The highest fitness value achieved.  
     - **Parameter Table:** A summary of the four parameters of the best-performing solution.  
     - **Fitness Progress Plot:** A line chart showing how the best fitness evolved over generations.         
-    """)
+    """
+    )
 
     if best_individual_history:
         # Finde das beste Individuum über alle Generationen
-        valid_inds = [ind for ind in best_individual_history if ind and getattr(ind, "fitness", None) is not None]
-        
+        valid_inds = [
+            ind
+            for ind in best_individual_history
+            if ind and getattr(ind, "fitness", None) is not None
+        ]
+
         if valid_inds:
             best_overall = max(valid_inds, key=lambda x: x.fitness)
-            
+
             # Ausgabe der besten Lösung
             col1, col2 = st.columns([1, 2])
             with col1:
                 st.metric("Best Fitness", f"{best_overall.fitness:.2f}")
-            
+
             with col2:
                 # Korrekte Datentypen für die Tabelle - alle Werte als String
                 params = {
@@ -213,42 +222,42 @@ with tabs[2]:
                     "Grind": str(getattr(best_overall, "grind", "N/A")),
                     "Brew Time": f"{getattr(best_overall, 'brew_time', 0):.2f}",
                 }
-                
+
                 st.markdown("#### Parameters")
                 # Verwende ein DataFrame mit korrekten Datentypen
                 import pandas as pd
-                df_params = pd.DataFrame({
-                    "Parameter": list(params.keys()),
-                    "Value": list(params.values())
-                })
+
+                df_params = pd.DataFrame(
+                    {"Parameter": list(params.keys()), "Value": list(params.values())}
+                )
                 st.dataframe(df_params, use_container_width=True, hide_index=True)
-                
+
             # Fitness-Verlauf plotten
             st.subheader("Fitness Progress")
             fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                y=best_fitness_history,
-                mode='lines+markers',
-                name='Best Fitness'
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    y=best_fitness_history, mode="lines+markers", name="Best Fitness"
+                )
+            )
             fig.update_layout(
                 xaxis_title="Generation",
                 yaxis_title="Fitness",
-                title="Best Fitness per Generation"
+                title="Best Fitness per Generation",
             )
             st.plotly_chart(fig, use_container_width=True)
-            
+
         else:
             st.error("No valid individuals with fitness found in any generation.")
     else:
         st.error("No evolution history recorded.")
 
-
     # -------------------
     # Fitness Landscape (Contour)
     # -------------------
     st.subheader("Fitness Landscape (Contour)")
-    st.markdown("""
+    st.markdown(
+        """
     Allows exploration of the **fitness landscape** across any two chosen parameter axes.  
     For example: *Grind vs. Brew Time* while keeping *Roast* and *Blend* fixed.
 
@@ -258,7 +267,8 @@ with tabs[2]:
                 
     The algorithm evaluates a **50x50 grid** of fitness values using `coffee_fitness_4d`  
     and visualizes them in a **Plotly contour plot**, showing the fitness elevation across the selected dimensions.
-    """)
+    """
+    )
     # --- Parameterwahl mit Dropdowns ---
     col1, col2 = st.columns(2)
     all_dims = ["roast", "blend", "grind", "brew_time"]
@@ -301,25 +311,78 @@ with tabs[2]:
     for i in range(50):
         for j in range(50):
             args = {**fixed_values}
-            args[variable_dims[0]] = int(X[i, j]) if variable_dims[0] in ["roast", "blend", "grind"] else X[i, j]
-            args[variable_dims[1]] = int(Y[i, j]) if variable_dims[1] in ["roast", "blend", "grind"] else Y[i, j]
+            args[variable_dims[0]] = (
+                int(X[i, j])
+                if variable_dims[0] in ["roast", "blend", "grind"]
+                else X[i, j]
+            )
+            args[variable_dims[1]] = (
+                int(Y[i, j])
+                if variable_dims[1] in ["roast", "blend", "grind"]
+                else Y[i, j]
+            )
             Z[i, j] = coffee_fitness_4d(**args)
 
     # --- Plotly Contour Plot ---
-    fig = go.Figure(data=
-        go.Contour(
+    fig = go.Figure(
+        data=go.Contour(
             z=Z,
             x=x_vals,
             y=y_vals,
-            colorscale='Viridis',
+            colorscale="Viridis",
             contours=dict(showlabels=True),
-            colorbar=dict(title='Fitness')
+            colorbar=dict(title="Fitness"),
         )
     )
+
+    # --- Trajectory visualization of best individuals ---
+    if best_individual_history:
+        # Hole die x/y-Koordinaten basierend auf den aktuell gewählten variable_dims
+        trajectory_x = []
+        trajectory_y = []
+
+        for ind in best_individual_history:
+            trajectory_x.append(getattr(ind, variable_dims[0]))
+            trajectory_y.append(getattr(ind, variable_dims[1]))
+
+        # --- Trajectory line (Entwicklung über Generationen) ---
+        fig.add_trace(
+            go.Scatter(
+                x=trajectory_x,
+                y=trajectory_y,
+                mode="lines+markers",
+                marker=dict(size=6, color="red"),
+                line=dict(color="red", dash="dash"),
+                name="Trajectory",
+            )
+        )
+
+        # --- Startpunkt (erste Generation) ---
+        fig.add_trace(
+            go.Scatter(
+                x=[trajectory_x[0]],
+                y=[trajectory_y[0]],
+                mode="markers",
+                marker=dict(size=10, color="blue"),
+                name="Start",
+            )
+        )
+
+        # --- Endpunkt (letzte Generation) ---
+        fig.add_trace(
+            go.Scatter(
+                x=[trajectory_x[-1]],
+                y=[trajectory_y[-1]],
+                mode="markers",
+                marker=dict(size=10, color="green"),
+                name="End",
+            )
+        )
+
     fig.update_layout(
         xaxis_title=variable_dims[0],
         yaxis_title=variable_dims[1],
-        title="Fitness Landscape Contour"
+        title="Fitness Landscape Contour",
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -328,7 +391,8 @@ with tabs[2]:
 # ------------------------
 with tabs[3]:
     st.header("Discussion & Analysis")
-    st.markdown("""
+    st.markdown(
+        """
     ## Discussion
 
     The Genetic Algorithm (GA) demonstrates its effectiveness in exploring the search space and identifying high-fitness coffee configurations.  
@@ -363,4 +427,5 @@ with tabs[3]:
     In summary, both selection strategies are valuable:  
     **Tournament selection** excels at rapid optimization, while **Roulette selection** maintains genetic diversity for long-term improvement.  
     Choosing between them depends on whether **speed** or **robustness** is prioritized.
-    """)
+    """
+    )
