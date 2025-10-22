@@ -124,8 +124,10 @@ with tabs[2]:
     pop_size = st.sidebar.slider("Population Size", 10, 100, 20)
     generations = st.sidebar.slider("Generations", 10, 300, 50)
     crossover_rate = st.sidebar.slider("Crossover Rate", 0.0, 1.0, 0.8)
-    mutation_rate_int = st.sidebar.slider("Mutation Rate (Int)", 0.0, 1.0, 0.2)
-    mutation_rate_float = st.sidebar.slider("Mutation Rate (Float)", 0.0, 1.0, 0.2)
+    mutation_rate = st.sidebar.slider("Mutation Rate", 0.0, 1.0, 0.2)
+    mutation_decay = st.sidebar.slider("Mutation Decay", 0.8, 1.0, 0.99, 0.01)
+    mutation_prob_int = st.sidebar.slider("Mutation Probability (Int)", 0.0, 1.0, 0.2)
+    mutation_prob_float = st.sidebar.slider("Mutation Probability (Float)", 0.0, 1.0, 0.2)
     selection_method = st.sidebar.selectbox(
         "Selection Method", ["tournament", "roulette"]
     )
@@ -134,12 +136,12 @@ with tabs[2]:
 
     # Initialize population
     population = Population(
-        size=pop_size, selection_method=selection_method, fitness_fn=coffee_fitness_4d
+        size=pop_size, selection_method=selection_method, fitness_fn=coffee_fitness_4d, mutation_rate=mutation_rate, mutation_decay=mutation_decay
     )
     population.evolve(
         crossover_rate=crossover_rate,
-        mutation_int_prob=mutation_rate_int,
-        mutation_float_prob=mutation_rate_float,
+        mutation_int_prob=mutation_prob_int,
+        mutation_float_prob=mutation_prob_float,
     )
 
     # Track best fitness
@@ -171,8 +173,8 @@ with tabs[2]:
 
         population.evolve(
             crossover_rate=crossover_rate,
-            mutation_int_prob=mutation_rate_int,
-            mutation_float_prob=mutation_rate_float,
+            mutation_int_prob=mutation_prob_int,
+            mutation_float_prob=mutation_prob_float,
         )
 
         best = population.best()
@@ -418,10 +420,7 @@ with tabs[3]:
     - Balanced crossover (around 0.7-0.9) helps combine traits effectively.
 
     ### Limitations and Future Improvements
-    - Due to its **stochastic nature**, performance varies between runs, especially with small populations.  
-    - Adaptive mechanisms could improve robustness:
-    - **Adaptive mutation/crossover rates** to balance exploration and exploitation dynamically.  
-    - **Elitism** to ensure top individuals persist across generations.  
+    - Due to its **stochastic nature**, performance varies between runs, especially with small populations.
     - **Hybrid approaches**, e.g., combining GA with **Hill Climbing**, could refine the best individuals locally for even higher fitness.
 
     In summary, both selection strategies are valuable:  

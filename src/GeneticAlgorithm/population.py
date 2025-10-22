@@ -18,20 +18,19 @@ class Population:
         size: int = 30,
         selection_method: str = "tournament",
         fitness_fn: Callable[[int, int, int, float], float] = None,
+        mutation_rate: float = 0.2,
+        mutation_decay: float = 0.99,
     ) -> None:
-        if selection_method not in self.VALID_SELECTION_METHODS:
-            raise ValueError(
-                f"Invalid selection_method '{selection_method}'. "
-                f"Valid options: {self.VALID_SELECTION_METHODS}"
-            )
-        if fitness_fn is None:
-            raise ValueError("Population requires a valid fitness function.")
 
         self.size = size
         self.selection_method = selection_method
         self.fitness_fn = fitness_fn
 
-        # --- create initial random population
+        # adaptive mutation parameters
+        self.mutation_rate = mutation_rate
+        self.mutation_decay = mutation_decay
+
+        # create initial random population
         self.individuals: List[CoffeeChromosome] = [
             CoffeeChromosome(fitness_fn=self.fitness_fn) for _ in range(size)
         ]
@@ -143,7 +142,6 @@ class Population:
     def evolve(
         self,
         crossover_rate: float = 0.8,
-        mutation_rate: float = 0.2,
         mutation_float_prob: float = 0.2,
         mutation_int_prob: float = 0.2,
     ) -> None:
@@ -172,7 +170,7 @@ class Population:
         parents = self.select_parents()
         n_parents = len(parents)
 
-        # offspring creation (crossover & mutation)
+        # offspring creation
         offspring: list[CoffeeChromosome] = []
         for i in range(0, n_parents - 1, 2):
             # crossover
@@ -184,11 +182,8 @@ class Population:
             # mutation + evaluation
             for child in (c1, c2):
                 child.fitness_fn = self.fitness_fn
-                if np.random.rand() < mutation_rate:
-                    child.mutate(
-                        p_float=mutation_float_prob,
-                        p_int=mutation_int_prob,
-                    )
+                if np.random.rand() < self.mutation_rate:
+                    child.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
                 child.evaluate()
                 offspring.append(child)
 
@@ -196,20 +191,20 @@ class Population:
         if n_parents % 2 == 1:
             last = parents[-1].copy()
             last.fitness_fn = self.fitness_fn
-            if np.random.rand() < mutation_rate:
-                last.mutate(
-                    p_float=mutation_float_prob,
-                    p_int=mutation_int_prob,
-                )
+            if np.random.rand() < self.mutation_rate:
+                last.mutate(p_float=mutation_float_prob, p_int=mutation_int_prob)
             last.evaluate()
             offspring.append(last)
 
-        # combine old + new individuals and select survivors
+        # combine + survivor selection
         combined = self.individuals + offspring
         combined = [ind for ind in combined if ind.fitness is not None]
         combined.sort(key=lambda x: x.fitness, reverse=True)
-
-        # update population and evaluate fitness
         self.individuals = combined[: self.size]
+
+        # evaluate remaining
         for ind in self.individuals:
             ind.evaluate()
+
+        # adaptive mutation decay
+        self.mutation_rate *= self.mutation_decay
