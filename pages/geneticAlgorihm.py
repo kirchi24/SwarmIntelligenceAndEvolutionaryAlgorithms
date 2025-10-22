@@ -46,10 +46,10 @@ with tabs[1]:
     ### Encoding
 
     Each coffee candidate (chromosome) consists of four genes:
-    - `roast` (int, 0–20)  
-    - `blend` (int, 0–100)  
-    - `grind` (int, 0–10)  
-    - `brew_time` (float, 0.0–5.0)  
+    - `roast` (int, 0-20)  
+    - `blend` (int, 0-100)  
+    - `grind` (int, 0-10)  
+    - `brew_time` (float, 0.0-5.0)  
 
     Integer genes are handled with **discrete mutation**, while `brew_time` uses **Gaussian noise** for smoother variation.
 
@@ -81,7 +81,7 @@ with tabs[1]:
     - **Cons:** Can reduce diversity and risk premature convergence.
 
     **2. Roulette Wheel Selection (Fitness-Proportionate)**  
-    - Each individual’s chance of selection is proportional to its fitness.  
+    - Each individual's chance of selection is proportional to its fitness.  
     - **Pros:** Maintains population diversity → less risk of local optima.  
     - **Cons:** Progress can be slower and more stochastic.
 
@@ -99,11 +99,11 @@ with tabs[1]:
 
     **Population Size**
     - Default: 30 individuals  
-    - Configurable range: 10–100  
+    - Configurable range: 10-100  
 
     **Effects of Size**
-    - **Small populations (10–20):** Faster convergence but higher risk of local optima.  
-    - **Large populations (50–100):** Better exploration but higher computational cost.
+    - **Small populations (10-20):** Faster convergence but higher risk of local optima.  
+    - **Large populations (50-100):** Better exploration but higher computational cost.
     """)
 
 # ------------------------
@@ -256,7 +256,7 @@ with tabs[2]:
     1. Select two **fixed parameters** (kept constant).  
     2. Set their **specific values** using sliders.      
                 
-    The algorithm evaluates a **50×50 grid** of fitness values using `coffee_fitness_4d`  
+    The algorithm evaluates a **50x50 grid** of fitness values using `coffee_fitness_4d`  
     and visualizes them in a **Plotly contour plot**, showing the fitness elevation across the selected dimensions.
     """)
     # --- Parameterwahl mit Dropdowns ---
@@ -351,7 +351,7 @@ with tabs[3]:
     - **Population size**, **mutation rate**, and **crossover rate** critically affect convergence speed and stability.  
     - Higher mutation maintains diversity but can destabilize convergence.  
     - Lower mutation speeds convergence but risks stagnation.  
-    - Balanced crossover (around 0.7–0.9) helps combine traits effectively.
+    - Balanced crossover (around 0.7-0.9) helps combine traits effectively.
 
     ### Limitations and Future Improvements
     - Due to its **stochastic nature**, performance varies between runs, especially with small populations.  
