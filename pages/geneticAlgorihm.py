@@ -388,6 +388,26 @@ with tabs[2]:
     )
     st.plotly_chart(fig, use_container_width=True)
 
+    import streamlit as st
+    from src.GeneticAlgorithm.hill_climbing_coffee import run_hill_climb
+
+    # --- Sidebar ---
+    samples = st.sidebar.slider("Neighbors per Iteration", 10, 100, 40)
+    step_size = st.sidebar.slider("Step Size", 0.1, 5.0, 2.0)
+    # --- Run hill climbing ---
+    best, trajectories = run_hill_climb(
+        generations=generations,
+        samples=samples,
+        step_size=step_size,
+        seed=seed
+    )
+
+    st.write("### Best Hill-Climbing Result")
+    st.json(best)
+
+
+
+
 # ------------------------
 # Discussion
 # ------------------------
