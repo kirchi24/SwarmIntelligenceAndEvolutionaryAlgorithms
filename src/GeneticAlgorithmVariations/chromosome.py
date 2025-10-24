@@ -91,7 +91,7 @@ class ImageChromosome:
     # Mutation Methods
     # -------------------------
 
-    def mutate(self, max_fitness: float = 100.0) -> None:
+    def mutate(self, max_fitness: float = 1.0) -> None:
         """
         Apply selected mutation method to the chromosome.
 

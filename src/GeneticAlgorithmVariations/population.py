@@ -179,7 +179,7 @@ class Population:
         n_parents = len(parents)
         offspring: List[ImageChromosome] = []
 
-        max_fitness = max(ind.fitness for ind in self.individuals)
+        max_fitness = 1.0
 
         for i in range(0, n_parents - 1, 2):
             # crossover
