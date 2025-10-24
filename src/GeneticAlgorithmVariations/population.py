@@ -183,24 +183,19 @@ class Population:
 
         for i in range(0, n_parents - 1, 2):
             # crossover
-            if np.random.rand() < self.crossover_rate:
-                c1 = parents[i].crossover(parents[i + 1])
-                c2 = parents[i + 1].crossover(parents[i])
-            else:
-                c1, c2 = parents[i].copy(), parents[i + 1].copy()
+            c1 = parents[i].crossover(parents[i + 1])
+            c2 = parents[i + 1].crossover(parents[i])
 
             # mutation + evaluation
             for child in (c1, c2):
-                if np.random.rand() < self.mutation_rate:
-                    child.mutate(max_fitness)
+                child.mutate(max_fitness)
                 child.evaluate()
                 offspring.append(child)
 
         # handle odd parent
         if n_parents % 2 == 1:
             last = parents[-1].copy()
-            if np.random.rand() < self.mutation_rate:
-                last.mutate(max_fitness)
+            last.mutate(max_fitness)
             last.evaluate()
             offspring.append(last)
 
