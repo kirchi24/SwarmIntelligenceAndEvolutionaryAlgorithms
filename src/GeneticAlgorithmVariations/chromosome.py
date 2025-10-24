@@ -20,6 +20,7 @@ class ImageChromosome:
     """
 
     VALID_MUTATION_METHODS = ("uniform_local", "gaussian_adaptive")
+    VALID_CROSSOVER_METHODS = ("arithmetic", "global_uniform")
 
     def __init__(
         self,
@@ -28,42 +29,51 @@ class ImageChromosome:
         mutation_method: Literal[
             "uniform_local", "gaussian_adaptive"
         ] = "uniform_local",
+        crossover_method: Literal["arithmetic", "global_uniform"] = "arithmetic",
         mutation_rate: float = 0.01,
         mutation_width: float = 0.1,
+        alpha: float = 0.5,  # for arithmetic crossover
     ) -> None:
         """
         Initialize an ImageChromosome with a given shape and fitness function.
 
         Parameters
         ----------
-        shape : tuple[int, int], optional
+        shape : tuple[int, int]
             Shape of the image (default (16,16)).
         fitness_fn : callable
             Fitness function, must accept genes array.
         mutation_method : str
             Mutation strategy ("uniform_local" or "gaussian_adaptive").
+        crossover_method : str
+            Crossover strategy ("arithmetic" or "global_uniform").
         mutation_rate : float
             Probability of mutating each gene.
         mutation_width : float
             Base width for uniform mutation or base stddev for Gaussian.
+        alpha : float
+            Weight for arithmetic crossover (default 0.5).
 
         Raises
         ------
         ValueError
-            If no fitness function is provided.
+            If no fitness function, mutation or crossover method is provided.
         """
         self.genes = np.random.rand(*shape).astype(np.float32)
         self.fitness = 0.0
-        self.fitness = 0.0
         self.fitness_fn = fitness_fn
         self.mutation_method = mutation_method
+        self.crossover_method = crossover_method
         self.mutation_rate = mutation_rate
         self.mutation_width = mutation_width
+        self.alpha = alpha
 
         if fitness_fn is None:
             raise ValueError("A fitness function must be provided.")
         if mutation_method not in self.VALID_MUTATION_METHODS:
-            raise ValueError(f"Invalid mutation method {mutation_method}.")
+            raise ValueError(f"Invalid mutation method: {mutation_method}")
+        if crossover_method not in self.VALID_CROSSOVER_METHODS:
+            raise ValueError(f"Invalid crossover method: {crossover_method}")
 
     def evaluate(self) -> float:
         """
@@ -121,6 +131,83 @@ class ImageChromosome:
         perturb = np.random.normal(0.0, stddev, self.genes.shape)
         self.genes[mask] += perturb[mask]
         self.genes = np.clip(self.genes, 0.0, 1.0)
+
+    # -------------------------
+    # Crossover Methods
+    # -------------------------
+
+    def crossover(self, other: ImageChromosome) -> ImageChromosome:
+        """
+        Perform crossover with another chromosome using the selected method.
+
+        Parameters
+        ----------
+        other : ImageChromosome
+            The other parent chromosome.
+
+        Returns
+        -------
+        ImageChromosome
+            Child chromosome resulting from crossover.
+
+        Raises
+        ------
+        ValueError
+            If the selected crossover method is not recognized.
+        """
+        if self.crossover_method == "arithmetic":
+            child_genes = self._crossover_arithmetic(other)
+        elif self.crossover_method == "global_uniform":
+            child_genes = self._crossover_global_uniform(other)
+        else:
+            raise ValueError(f"Invalid crossover method: {self.crossover_method}")
+
+        child = ImageChromosome(
+            shape=self.genes.shape,
+            fitness_fn=self.fitness_fn,
+            mutation_method=self.mutation_method,
+            crossover_method=self.crossover_method,
+            mutation_rate=self.mutation_rate,
+            mutation_width=self.mutation_width,
+            alpha=self.alpha,
+        )
+        child.genes = child_genes
+        return child
+
+    def _crossover_arithmetic(self, other: ImageChromosome) -> np.ndarray:
+        """
+        Arithmetic crossover: weighted average of parent genes.
+
+        Parameters
+        ----------
+        other : ImageChromosome
+            The second parent chromosome.
+
+        Returns
+        -------
+        np.ndarray
+            Child gene array after arithmetic crossover.
+        """
+        return np.clip(
+            self.alpha * self.genes + (1 - self.alpha) * other.genes, 0.0, 1.0
+        )
+
+    def _crossover_global_uniform(self, other: ImageChromosome) -> np.ndarray:
+        """
+        Global uniform crossover: each gene randomly chosen from one of the parents.
+
+        Parameters
+        ----------
+        other : ImageChromosome
+            The second parent chromosome.
+
+        Returns
+        -------
+        np.ndarray
+            Child gene array after global uniform crossover.
+        """
+        mask = np.random.rand(*self.genes.shape) < 0.5
+        return np.where(mask, self.genes, other.genes)
 
     def copy(self) -> ImageChromosome:
         """
