@@ -68,5 +68,6 @@ class ImageChromosome:
             shape=self.genes.shape,
             fitness_fn=self.fitness_fn,
         )
+        new_chromosome.genes = self.genes.copy()
         new_chromosome.fitness = self.fitness
         return new_chromosome
