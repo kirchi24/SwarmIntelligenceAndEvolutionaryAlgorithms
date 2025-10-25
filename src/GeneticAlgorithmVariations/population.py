@@ -10,7 +10,7 @@ class Population:
     Handles evaluation, selection, crossover, mutation, and survivor selection.
     """
 
-    VALID_SELECTION_METHODS = ("tournament", "roulette")
+    VALID_SELECTION_METHODS = ("tournament", "rank")
 
     def __init__(
         self,
@@ -29,7 +29,7 @@ class Population:
         size : int
             Number of individuals in the population.
         selection_method : str
-            Selection method: "tournament" or "roulette".
+            Selection method: "tournament" or "rank".
         fitness_fn : callable
             Fitness function accepting an np.ndarray of genes.
         mutation_method : str
@@ -100,7 +100,7 @@ class Population:
 
         return self.individuals[best_index]
 
-    def select_parents(self, k: int = 3) -> List[ImageChromosome]:
+    def select_parents(self, k: int = 3, selection_pressure: float = 1.7) -> List[ImageChromosome]:
         """
         Select parent individuals according to the population's selection method.
 
@@ -108,6 +108,8 @@ class Population:
         ----------
         k : int, optional
             Tournament size if using tournament selection (default 3).
+        selection_pressure : float, optional
+            Selection pressure if using rank-based selection (default 1.7, valid range [1.0, 2.0]).
 
         Returns
         -------
@@ -116,8 +118,9 @@ class Population:
         """
         if self.selection_method == "tournament":
             return self._tournament_selection(k)
-        elif self.selection_method == "roulette":
-            return self._roulette_selection()
+        elif self.selection_method == "rank":
+            return self._rank_selection(selection_pressure)
+
 
     def _tournament_selection(self, k: int) -> List[ImageChromosome]:
         """
@@ -144,32 +147,32 @@ class Population:
 
         return parents
 
-    def _roulette_selection(self) -> List[ImageChromosome]:
+
+    def _rank_selection(self, selection_pressure: float = 1.7) -> List[ImageChromosome]:
         """
-        Perform roulette wheel (fitness-proportionate) selection.
+        Perform linear rank-based selection.
+
+        Parameters
+        ----------
+        selection_pressure : float, optional
+            Selection pressure in [1.0, 2.0]. Higher values favor fitter individuals.
 
         Returns
         -------
         List[ImageChromosome]
             List of selected parent chromosomes.
         """
-        fitnesses = np.array([ind.fitness for ind in self.individuals], dtype=float)
-        fitnesses = np.nan_to_num(fitnesses, nan=0.0)
+        n = len(self.individuals)
+        sorted_inds = sorted(self.individuals, key=lambda x: x.fitness)
+        ranks = np.arange(1, n + 1)
 
-        # shift fitnesses if there are negative values
-        min_fit = fitnesses.min()
-        if min_fit < 0:
-            fitnesses -= min_fit
-        total = fitnesses.sum()
-        if total <= 0:
-            # if all fitnesses are zero, select uniformly
-            probabilities = np.full_like(fitnesses, 1 / len(fitnesses))
-        else:
-            probabilities = fitnesses / total
-        indices = np.random.choice(
-            len(self.individuals), size=len(self.individuals), p=probabilities
-        )
-        return [self.individuals[i] for i in indices]
+        # Compute probabilities linearly from ranks
+        probs = (2 - selection_pressure) / n + 2 * ranks * (selection_pressure - 1) / (n * (n - 1))
+        probs /= probs.sum()
+
+        indices = np.random.choice(n, size=n, p=probs)
+        return [sorted_inds[i] for i in indices]
+
 
     def evolve(self) -> None:
         """
