@@ -66,7 +66,8 @@ class ImageChromosome:
         self.crossover_method = crossover_method
         self.mutation_rate = mutation_rate
         self.mutation_width = mutation_width
-        self.alpha = alpha
+        self.alpha = alpha # for arithmetic crossover
+        self.age = 0  # age in generations
 
         if fitness_fn is None:
             raise ValueError("A fitness function must be provided.")
