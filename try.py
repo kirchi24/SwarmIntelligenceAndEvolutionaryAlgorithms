@@ -40,7 +40,7 @@ def main():
         initialization_method="random",
         parent_selection="rank",
         survivor_method="fitness",
-        mutation_method="uniform_local",
+        mutation_method="gaussian_adaptive",
         mutation_rate=0.5,
         mutation_width=0.1,
         crossover_method="arithmetic",
@@ -100,6 +100,19 @@ def main():
     plt.ylabel("Best Fitness")
     plt.ylim(0, 1)
     plt.grid(True)
+    plt.show()
+
+    # show original and best individual side by side
+    best_individual = pop.best()
+    plt.figure(figsize=(8, 4))
+    plt.subplot(1, 2, 1)
+    plt.imshow(target, cmap="gray")
+    plt.title("Original Image")
+    plt.axis("off")
+    plt.subplot(1, 2, 2)
+    plt.imshow(best_individual.genes, cmap="gray")
+    plt.title("Best Individual")
+    plt.axis("off")
     plt.show()
 
 
