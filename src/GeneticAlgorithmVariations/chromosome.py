@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from typing import Optional, Tuple, Callable
+from typing import Callable
+
 
 from pyparsing import Literal
 
@@ -8,24 +9,17 @@ from pyparsing import Literal
 class ImageChromosome:
     """
     Represents one chromosome for image-based genetic algorithms.
-
-    Attributes
-    ----------
-    genes : np.ndarray
-        2D array of floats in [0,1] representing pixel intensities of the chromosome.
-    fitness : float
-        Fitness score of the chromosome. Initialized to 0.0.
-    fitness_fn : Callable[[np.ndarray], float]
-        Function to compute the fitness of the chromosome based on its genes.
     """
 
     VALID_MUTATION_METHODS = ("uniform_local", "gaussian_adaptive")
     VALID_CROSSOVER_METHODS = ("arithmetic", "global_uniform")
+    VALID_INITIALIZATION_METHODS = ("random", "expert_knowledge")
 
     def __init__(
         self,
         shape: tuple[int, int] = (16, 16),
         fitness_fn: Callable[[np.ndarray], float] = None,
+        initialization_method: Literal["random", "expert_knowledge"] = "random",
         mutation_method: Literal[
             "uniform_local", "gaussian_adaptive"
         ] = "uniform_local",
@@ -43,6 +37,8 @@ class ImageChromosome:
             Shape of the image (default (16,16)).
         fitness_fn : callable
             Fitness function, must accept genes array.
+        initialization_method : str
+            Method for initializing genes ("random" or "expert_knowledge").
         mutation_method : str
             Mutation strategy ("uniform_local" or "gaussian_adaptive").
         crossover_method : str
@@ -59,22 +55,43 @@ class ImageChromosome:
         ValueError
             If no fitness function, mutation or crossover method is provided.
         """
-        self.genes = np.random.rand(*shape).astype(np.float32)
+        if fitness_fn is None:
+            raise ValueError("A fitness function must be provided.")
+        if initialization_method not in self.VALID_INITIALIZATION_METHODS:
+            raise ValueError(f"Invalid initialization method: {initialization_method}")
+        if mutation_method not in self.VALID_MUTATION_METHODS:
+            raise ValueError(f"Invalid mutation method: {mutation_method}")
+        if crossover_method not in self.VALID_CROSSOVER_METHODS:
+            raise ValueError(f"Invalid crossover method: {crossover_method}")
+
+        # --- Initialize genes ---
+        if initialization_method == "random":
+            genes = np.random.rand(*shape).astype(np.float32)
+
+        elif initialization_method == "expert_knowledge":
+            # Assume mostly white background with darker center
+            genes = np.ones(shape, dtype=np.float32)
+            yy, xx = np.meshgrid(
+                np.linspace(-1, 1, shape[0]),
+                np.linspace(-1, 1, shape[1]),
+                indexing="ij",
+            )
+            radius = np.sqrt(xx**2 + yy**2)
+            center_mask = np.exp(-(radius**2) / (2 * (0.4**2)))  # Gaussian falloff
+            noise = np.random.rand(*shape).astype(np.float32) * 0.3
+            genes -= 0.6 * center_mask
+            genes += noise
+            genes = np.clip(genes, 0.0, 1.0)
+
+        self.genes = genes
         self.fitness = 0.0
         self.fitness_fn = fitness_fn
         self.mutation_method = mutation_method
         self.crossover_method = crossover_method
         self.mutation_rate = mutation_rate
         self.mutation_width = mutation_width
-        self.alpha = alpha # for arithmetic crossover
+        self.alpha = alpha
         self.age = 0  # age in generations
-
-        if fitness_fn is None:
-            raise ValueError("A fitness function must be provided.")
-        if mutation_method not in self.VALID_MUTATION_METHODS:
-            raise ValueError(f"Invalid mutation method: {mutation_method}")
-        if crossover_method not in self.VALID_CROSSOVER_METHODS:
-            raise ValueError(f"Invalid crossover method: {crossover_method}")
 
     def evaluate(self) -> float:
         """
