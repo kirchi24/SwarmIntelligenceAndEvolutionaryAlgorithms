@@ -16,11 +16,14 @@ class Population:
     def __init__(
         self,
         size: int = 30,
+        shape: tuple[int, int] = (16, 16),
+        initialization_method: str = "random",
         parent_selection: str = "tournament",
         survivor_method: str = "fitness",
         fitness_fn: Callable[[np.ndarray], float] = None,
         mutation_method: str = "uniform_local",
         mutation_rate: float = 0.2,
+        mutation_width: float = 0.1,
         crossover_method: str = "arithmetic",
         alpha: float = 0.5,  # for arithmetic crossover
     ) -> None:
@@ -31,6 +34,8 @@ class Population:
         ----------
         size : int
             Number of individuals in the population.
+        initialization_method : str
+            Method for initializing genes ("random" or "smooth_random").
         parent_selection : str
             Selection method: "tournament" or "rank".
         survivor_method : str
@@ -41,6 +46,8 @@ class Population:
             Mutation method for all chromosomes ("uniform_local" or "gaussian_adaptive").
         mutation_rate : float
             Probability of mutation for each chromosome.
+        mutation_width : float
+            Base width for uniform mutation or base stddev for Gaussian.
         crossover_method : str
             Crossover method for all chromosomes ("arithmetic" or "global_uniform").
         alpha : float
@@ -62,8 +69,12 @@ class Population:
 
         if fitness_fn is None:
             raise ValueError("A fitness function must be provided.")
+        if initialization_method not in ImageChromosome.VALID_INITIALIZATION_METHODS:
+            raise ValueError(f"Invalid survivor method: {survivor_method}")
         if parent_selection not in self.VALID_PARENT_METHODS:
             raise ValueError(f"Invalid selection method: {parent_selection}")
+        if survivor_method not in self.VALID_SURVIVOR_METHODS:
+            raise ValueError(f"Invalid survivor method: {survivor_method}")
         if mutation_method not in ImageChromosome.VALID_MUTATION_METHODS:
             raise ValueError(f"Invalid mutation method: {mutation_method}")
         if crossover_method not in ImageChromosome.VALID_CROSSOVER_METHODS:
@@ -72,8 +83,11 @@ class Population:
         # create initial random population
         self.individuals: List[ImageChromosome] = [
             ImageChromosome(
+                shape=shape,
                 fitness_fn=self.fitness_fn,
+                initialization_method=initialization_method,
                 mutation_method=self.mutation_method,
+                mutation_width=mutation_width,
                 crossover_method=self.crossover_method,
                 alpha=self.alpha,
             )
