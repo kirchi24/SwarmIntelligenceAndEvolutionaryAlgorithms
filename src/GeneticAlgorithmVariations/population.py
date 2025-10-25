@@ -186,8 +186,7 @@ class Population:
 
         for i in range(0, n_parents - 1, 2):
             # crossover
-            c1 = parents[i].crossover(parents[i + 1])
-            c2 = parents[i + 1].crossover(parents[i])
+            children = p1.crossover(p2)
 
             # mutation + evaluation
             for child in (c1, c2):

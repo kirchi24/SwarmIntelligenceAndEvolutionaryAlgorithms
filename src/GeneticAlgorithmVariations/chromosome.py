@@ -136,9 +136,11 @@ class ImageChromosome:
     # Crossover Methods
     # -------------------------
 
-    def crossover(self, other: ImageChromosome) -> ImageChromosome:
+    def crossover(
+        self, other: ImageChromosome
+    ) -> tuple[ImageChromosome, ImageChromosome]:
         """
-        Perform crossover with another chromosome using the selected method.
+        Perform crossover with another chromosome and produce two offspring.
 
         Parameters
         ----------
@@ -147,8 +149,8 @@ class ImageChromosome:
 
         Returns
         -------
-        ImageChromosome
-            Child chromosome resulting from crossover.
+        tuple[ImageChromosome, ImageChromosome]
+            Two child chromosomes resulting from crossover.
 
         Raises
         ------
@@ -156,13 +158,13 @@ class ImageChromosome:
             If the selected crossover method is not recognized.
         """
         if self.crossover_method == "arithmetic":
-            child_genes = self._crossover_arithmetic(other)
+            child1_genes, child2_genes = self._crossover_arithmetic(other)
         elif self.crossover_method == "global_uniform":
-            child_genes = self._crossover_global_uniform(other)
+            child1_genes, child2_genes = self._crossover_global_uniform(other)
         else:
             raise ValueError(f"Invalid crossover method: {self.crossover_method}")
 
-        child = ImageChromosome(
+        child1 = ImageChromosome(
             shape=self.genes.shape,
             fitness_fn=self.fitness_fn,
             mutation_method=self.mutation_method,
@@ -171,12 +173,25 @@ class ImageChromosome:
             mutation_width=self.mutation_width,
             alpha=self.alpha,
         )
-        child.genes = child_genes
-        return child
+        child2 = ImageChromosome(
+            shape=self.genes.shape,
+            fitness_fn=self.fitness_fn,
+            mutation_method=self.mutation_method,
+            crossover_method=self.crossover_method,
+            mutation_rate=self.mutation_rate,
+            mutation_width=self.mutation_width,
+            alpha=self.alpha,
+        )
 
-    def _crossover_arithmetic(self, other: ImageChromosome) -> np.ndarray:
+        child1.genes = child1_genes
+        child2.genes = child2_genes
+        return child1, child2
+
+    def _crossover_arithmetic(
+        self, other: ImageChromosome
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Arithmetic crossover: weighted average of parent genes.
+        Arithmetic crossover: two offspring produced by weighted averaging of parent genes.
 
         Parameters
         ----------
@@ -185,14 +200,20 @@ class ImageChromosome:
 
         Returns
         -------
-        np.ndarray
-            Child gene array after arithmetic crossover.
+        tuple[np.ndarray, np.ndarray]
+            Two child gene arrays after arithmetic crossover.
         """
-        return np.clip(
+        child1 = np.clip(
             self.alpha * self.genes + (1 - self.alpha) * other.genes, 0.0, 1.0
         )
+        child2 = np.clip(
+            self.alpha * other.genes + (1 - self.alpha) * self.genes, 0.0, 1.0
+        )
+        return child1, child2
 
-    def _crossover_global_uniform(self, other: ImageChromosome) -> np.ndarray:
+    def _crossover_global_uniform(
+        self, other: ImageChromosome
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Global uniform crossover: each gene randomly chosen from one of the parents.
 
@@ -203,11 +224,13 @@ class ImageChromosome:
 
         Returns
         -------
-        np.ndarray
-            Child gene array after global uniform crossover.
+        tuple[np.ndarray, np.ndarray]
+            Two child gene arrays after global uniform crossover.
         """
         mask = np.random.rand(*self.genes.shape) < 0.5
-        return np.where(mask, self.genes, other.genes)
+        child1 = np.where(mask, self.genes, other.genes)
+        child2 = np.where(mask, other.genes, self.genes)
+        return child1, child2
 
     def copy(self) -> ImageChromosome:
         """
