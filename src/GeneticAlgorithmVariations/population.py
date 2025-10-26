@@ -70,7 +70,7 @@ class Population:
         if fitness_fn is None:
             raise ValueError("A fitness function must be provided.")
         if initialization_method not in ImageChromosome.VALID_INITIALIZATION_METHODS:
-            raise ValueError(f"Invalid survivor method: {survivor_method}")
+            raise ValueError(f"Invalid survivor method: {initialization_method}")
         if parent_selection not in self.VALID_PARENT_METHODS:
             raise ValueError(f"Invalid selection method: {parent_selection}")
         if survivor_method not in self.VALID_SURVIVOR_METHODS:
