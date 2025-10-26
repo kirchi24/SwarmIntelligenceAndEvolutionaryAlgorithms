@@ -1,8 +1,10 @@
 import streamlit as st
+import pandas as pd
 import numpy as np
 from PIL import Image
 import os
 from io import BytesIO
+import altair as alt
 
 from src.GeneticAlgorithmVariations.chromosome import ImageChromosome
 from src.GeneticAlgorithmVariations.population import Population
@@ -325,8 +327,18 @@ with tabs[2]:
     if "fitness_history" in st.session_state:
         st.subheader("Fitness progression")
         fitness_history = st.session_state["fitness_history"]
-        # Line chart – Streamlit akzeptiert eine Liste/Numpy-Array
-        st.line_chart(fitness_history)
+        
+        df = pd.DataFrame({
+            "Generation": list(range(1, len(fitness_history)+1)),
+            "Fitness": fitness_history
+        })
+        
+        chart = alt.Chart(df).mark_line().encode(
+            x="Generation",
+            y="Fitness"
+        ).interactive(bind_x=False, bind_y=False)  # Deaktiviert Zoom/Pan
+        
+        st.altair_chart(chart, use_container_width=True)
 
         st.subheader("Evolution snapshots")
         best_images = st.session_state["best_images"]
@@ -336,9 +348,8 @@ with tabs[2]:
             for i, (gen, genes) in enumerate(best_images):
                 img_arr = (genes * 255).astype(np.uint8)
                 img_pil = Image.fromarray(img_arr)
-                # kleine Vorschau für Snapshots (z.B. 150 px breit)
                 cols[i % len(cols)].image(img_pil, caption=f"Gen {gen}", width=150)
-
+                
         # Final best image / Download
         final_gen, final_genes = best_images[-1]
         final_img = Image.fromarray((final_genes * 255).astype(np.uint8))
