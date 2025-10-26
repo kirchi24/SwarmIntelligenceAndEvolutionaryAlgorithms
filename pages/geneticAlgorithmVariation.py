@@ -367,17 +367,53 @@ with tabs[3]:
         st.markdown(
             """
             **Diskussion**
-            - Wie wirkt sich die Mutationsmethode auf die Konvergenz aus?
-            - Welche Selektionsstrategie liefert stabilere Ergebnisse?
-            - Wo liegt der Sweet Spot zwischen Diversität und Exploitation?
+
+            - **Mutationsmethoden:**  
+              - `uniform_local`: gleichmäßige kleine Änderungen  
+              - `gaussian_adaptive`: schwächere Individuen mutieren stärker → schnellere Erkundung
+
+            - **Eltern- und Survivor-Auswahl:**  
+              - Turnier vs. Rang-basiert → Selektionsdruck vs. Diversität  
+              - Survivor nach Fitness → aggressive Eliminierung  
+              - Survivor nach Alter → Diversität + Stabilität
+
+            - **Initialisierung:**  
+              - `random` → reines Rauschen  
+              - `expert_knowledge` → grobes Muster → schnellere Konvergenz, Risiko lokaler Optima
+
+            - **Fitness-Funktion:**  
+              - Manhattan vs. Euclidean → Bewertung der Nachkommen  
+              - Normalisierung wichtig für Vergleichbarkeit
+
+            - **Abbruchkriterium:**  
+              - Feste Generationenanzahl oder minimale Fitness-Verbesserung  
+              - Adaptive Kriterien sparen Berechnungen
             """
         )
     else:
         st.markdown(
             """
             **Discussion**
-            - How does the mutation method affect convergence?
-            - Which selection strategy gives more stable results?
-            - Where is the sweet spot between diversity and exploitation?
+
+            - **Mutation Methods:**  
+              - `uniform_local`: uniform small changes  
+              - `gaussian_adaptive`: weaker individuals mutate more → faster exploration
+
+            - **Parent & Survivor Selection:**  
+              - Tournament vs. rank-based → selection pressure vs. diversity  
+              - Survivor by fitness → aggressive elimination  
+              - Survivor by age → diversity + stability
+
+            - **Initialization:**  
+              - `random` → pure noise  
+              - `expert_knowledge` → rough pattern → faster convergence, risk of local optima
+
+            - **Fitness Function:**  
+              - Manhattan vs. Euclidean → offspring evaluation  
+              - Normalization important for comparability
+
+            - **Termination Criterion:**  
+              - Fixed generations or minimal fitness improvement  
+              - Adaptive criteria save computations
             """
         )
