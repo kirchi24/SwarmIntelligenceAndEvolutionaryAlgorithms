@@ -11,136 +11,262 @@ from src.GeneticAlgorithmVariations.image_utils import (
     fitness_factory,
 )
 
-# -------------------------
-# Streamlit Konfiguration
-# -------------------------
+# Streamlit config
 st.set_page_config(
-    page_title="Genetic Algorithm Variations",
+    page_title="Genetic Algorithm - Image Reconstruction",
     layout="wide",
 )
 
-st.title("Genetic Algorithm Variations - Image Reconstruction")
+# ---------------------------
+# Sprachumschaltung (EN / DE)
+# ---------------------------
+if "lang" not in st.session_state:
+    st.session_state["lang"] = "DE"
+
+col_lang1, col_lang2 = st.columns([1, 6])
+with col_lang1:
+    if st.button("EN English" if st.session_state["lang"] == "DE" else "DE Deutsch"):
+        st.session_state["lang"] = "EN" if st.session_state["lang"] == "DE" else "DE"
+
+lang = st.session_state["lang"]
+
+# Textdictionary 
+T = {
+    "DE": {
+        "title": "Genetischer Algorithmus – Bildrekonstruktion",
+        "intro": """
+        Diese App demonstriert einen **genetischen Algorithmus zur Bildrekonstruktion**.
+        Ziel ist es, eine Population kleiner Graustufenbilder (z. B. 16×16) so zu entwickeln,
+        dass eines möglichst gut einem Zielbild entspricht.
+        """,
+        "tabs": ["Einführung", "Methoden", "Ergebnisse", "Diskussion"],
+        "config": "Konfiguration",
+        "upload": "Lade ein Zielbild hoch (optional)",
+        "run": " Algorithmus starten",
+        "fitprog": "Fitness-Verlauf",
+        "evo": "Evolution-Schnappschüsse",
+        "download": "Bestes Bild herunterladen",
+        "init_method": "Initialisierungsmethode",
+        "stopcrit": "Abbruchkriterium",
+        "generations": "Nach Anzahl Generationen",
+        "fitness": "Nach Fitness-Verbesserung",
+        "intro_warn": "Standardbild nicht gefunden. Bitte lade ein Zielbild hoch.",
+        "pop_size": "Populationsgröße",
+        "mutation_rate": "Mutationsrate",
+        "mutation_width": "Mutationsbreite",
+        "shape": "Form",
+        "crossover_method": "Crossover-Methode",
+        "mutation_method": "Mutationsmethode",
+        "parent_selection": "Elternauswahl",
+        "survivor_method": "Überlebensmethode",
+        "fitness_method": "Fitnessmethode",
+    },
+    "EN": {
+        "title": "Genetic Algorithm – Image Reconstruction",
+        "intro": """
+        This app demonstrates a **genetic algorithm for image reconstruction**.
+        The goal is to evolve a population of small grayscale images (e.g., 16×16)
+        so that one of them closely matches a given target image.
+        """,
+        "tabs": ["Introduction", "Methods", "Results", "Discussion"],
+        "config": "Configuration",
+        "upload": "Upload a target image (optional)",
+        "run": "Run Genetic Algorithm",
+        "fitprog": "Fitness progression",
+        "evo": "Evolution snapshots",
+        "download": " Download best image",
+        "init_method": "Initialization method",
+        "stopcrit": "Stopping criterion",
+        "generations": "By generation count",
+        "fitness": "By fitness improvement",
+        "intro_warn": "Default image not found. Please upload a target image.",
+        "pop_size": "Population size",
+        "mutation_rate": "Mutation rate",
+        "mutation_width": "Mutation width",
+        "shape": "Shape",
+        "crossover_method": "Crossover method",
+        "mutation_method": "Mutation method",
+        "parent_selection": "Parent selection",
+        "survivor_method": "Survivor selection",
+        "fitness_method": "Fitness method",
+    },
+}
+
+st.title(T[lang]["title"])
 
 # ------------------------
 # Tabs
 # ------------------------
-tabs = st.tabs(["Introduction", "Methods", "Results", "Discussion"])
+tabs = st.tabs(T[lang]["tabs"])
 
 # =====================================================
 # TAB 0: INTRODUCTION
 # =====================================================
 with tabs[0]:
-    st.header("Introduction")
-    st.markdown(
-        """
-        Diese App demonstriert einen einfachen genetischen Algorithmus zur **Bildrekonstruktion**.
-        Ziel ist es, ein Population von kleinen Bildern (z.B. 16×16) so zu entwickeln, dass
-        eines der Bilder möglichst nah an einem Zielbild liegt.
-        """
-    )
+    st.markdown(T[lang]["intro"])
 
-    # Zielbild anzeigen (ca. 400x400 px)
     default_target_path = os.path.join("src", "GeneticAlgorithmVariations", "data", "example_image.png")
     if os.path.exists(default_target_path):
         target_preview = Image.open(default_target_path).convert("L").resize((400, 400), Image.LANCZOS)
-        st.image(target_preview, caption="Target image (preview ~400×400 px)", width=400)
+        st.image(target_preview, caption="Target image (~400×400 px)", width=400)
     else:
-        st.info(f"Default target image not found at '{default_target_path}'. Upload a file in Results tab to use a target.")
+        st.warning(T[lang]["intro_warn"])
 
 # =====================================================
-# TAB 1: METHODS  (ausführliche Code-Erklärung)
+# TAB 1: METHODS
 # =====================================================
 with tabs[1]:
-    st.header("Methods — Klassen & Konzepte (ausführlich)")
-    st.markdown(
-        """
-        Nachfolgend findest du eine ausführliche, aber konzentrierte Erklärung der wichtigsten Komponenten,
-        so wie sie in deinem Projekt implementiert sind.
+    if lang == "DE":
+        st.header("Methods — Klassen & Konzepte")
+        st.markdown(
+            """
+            ---
+            ### 1) `ImageChromosome`
+            - Repräsentiert ein *Individuum* / Chromosom: ein 2D-Array von Pixelwerten im Bereich `[0, 1]`.
+            - **Kernattribute:**
+            - `genes`: 2D `np.ndarray` mit Float-Werten ∈ [0,1] (das Bild).
+            - `fitness`: numerischer Fitness-Wert (höher = besser).
+            - `fitness_fn`: callable, das ein `genes`-Array bewertet.
+            - `mutation_method`, `crossover_method`, `mutation_rate`, `mutation_width`, `alpha`.
+            - **Initialisierung:**
+            - `random`: vollständiges Rauschen (Uniform[0,1]).
+            - `expert_knowledge`: glatteres Startbild (weiß mit dunklerem Zentrum + Rauschen).
+            - **Mutationen:**
+            - `uniform_local`: uniformer Störterm in einem Intervall um das aktuelle Gen.
+            - `gaussian_adaptive`: normalverteilte Störung, deren Standardabweichung adaptiv skaliert wird anhand der Fitness (schwächere Individuen mutieren stärker).
+            - **Crossover:**
+            - `arithmetic`: gewichtete Mittelung der Elternpixel (`alpha` steuert Gewichtung).
+            - `global_uniform`: für jedes Pixel Zufallsauswahl: Eltern A oder B.
+            - **Methoden:**
+            - `evaluate()`: ruft `fitness_fn(genes)` auf und speichert Ergebnis.
+            - `mutate(max_fitness)`: ruft die gewählte Mutationsstrategie auf.
+            - `crossover(other)`: erzeugt zwei Kinder-`ImageChromosome`.
+            - `copy()`: tiefe Kopie (unabhängig).
 
-        ---
-        ### 1) `ImageChromosome`
-        - Repräsentiert ein *Individuum* / Chromosom: ein 2D-Array von Pixelwerten im Bereich `[0, 1]`.
-        - **Kernattribute:**
-          - `genes`: 2D `np.ndarray` mit Float-Werten ∈ [0,1] (das Bild).
-          - `fitness`: numerischer Fitness-Wert (höher = besser).
-          - `fitness_fn`: callable, das ein `genes`-Array bewertet.
-          - `mutation_method`, `crossover_method`, `mutation_rate`, `mutation_width`, `alpha`.
-        - **Initialisierung:**
-          - `random`: vollständiges Rauschen (Uniform[0,1]).
-          - `expert_knowledge`: glatteres Startbild (weiß mit dunklerem Zentrum + Rauschen).
-        - **Mutationen:**
-          - `uniform_local`: uniformer Störterm in einem Intervall um das aktuelle Gen.
-          - `gaussian_adaptive`: normalverteilte Störung, deren Standardabweichung adaptiv skaliert wird anhand der Fitness (schwächere Individuen mutieren stärker).
-        - **Crossover:**
-          - `arithmetic`: gewichtete Mittelung der Elternpixel (`alpha` steuert Gewichtung).
-          - `global_uniform`: für jedes Pixel Zufallsauswahl: Eltern A oder B.
-        - **Methoden:**
-          - `evaluate()`: ruft `fitness_fn(genes)` auf und speichert Ergebnis.
-          - `mutate(max_fitness)`: ruft die gewählte Mutationsstrategie auf.
-          - `crossover(other)`: erzeugt zwei Kinder-`ImageChromosome`.
-          - `copy()`: tiefe Kopie (unabhängig).
+            ---
+            ### 2) `Population`
+            - Verwaltet eine Liste von `ImageChromosome`-Objekten und führt die GA-Schritte aus:
+            - **Evaluation** aller Individuen,
+            - **Parent Selection** (z. B. `tournament` oder `rank`),
+            - **Crossover** und **Mutation** zur Erzeugung von Nachkommen,
+            - **Survivor Selection** (z. B. nach `fitness` oder `age`).
+            - **Wichtige Punkte:**
+            - `evaluate()` ruft `ind.evaluate()` für alle Individuen auf (Fehlerbehandlung setzt Fitness auf 0).
+            - `_select_parents()` bietet Turnier- und Rang-basiertes Selektionsschema.
+            - `_select_survivors()` ermöglicht Elimination/Überleben basierend auf Fitness oder Alter.
+            - `evolve()` führt genau eine Generation aus (Eltern auswählen, Nachkommen erzeugen, mutieren, evaluieren, Survivors wählen).
+            - **Tipps/Erweiterungen:**
+            - Elitismus: Top-k direkt übernehmen, um Verlust guter Lösungen zu verhindern.
+            - Adaptive Mutation: Mutation-Rate adaptiv verändern (z. B. je nach Varianz der Population).
+            - Multi-Island: Mehrere Subpopulationen mit Migration.
 
-        ---
-        ### 2) `Population`
-        - Verwaltet eine Liste von `ImageChromosome`-Objekten und führt die GA-Schritte aus:
-          - **Evaluation** aller Individuen,
-          - **Parent Selection** (z. B. `tournament` oder `rank`),
-          - **Crossover** und **Mutation** zur Erzeugung von Nachkommen,
-          - **Survivor Selection** (z. B. nach `fitness` oder `age`).
-        - **Wichtige Punkte:**
-          - `evaluate()` ruft `ind.evaluate()` für alle Individuen auf (Fehlerbehandlung setzt Fitness auf 0).
-          - `_select_parents()` bietet Turnier- und Rang-basiertes Selektionsschema.
-          - `_select_survivors()` ermöglicht Elimination/Überleben basierend auf Fitness oder Alter.
-          - `evolve()` führt genau eine Generation aus (Eltern auswählen, Nachkommen erzeugen, mutieren, evaluieren, Survivors wählen).
-        - **Tipps/Erweiterungen:**
-          - Elitismus: Top-k direkt übernehmen, um Verlust guter Lösungen zu verhindern.
-          - Adaptive Mutation: Mutation-Rate adaptiv verändern (z. B. je nach Varianz der Population).
-          - Multi-Island: Mehrere Subpopulationen mit Migration.
+            ---
+            ### 3) `image_utils`
+            - `load_and_resize_image(path, size)`: lädt Bild, konvertiert zu Graustufen, skaliert auf `size` und normalisiert auf [0,1].
+            - `fitness_factory(target, method)`: liefert eine Fitness-Funktion:
+            - `manhattan`: `1 - mean(|individual - target|)` (1.0 = perfekter Treffer)
+            - `euclidean`: `1 - sqrt(mean((individual - target)^2))` (1.0 = perfekter Treffer)
 
-        ---
-        ### 3) `fitness_utils` (load & fitness_factory)
-        - `load_and_resize_image(path, size)`: lädt Bild, konvertiert zu Graustufen, skaliert auf `size` und normalisiert auf [0,1].
-        - `fitness_factory(target, method)`: liefert eine Fitness-Funktion:
-          - `manhattan`: `1 - mean(|individual - target|)` (1.0 = perfekter Treffer)
-          - `euclidean`: `1 - sqrt(mean((individual - target)^2))` (1.0 = perfekter Treffer)
+            """
+        )
+    else:
+        st.header("Methods — Classes & Concepts")
+        st.markdown(
+            """
+             ---
+            ### 1) `ImageChromosome`
+            - Represents a single *individual* / chromosome: a 2D array of pixel values in `[0, 1]`.
+            - **Core attributes:**
+            - `genes`: 2D `np.ndarray` of floats ∈ [0,1] (the image).
+            - `fitness`: numerical fitness value (higher = better).
+            - `fitness_fn`: callable that evaluates the `genes` array.
+            - `mutation_method`, `crossover_method`, `mutation_rate`, `mutation_width`, `alpha`.
+            - **Initialization:**
+            - `random`: full uniform noise in [0,1].
+            - `expert_knowledge`: smoother starting image (mostly white with darker center + noise).
+            - **Mutations:**
+            - `uniform_local`: uniform perturbation around current gene values.
+            - `gaussian_adaptive`: Gaussian perturbation scaled adaptively by fitness (weaker individuals mutate more).
+            - **Crossover:**
+            - `arithmetic`: weighted average of parent pixels (`alpha` controls weighting).
+            - `global_uniform`: each pixel randomly taken from one of the parents.
+            - **Methods:**
+            - `evaluate()`: calls `fitness_fn(genes)` and stores the result.
+            - `mutate(max_fitness)`: applies the chosen mutation strategy.
+            - `crossover(other)`: produces two child `ImageChromosome` instances.
+            - `copy()`: deep, independent copy.
 
-        ---
-        Diese Architektur trennt Verantwortlichkeiten sauber:
-        - `ImageChromosome` kennt nur das einzelne Individuum,
-        - `Population` orchestriert Evolution,
-        - `fitness_utils` liefert Ziel & Bewertungsmaß.
-        """
-    )
+            ---
+            ### 2) `Population`
+            - Manages a list of `ImageChromosome` objects and executes GA steps:
+            - **Evaluation** of all individuals,
+            - **Parent selection** (e.g., `tournament` or `rank`),
+            - **Crossover** and **mutation** to generate offspring,
+            - **Survivor selection** (e.g., by `fitness` or `age`).
+            - **Key points:**
+            - `evaluate()` calls `ind.evaluate()` for all individuals (error handling sets fitness to 0 on failure).
+            - `_select_parents()` provides tournament or rank-based selection.
+            - `_select_survivors()` allows elimination/survival based on fitness or age.
+            - `evolve()` executes exactly one generation (select parents, produce offspring, mutate, evaluate, select survivors).
+            - **Tips / Extensions:**
+            - Elitism: directly retain top-k to prevent loss of good solutions.
+            - Adaptive mutation: adjust mutation rate based on population variance.
+            - Multi-Island: multiple subpopulations with migration.
+
+            ---
+            ### 3) `image_utils`
+            - `load_and_resize_image(path, size)`: loads image, converts to grayscale, resizes to `size`, normalizes to [0,1].
+            - `fitness_factory(target, method)`: returns a fitness function:
+            - `manhattan`: `1 - mean(|individual - target|)` (1.0 = perfect match)
+            - `euclidean`: `1 - sqrt(mean((individual - target)^2))` (1.0 = perfect match)
+           """
+        )    
 
 # =====================================================
 # TAB 2: RESULTS
 # =====================================================
 with tabs[2]:
-    st.header("Results — Run & Visualize")
-
-    # ----------------------------
-    # Konfiguration (Parameter)
-    # ----------------------------
-    st.subheader("Configuration")
+    st.subheader(T[lang]["config"])
     col1, col2 = st.columns(2)
 
+    survivor_options = ["fitness", "age"]
+    survivor_labels = {
+        "fitness": {"DE": "Nach Fitness", "EN": "By fitness"},
+        "age": {"DE": "Nach Alter", "EN": "By age"}
+    }
+
+    init_options = ["random", "expert_knowledge"]
+    init_labels = {
+        "random": {"DE": "Zufällig", "EN": "Random"},
+        "expert_knowledge": {"DE": "Expertenwissen", "EN": "Expert"}
+    }
+
     with col1:
-        pop_size = st.slider("Population size", 10, 100, 30, step=5)
-        generations = st.slider("Generations", 10, 500, 100, step=10)
-        mutation_rate = st.slider("Mutation rate", 0.0, 1.0, 0.3, 0.05)
-        mutation_width = st.slider("Mutation width", 0.0, 1.0, 0.2, 0.05)
+        pop_size = st.slider(T[lang]["pop_size"], 10, 200, 50, step=5)
+        generations = st.slider(T[lang]["generations"], 10, 5000, 1000, step=10)
+        mutation_rate = st.slider(T[lang]["mutation_rate"], 0.0, 1.0, 0.5, 0.05)
+        mutation_width = st.slider(T[lang]["mutation_width"], 0.0, 1.0, 0.1, 0.05)
+        shape = st.slider(T[lang]["shape"], 0, 64, 16, 2)
 
     with col2:
-        crossover_method = st.selectbox("Crossover method", ["arithmetic", "global_uniform"])
-        mutation_method = st.selectbox("Mutation method", ["uniform_local", "gaussian_adaptive"])
-        parent_selection = st.selectbox("Parent selection", ["tournament", "rank"])
-        survivor_method = st.selectbox("Survivor selection", ["fitness", "age"])
-
+        crossover_method = st.selectbox(T[lang]["crossover_method"], ["arithmetic", "global_uniform"])
+        mutation_method = st.selectbox(T[lang]["mutation_method"], ["uniform_local", "gaussian_adaptive"])
+        parent_selection = st.selectbox(T[lang]["parent_selection"], ["tournament", "rank"])
+        survivor_method = st.selectbox(
+            T[lang]["survivor_method"],
+            options=survivor_options,
+            format_func=lambda x: survivor_labels[x][lang]
+        )
+        initialization_method = st.selectbox(
+            T[lang]["init_method"],
+            options=init_options,
+            format_func=lambda x: init_labels[x][lang]
+        )
+        fitness_method = st.selectbox(T[lang]["fitness_method"], ["manhattan", "euclidean"])
+ 
     st.divider()
 
-    # ----------------------------
-    # Zielbild Upload / Default
-    # ----------------------------
+    #image upload
     uploaded_file = st.file_uploader("Upload your target image (optional)", type=["png", "jpg", "jpeg"])
     if uploaded_file:
         img = Image.open(uploaded_file).convert("L")
@@ -159,21 +285,18 @@ with tabs[2]:
             st.warning("Kein Standard-Target gefunden. Bitte lade ein Zielbild hoch.")
             target = np.ones((16, 16), dtype=np.float32) * 0.5
 
-    fitness_method = st.radio("Fitness method", ["manhattan", "euclidean"], horizontal=True)
     fitness_fn = fitness_factory(target, method=fitness_method)
 
-    # ----------------------------
-    # Run GA Button
-    # ----------------------------
-    if st.button("Run Genetic Algorithm"):
+    if st.button(T[lang]["run"]):
         with st.spinner("Evolving population... please wait"):
-            # Initial population
+            st.session_state["survivor_method"] = survivor_method
+
             pop = Population(
                 size=pop_size,
-                shape=(16, 16),
-                initialization_method="random",
+                shape=(shape, shape),
+                initialization_method=initialization_method,
                 parent_selection=parent_selection,
-                survivor_method=survivor_method,
+                survivor_method="fitness",
                 fitness_fn=fitness_fn,
                 mutation_method=mutation_method,
                 mutation_rate=mutation_rate,
@@ -189,7 +312,6 @@ with tabs[2]:
                 pop.evolve()
                 best = pop.best()
                 fitness_history.append(best.fitness)
-                # snapshots (z. B. alle 10 Generationen)
                 if gen % 10 == 0 or gen == generations - 1:
                     best_images.append((gen, best.genes.copy()))
 
@@ -222,7 +344,7 @@ with tabs[2]:
         final_img = Image.fromarray((final_genes * 255).astype(np.uint8))
         buf = BytesIO()
         final_img.save(buf, format="PNG")
-        st.download_button("⬇️ Download final image", buf.getvalue(), file_name="best_evolved.png", mime="image/png")
+        st.download_button(T[lang]["download"], buf.getvalue(), "best_evolved.png", mime="image/png")
     else:
         st.info("Führe zuerst den Algorithmus im oberen Bereich dieses Tabs aus (Run Genetic Algorithm).")
 
@@ -230,19 +352,21 @@ with tabs[2]:
 # TAB 3: DISCUSSION
 # =====================================================
 with tabs[3]:
-    st.header("Discussion")
-    st.markdown(
-        """
-        Hier kannst du Ergebnisse interpretieren:
-        - Wie schnell konvergiert die Fitness?
-        - Was bewirken unterschiedliche Mutationsstrategien?
-        - Welche Einstellungen produzieren stabilere Resultate?
-
-        Ideen zur Erweiterung:
-        - RGB-Unterstützung (3-Kanal-Chromosomen)
-        - Elitismus hinzufügen
-        - Adaptive Mutation/Selektion
-        - Mehrere Inseln (Multi-population) mit Migration
-        """
-    )
-
+    if lang == "DE":
+        st.markdown(
+            """
+            **Diskussion**
+            - Wie wirkt sich die Mutationsmethode auf die Konvergenz aus?
+            - Welche Selektionsstrategie liefert stabilere Ergebnisse?
+            - Wo liegt der Sweet Spot zwischen Diversität und Exploitation?
+            """
+        )
+    else:
+        st.markdown(
+            """
+            **Discussion**
+            - How does the mutation method affect convergence?
+            - Which selection strategy gives more stable results?
+            - Where is the sweet spot between diversity and exploitation?
+            """
+        )
