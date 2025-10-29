@@ -35,10 +35,10 @@ lang = st.session_state["lang"]
 # Textdictionary 
 T = {
     "DE": {
-        "title": "Genetischer Algorithmus – Bildrekonstruktion",
+        "title": "Genetischer Algorithmus - Bildrekonstruktion",
         "intro": """
         Diese App demonstriert einen **genetischen Algorithmus zur Bildrekonstruktion**.
-        Ziel ist es, eine Population kleiner Graustufenbilder (z. B. 16×16) so zu entwickeln,
+        Ziel ist es, eine Population kleiner Graustufenbilder (z. B. 16x16) so zu entwickeln,
         dass eines möglichst gut einem Zielbild entspricht.
         """,
         "tabs": ["Einführung", "Methoden", "Ergebnisse", "Diskussion"],
@@ -50,7 +50,7 @@ T = {
         "download": "Bestes Bild herunterladen",
         "init_method": "Initialisierungsmethode",
         "stopcrit": "Abbruchkriterium",
-        "generations": "Nach Anzahl Generationen",
+        "generations": "Anzahl Generationen",
         "fitness": "Nach Fitness-Verbesserung",
         "intro_warn": "Standardbild nicht gefunden. Bitte lade ein Zielbild hoch.",
         "pop_size": "Populationsgröße",
@@ -64,10 +64,10 @@ T = {
         "fitness_method": "Fitnessmethode",
     },
     "EN": {
-        "title": "Genetic Algorithm – Image Reconstruction",
+        "title": "Genetic Algorithm - Image Reconstruction",
         "intro": """
         This app demonstrates a **genetic algorithm for image reconstruction**.
-        The goal is to evolve a population of small grayscale images (e.g., 16×16)
+        The goal is to evolve a population of small grayscale images (e.g., 16x16)
         so that one of them closely matches a given target image.
         """,
         "tabs": ["Introduction", "Methods", "Results", "Discussion"],
@@ -110,7 +110,7 @@ with tabs[0]:
     default_target_path = os.path.join("src", "GeneticAlgorithmVariations", "data", "example_image.png")
     if os.path.exists(default_target_path):
         target_preview = Image.open(default_target_path).convert("L").resize((400, 400), Image.LANCZOS)
-        st.image(target_preview, caption="Target image (~400×400 px)", width=400)
+        st.image(target_preview, caption="Target image (~400x400 px)", width=400)
     else:
         st.warning(T[lang]["intro_warn"])
 
@@ -273,7 +273,7 @@ with tabs[2]:
     if uploaded_file:
         img = Image.open(uploaded_file).convert("L")
         preview = img.resize((400, 400), Image.LANCZOS)
-        st.image(preview, caption="Uploaded target (preview ~400×400 px)", width=400)
+        st.image(preview, caption="Uploaded target (preview ~400x400 px)", width=400)
         # Für die GA: 16x16 normalisieren
         target = np.array(img.resize((16, 16), Image.LANCZOS), dtype=np.float32) / 255.0
     else:
@@ -281,7 +281,7 @@ with tabs[2]:
         if os.path.exists(default_path):
             img = Image.open(default_path).convert("L")
             preview = img.resize((400, 400), Image.LANCZOS)
-            st.image(preview, caption="Default target (preview ~400×400 px)", width=400)
+            st.image(preview, caption="Default target (preview ~400x400 px)", width=400)
             target = load_and_resize_image(default_path, (16, 16))
         else:
             st.warning("Kein Standard-Target gefunden. Bitte lade ein Zielbild hoch.")
