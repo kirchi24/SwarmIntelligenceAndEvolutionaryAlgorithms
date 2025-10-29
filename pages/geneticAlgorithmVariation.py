@@ -54,6 +54,7 @@ T = {
         "fitness": "Nach Fitness-Verbesserung",
         "intro_warn": "Standardbild nicht gefunden. Bitte lade ein Zielbild hoch.",
         "pop_size": "Populationsgröße",
+        "crossover_alpha": "Crossover-Alpha",
         "mutation_rate": "Mutationsrate",
         "mutation_width": "Mutationsbreite",
         "shape": "Form",
@@ -83,6 +84,7 @@ T = {
         "fitness": "By fitness improvement",
         "intro_warn": "Default image not found. Please upload a target image.",
         "pop_size": "Population size",
+        "crossover_alpha": "Crossover alpha",
         "mutation_rate": "Mutation rate",
         "mutation_width": "Mutation width",
         "shape": "Shape",
@@ -246,6 +248,7 @@ with tabs[2]:
     with col1:
         pop_size = st.slider(T[lang]["pop_size"], 10, 200, 50, step=5)
         generations = st.slider(T[lang]["generations"], 10, 5000, 1000, step=10)
+        crossover_alpha = st.slider(T[lang]["crossover_alpha"], 0.0, 1.0, 0.5, 0.05)
         mutation_rate = st.slider(T[lang]["mutation_rate"], 0.0, 1.0, 0.5, 0.05)
         mutation_width = st.slider(T[lang]["mutation_width"], 0.0, 1.0, 0.1, 0.05)
         shape = st.slider(T[lang]["shape"], 0, 256, 16, 16)
@@ -304,7 +307,7 @@ with tabs[2]:
                 mutation_rate=mutation_rate,
                 mutation_width=mutation_width,
                 crossover_method=crossover_method,
-                alpha=0.5,
+                alpha=crossover_alpha,
             )
 
             fitness_history = []
@@ -314,7 +317,7 @@ with tabs[2]:
                 pop.evolve()
                 best = pop.best()
                 fitness_history.append(best.fitness)
-                if gen % 10 == 0 or gen == generations - 1:
+                if gen % 25 == 0 or gen == generations - 1:
                     best_images.append((gen, best.genes.copy()))
 
             st.session_state["fitness_history"] = fitness_history
@@ -388,6 +391,10 @@ with tabs[3]:
             - **Abbruchkriterium:**  
               - Feste Generationenanzahl oder minimale Fitness-Verbesserung  
               - Adaptive Kriterien sparen Berechnungen
+
+            - **Mögliche Erweiterungen:**
+                - Oft bleibt die Lösung mit typischen Fehlern (Rauschen, Unschärfe) hinter dem Zielbild zurück. Eine mögliche Verbesserung wäre es, eine Bildnachbearbeitung (z.B. Rauschunterdrückung) anzuwenden, um solche Artefakte zu minimieren.
+                - Achtung die Bildbearbeitung sollte am besten NACH dem GA sein, da das Glätten die Mutationen unterdrückt!
             """
         )
     else:
@@ -415,5 +422,9 @@ with tabs[3]:
             - **Termination Criterion:**  
               - Fixed generations or minimal fitness improvement  
               - Adaptive criteria save computations
+
+            - **Possible Extensions:**
+                - Often the solution lags behind the target image with typical artifacts (noise, blur). A possible improvement would be to apply image post-processing (e.g., noise reduction) to minimize such artifacts.
+                - Note that the image processing should preferably be done AFTER the GA, as smoothing suppresses mutations!
             """
         )
