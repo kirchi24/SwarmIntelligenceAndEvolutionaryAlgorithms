@@ -248,7 +248,7 @@ with tabs[2]:
         generations = st.slider(T[lang]["generations"], 10, 5000, 1000, step=10)
         mutation_rate = st.slider(T[lang]["mutation_rate"], 0.0, 1.0, 0.5, 0.05)
         mutation_width = st.slider(T[lang]["mutation_width"], 0.0, 1.0, 0.1, 0.05)
-        shape = st.slider(T[lang]["shape"], 0, 64, 16, 2)
+        shape = st.slider(T[lang]["shape"], 0, 256, 16, 16)
 
     with col2:
         crossover_method = st.selectbox(T[lang]["crossover_method"], ["arithmetic", "global_uniform"])
@@ -275,17 +275,17 @@ with tabs[2]:
         preview = img.resize((400, 400), Image.LANCZOS)
         st.image(preview, caption="Uploaded target (preview ~400x400 px)", width=400)
         # Für die GA: 16x16 normalisieren
-        target = np.array(img.resize((16, 16), Image.LANCZOS), dtype=np.float32) / 255.0
+        target = np.array(img.resize((shape, shape), Image.LANCZOS), dtype=np.float32) / 255.0
     else:
         default_path = os.path.join("src", "GeneticAlgorithmVariations", "data", "example_image.png")
         if os.path.exists(default_path):
             img = Image.open(default_path).convert("L")
             preview = img.resize((400, 400), Image.LANCZOS)
             st.image(preview, caption="Default target (preview ~400x400 px)", width=400)
-            target = load_and_resize_image(default_path, (16, 16))
+            target = load_and_resize_image(default_path, (shape, shape))
         else:
             st.warning("Kein Standard-Target gefunden. Bitte lade ein Zielbild hoch.")
-            target = np.ones((16, 16), dtype=np.float32) * 0.5
+            target = np.ones((shape, shape), dtype=np.float32) * 0.5
 
     fitness_fn = fitness_factory(target, method=fitness_method)
 
