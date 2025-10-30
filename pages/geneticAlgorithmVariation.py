@@ -35,10 +35,10 @@ lang = st.session_state["lang"]
 # Textdictionary 
 T = {
     "DE": {
-        "title": "Genetischer Algorithmus – Bildrekonstruktion",
+        "title": "Genetischer Algorithmus - Bildrekonstruktion",
         "intro": """
         Diese App demonstriert einen **genetischen Algorithmus zur Bildrekonstruktion**.
-        Ziel ist es, eine Population kleiner Graustufenbilder (z. B. 16×16) so zu entwickeln,
+        Ziel ist es, eine Population kleiner Graustufenbilder (z. B. 16x16) so zu entwickeln,
         dass eines möglichst gut einem Zielbild entspricht.
         """,
         "tabs": ["Einführung", "Methoden", "Ergebnisse", "Diskussion"],
@@ -50,10 +50,11 @@ T = {
         "download": "Bestes Bild herunterladen",
         "init_method": "Initialisierungsmethode",
         "stopcrit": "Abbruchkriterium",
-        "generations": "Nach Anzahl Generationen",
+        "generations": "Anzahl Generationen",
         "fitness": "Nach Fitness-Verbesserung",
         "intro_warn": "Standardbild nicht gefunden. Bitte lade ein Zielbild hoch.",
         "pop_size": "Populationsgröße",
+        "crossover_alpha": "Crossover-Alpha",
         "mutation_rate": "Mutationsrate",
         "mutation_width": "Mutationsbreite",
         "shape": "Form",
@@ -64,10 +65,10 @@ T = {
         "fitness_method": "Fitnessmethode",
     },
     "EN": {
-        "title": "Genetic Algorithm – Image Reconstruction",
+        "title": "Genetic Algorithm - Image Reconstruction",
         "intro": """
         This app demonstrates a **genetic algorithm for image reconstruction**.
-        The goal is to evolve a population of small grayscale images (e.g., 16×16)
+        The goal is to evolve a population of small grayscale images (e.g., 16x16)
         so that one of them closely matches a given target image.
         """,
         "tabs": ["Introduction", "Methods", "Results", "Discussion"],
@@ -83,6 +84,7 @@ T = {
         "fitness": "By fitness improvement",
         "intro_warn": "Default image not found. Please upload a target image.",
         "pop_size": "Population size",
+        "crossover_alpha": "Crossover alpha",
         "mutation_rate": "Mutation rate",
         "mutation_width": "Mutation width",
         "shape": "Shape",
@@ -110,7 +112,7 @@ with tabs[0]:
     default_target_path = os.path.join("src", "GeneticAlgorithmVariations", "data", "example_image.png")
     if os.path.exists(default_target_path):
         target_preview = Image.open(default_target_path).convert("L").resize((400, 400), Image.LANCZOS)
-        st.image(target_preview, caption="Target image (~400×400 px)", width=400)
+        st.image(target_preview, caption="Target image (~400x400 px)", width=400)
     else:
         st.warning(T[lang]["intro_warn"])
 
@@ -246,9 +248,10 @@ with tabs[2]:
     with col1:
         pop_size = st.slider(T[lang]["pop_size"], 10, 200, 50, step=5)
         generations = st.slider(T[lang]["generations"], 10, 5000, 1000, step=10)
+        crossover_alpha = st.slider(T[lang]["crossover_alpha"], 0.0, 1.0, 0.5, 0.05)
         mutation_rate = st.slider(T[lang]["mutation_rate"], 0.0, 1.0, 0.5, 0.05)
         mutation_width = st.slider(T[lang]["mutation_width"], 0.0, 1.0, 0.1, 0.05)
-        shape = st.slider(T[lang]["shape"], 0, 64, 16, 2)
+        shape = st.slider(T[lang]["shape"], 0, 256, 16, 16)
 
     with col2:
         crossover_method = st.selectbox(T[lang]["crossover_method"], ["arithmetic", "global_uniform"])
@@ -273,19 +276,19 @@ with tabs[2]:
     if uploaded_file:
         img = Image.open(uploaded_file).convert("L")
         preview = img.resize((400, 400), Image.LANCZOS)
-        st.image(preview, caption="Uploaded target (preview ~400×400 px)", width=400)
+        st.image(preview, caption="Uploaded target (preview ~400x400 px)", width=400)
         # Für die GA: 16x16 normalisieren
-        target = np.array(img.resize((16, 16), Image.LANCZOS), dtype=np.float32) / 255.0
+        target = np.array(img.resize((shape, shape), Image.LANCZOS), dtype=np.float32) / 255.0
     else:
         default_path = os.path.join("src", "GeneticAlgorithmVariations", "data", "example_image.png")
         if os.path.exists(default_path):
             img = Image.open(default_path).convert("L")
             preview = img.resize((400, 400), Image.LANCZOS)
-            st.image(preview, caption="Default target (preview ~400×400 px)", width=400)
-            target = load_and_resize_image(default_path, (16, 16))
+            st.image(preview, caption="Default target (preview ~400x400 px)", width=400)
+            target = load_and_resize_image(default_path, (shape, shape))
         else:
             st.warning("Kein Standard-Target gefunden. Bitte lade ein Zielbild hoch.")
-            target = np.ones((16, 16), dtype=np.float32) * 0.5
+            target = np.ones((shape, shape), dtype=np.float32) * 0.5
 
     fitness_fn = fitness_factory(target, method=fitness_method)
 
@@ -304,7 +307,7 @@ with tabs[2]:
                 mutation_rate=mutation_rate,
                 mutation_width=mutation_width,
                 crossover_method=crossover_method,
-                alpha=0.5,
+                alpha=crossover_alpha,
             )
 
             fitness_history = []
@@ -314,7 +317,7 @@ with tabs[2]:
                 pop.evolve()
                 best = pop.best()
                 fitness_history.append(best.fitness)
-                if gen % 10 == 0 or gen == generations - 1:
+                if gen % 25 == 0 or gen == generations - 1:
                     best_images.append((gen, best.genes.copy()))
 
             st.session_state["fitness_history"] = fitness_history
@@ -388,6 +391,10 @@ with tabs[3]:
             - **Abbruchkriterium:**  
               - Feste Generationenanzahl oder minimale Fitness-Verbesserung  
               - Adaptive Kriterien sparen Berechnungen
+
+            - **Mögliche Erweiterungen:**
+                - Oft bleibt die Lösung mit typischen Fehlern (Rauschen, Unschärfe) hinter dem Zielbild zurück. Eine mögliche Verbesserung wäre es, eine Bildnachbearbeitung (z.B. Rauschunterdrückung) anzuwenden, um solche Artefakte zu minimieren.
+                - Achtung die Bildbearbeitung sollte am besten NACH dem GA sein, da das Glätten die Mutationen unterdrückt!
             """
         )
     else:
@@ -415,5 +422,9 @@ with tabs[3]:
             - **Termination Criterion:**  
               - Fixed generations or minimal fitness improvement  
               - Adaptive criteria save computations
+
+            - **Possible Extensions:**
+                - Often the solution lags behind the target image with typical artifacts (noise, blur). A possible improvement would be to apply image post-processing (e.g., noise reduction) to minimize such artifacts.
+                - Note that the image processing should preferably be done AFTER the GA, as smoothing suppresses mutations!
             """
         )
