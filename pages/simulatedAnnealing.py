@@ -10,17 +10,25 @@ st.set_page_config(page_title="Simulated Annealing - TSP", layout="wide")
 if "lang" not in st.session_state:
     st.session_state["lang"] = "DE"
 
-def toggle_lang():
-    st.session_state["lang"] = "EN" if st.session_state["lang"] == "DE" else "DE"
+# Sprachoptionen mit Flaggen
+lang_options = {
+    "🇩🇪 Deutsch": "DE",
+    "🇬🇧 English": "EN"
+}
 
 col_lang1, col_lang2 = st.columns([1, 6])
 with col_lang1:
-    st.button(
-        "EN English" if st.session_state["lang"] == "DE" else "DE Deutsch",
-        on_click=toggle_lang
+    # Setze aktuellen Key als default_value, damit es stateful ist
+    selected_flag = st.selectbox(
+        "Sprache / Language",
+        options=list(lang_options.keys()),
+        key="lang_selectbox"
     )
+    # State sofort setzen
+    st.session_state["lang"] = lang_options[selected_flag]
 
 lang = st.session_state["lang"]
+
 # Textdictionary
 T = {
     "DE": {
