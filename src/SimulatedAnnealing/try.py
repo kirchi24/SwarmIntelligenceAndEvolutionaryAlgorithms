@@ -1,23 +1,20 @@
 from load_tsp_data import TSPData
-
-tsp = TSPData()
-print(tsp.get_all_names())
-print(tsp.get_matrix("distance"))
-print(tsp.get_city_coord("Amstetten"))
-
-
-
 import numpy as np
 import random
 import math
 
-# Beispielmatrix (kannst du durch deine eigene ersetzen)
-dist_matrix = np.array([
-    [0, 10, 15, 20],
-    [10, 0, 35, 25],
-    [15, 35, 0, 30],
-    [20, 25, 30, 0]
-])
+
+# Wähle drei Städtenamen
+selected_cities = ["Amstetten", "Bregenz", "Graz"]
+
+# Lade TSP-Daten
+tsp = TSPData()
+
+# Hole die Indizes der ausgewählten Städte
+indices = [tsp.get_city_index(name) for name in selected_cities]
+
+# Extrahiere die 3x3-Submatrix
+dist_matrix = tsp.distance[np.ix_(indices, indices)]
 
 def total_distance(route, dist_matrix):
     """Berechnet die Gesamtdistanz einer Route."""
