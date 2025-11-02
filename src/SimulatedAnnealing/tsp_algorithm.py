@@ -56,7 +56,6 @@ def get_neighbor(route):
         return new_route
 
 
-# --- Hauptalgorithmus ---
 def simulated_annealing(
     dist_matrix,
     T_start=2000,
@@ -139,7 +138,6 @@ def get_sa_route_coords(best_route, tsp):
             route_coords = [tsp.get_city_coord(start_city), tsp.get_city_coord(end_city)]
 
         if coords:
-            # Verbinde nahtlos: letztes Ende der bisherigen Route ist Start der nächsten
             coords.extend(route_coords[1:])
         else:
             coords.extend(route_coords)
@@ -151,10 +149,8 @@ def get_route_coords(start_city, end_city):
     start_city_lower = start_city.lower()
     end_city_lower = end_city.lower()
 
-    # Suche nach allen passenden Dateien
     for file_path in ROUTES_DIR.glob("route_*.json"):
-        fname = file_path.stem.lower()  # z.B. route_traun_graz
-        # Prüfen, ob sowohl Start als auch Ziel im Dateinamen vorkommen
+        fname = file_path.stem.lower() 
         if start_city_lower in fname and end_city_lower in fname:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
