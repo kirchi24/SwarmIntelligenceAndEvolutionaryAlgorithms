@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 from PIL import Image, ImageDraw
 
-from src.SimulatedAnnealing.tsp_algorithm import tsp, get_route_coords
+from src.SimulatedAnnealing.tsp_algorithm import tsp, get_all_routes, get_sa_route_coords, get_route_coords, simulated_annealing
 
 
 # Streamlit config
@@ -113,43 +113,65 @@ with tabs[2]:
     start_city = st.selectbox("Startstadt", city_names)
     end_city = st.selectbox("Zielstadt", city_names, index=1)
 
-    if st.button("Route berechnen"):
-        if start_city == end_city:
-            st.warning("Start- und Zielstadt dürfen nicht gleich sein!")
-        else:
-            # Geo-Koordinaten der Route aus Algorithmus holen
-            coords = get_route_coords(start_city, end_city)
-            if not coords:
-                st.error("Keine Route gefunden!")
-            else:
-                # Karte laden
-                map_img = Image.open("src/SimulatedAnnealing/landscape/austria_map.png").convert("RGBA")
-                draw = ImageDraw.Draw(map_img)
-                width, height = map_img.size
+    st.sidebar.header("SA-Hyperparameter")
+    T_start = st.sidebar.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100)
+    T_end = st.sidebar.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0)
+    alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 0.999, 0.995, step=0.001)
+    max_iter = st.sidebar.slider("Max. Iterationen", 1000, 100000, 20000, step=1000)
+    reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1)
 
-                # Geo → Pixel Mapping
-                def project(coord):
-                    lon, lat = coord
-                    # Österreich: west=9.25, east=17.25, north=49, south=46.2
-                    left, right = 9.25, 17.25
-                    top, bottom = 49.25, 46.25
-                    x = int((lon - left) / (right - left) * width)
-                    y = int((top - lat) / (top - bottom) * height)
-                    return x, y
+    if start_city == end_city:
+        st.warning("Start- und Zielstadt dürfen nicht gleich sein!")
+    else:
+        # --- Submatrix für gewählte Städte ---
+        indices = [tsp.get_city_index(start_city), tsp.get_city_index(end_city)]
+        dist_matrix = tsp.distance[np.ix_(indices, indices)]
 
-                # Route zeichnen
-                for i in range(len(coords) - 1):
-                    draw.line([project(coords[i]), project(coords[i + 1])], fill=(255, 0, 0, 255), width=3)
+        with st.spinner("Berechne optimale Route..."):
+            best_route, best_distance, history = simulated_annealing(
+                tsp.distance, 
+                T_start=T_start, 
+                T_end=T_end, 
+                alpha=alpha, 
+                reheating_factor=reheating_factor,
+                max_iter=max_iter,
+                return_history=True
+            )
 
-                # Start & Ziel markieren
-                start_px = project(coords[0])
-                end_px = project(coords[-1])
-                r = 6  # Radius
-                draw.ellipse([start_px[0]-r, start_px[1]-r, start_px[0]+r, start_px[1]+r], fill="green")
-                draw.ellipse([end_px[0]-r, end_px[1]-r, end_px[0]+r, end_px[1]+r], fill="blue")
+        st.success(f"Beste gefundene Route: {best_route} — Distanz: {best_distance /1000:.2f} km")
 
-                # Karte anzeigen
-                st.image(map_img, caption=f"Route von {start_city} nach {end_city}")
+        # --- Verlauf visualisieren ---
+        st.subheader("Verbesserungsverlauf")
+        st.line_chart(history, height=200)
+
+        # --- Karte zeichnen ---
+        st.subheader("Gefundene Route")
+
+        # Karte laden
+        map_img = Image.open("src/SimulatedAnnealing/landscape/austria_map.png").convert("RGBA")
+        draw = ImageDraw.Draw(map_img)
+        width, height = map_img.size
+
+        # --- Projektionsfunktion ---
+        def project(coord):
+            lon, lat = coord
+            left, right = 9.25, 17.25
+            top, bottom = 49.25, 46.25
+            x = int((lon - left) / (right - left) * width)
+            y = int((top - lat) / (top - bottom) * height)
+            return x, y
+
+        # Echte Route zwischen Start und Ziel
+        true_coords = get_route_coords(start_city, end_city)
+        for i in range(len(true_coords) - 1):
+            draw.line([project(true_coords[i]), project(true_coords[i + 1])], fill=(0, 0, 255, 255), width=3)
+
+        # SA-Route (rot)
+        sa_coords = get_sa_route_coords(best_route, tsp)
+        for i in range(len(sa_coords) - 1):
+            draw.line([project(sa_coords[i]), project(sa_coords[i + 1])], fill=(255, 0, 0, 255), width=2)
+
+        st.image(map_img, caption="🔵 Originalroute  |  🔴 SA-Route")
 
 # =====================================================
 # TAB 3: DISCUSSION / DISKUSSION
