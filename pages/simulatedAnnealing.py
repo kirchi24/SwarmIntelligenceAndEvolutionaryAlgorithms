@@ -1,5 +1,9 @@
 import streamlit as st
 import numpy as np
+from PIL import Image, ImageDraw
+
+from src.SimulatedAnnealing.tsp_algorithm import tsp, get_route_coords
+
 
 # Streamlit config
 st.set_page_config(page_title="Simulated Annealing - TSP", layout="wide")
@@ -45,7 +49,7 @@ T = {
         **Kühlstrategie:** Linear, exponentiell oder adaptiv.  
         **Parameter:** Starttemperatur, Abkühlrate, Iterationen.
         """,
-        "results": "Die Ergebnisse werden später angezeigt, sobald der Algorithmus implementiert ist.",
+        "results": "2 Städte wählen und die beste Route mit dem TSP-Algorithmus berechnen.",
         "discussion": """
         **Diskussion**  
         - SA kann lokale Minima besser verlassen als gierige Algorithmen.  
@@ -68,7 +72,7 @@ T = {
         **Cooling schedule:** linear, exponential, or adaptive.  
         **Parameters:** initial temperature, cooling rate, iterations.
         """,
-        "results": "Results will be displayed here once the algorithm is implemented.",
+        "results": "Select 2 cities and compute the best route using the TSP algorithm.",
         "discussion": """
         **Discussion**  
         - SA can escape local minima better than greedy algorithms.  
@@ -103,6 +107,49 @@ with tabs[1]:
 # =====================================================
 with tabs[2]:
     st.info(T[lang]["results"])
+
+    # Auswahlfelder für Start und Ziel
+    city_names = tsp.get_all_names()
+    start_city = st.selectbox("Startstadt", city_names)
+    end_city = st.selectbox("Zielstadt", city_names, index=1)
+
+    if st.button("Route berechnen"):
+        if start_city == end_city:
+            st.warning("Start- und Zielstadt dürfen nicht gleich sein!")
+        else:
+            # Geo-Koordinaten der Route aus Algorithmus holen
+            coords = get_route_coords(start_city, end_city)
+            if not coords:
+                st.error("Keine Route gefunden!")
+            else:
+                # Karte laden
+                map_img = Image.open("src/SimulatedAnnealing/landscape/austria_map.png").convert("RGBA")
+                draw = ImageDraw.Draw(map_img)
+                width, height = map_img.size
+
+                # Geo → Pixel Mapping
+                def project(coord):
+                    lon, lat = coord
+                    # Österreich: west=9.25, east=17.25, north=49, south=46.2
+                    left, right = 9.25, 17.25
+                    top, bottom = 49.25, 46.25
+                    x = int((lon - left) / (right - left) * width)
+                    y = int((top - lat) / (top - bottom) * height)
+                    return x, y
+
+                # Route zeichnen
+                for i in range(len(coords) - 1):
+                    draw.line([project(coords[i]), project(coords[i + 1])], fill=(255, 0, 0, 255), width=3)
+
+                # Start & Ziel markieren
+                start_px = project(coords[0])
+                end_px = project(coords[-1])
+                r = 6  # Radius
+                draw.ellipse([start_px[0]-r, start_px[1]-r, start_px[0]+r, start_px[1]+r], fill="green")
+                draw.ellipse([end_px[0]-r, end_px[1]-r, end_px[0]+r, end_px[1]+r], fill="blue")
+
+                # Karte anzeigen
+                st.image(map_img, caption=f"Route von {start_city} nach {end_city}")
 
 # =====================================================
 # TAB 3: DISCUSSION / DISKUSSION
