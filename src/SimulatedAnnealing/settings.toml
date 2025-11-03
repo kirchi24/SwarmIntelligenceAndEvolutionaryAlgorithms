@@ -1,0 +1,49 @@
+[default]
+coordinates_path = "sea_demo/data/routes/city_coordinates.json"
+summary_path = "sea_demo/data/routes/routes_summary.json"
+routes_path = "sea_demo/data/routes/"
+gpd_url = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson"
+cities_reduced = [
+    "Wien",
+    "Graz",
+    "Linz",
+    "Salzburg",
+    "Innsbruck",
+    "Klagenfurt",
+    "St. Pölten",
+    "Eisenstadt",
+    "Bregenz",
+    "Lienz",
+]
+cities = [
+    "Wien",
+    "Graz",
+    "Linz",
+    "Salzburg",
+    "Innsbruck",
+    "Klagenfurt",
+    "Villach",
+    "Wels",
+    "Sankt Pölten",
+    "Dornbirn",
+    "Wiener Neustadt",
+    "Steyr",
+    "Feldkirch",
+    "Bregenz",
+    "Leoben",
+    "Kapfenberg",
+    "Amstetten",
+    "Lustenau",
+    "Traun",
+    "Krems an der Donau",
+    "Baden",
+    "Mödling",
+    "Schwechat",
+    "Hallein",
+    "Saalfelden am Steinernen Meer",
+    "Knittelfeld",
+    "Bruck an der Mur",
+    "Spittal an der Drau",
+    "Zell am See",
+    "Tulln an der Donau",
+]
