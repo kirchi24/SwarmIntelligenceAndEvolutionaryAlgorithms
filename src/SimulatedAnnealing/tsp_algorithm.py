@@ -144,31 +144,24 @@ def simulated_annealing(
 
 def get_sa_route_coords(best_route, tsp):
     coords = []
+
     for i in range(len(best_route) - 1):
-        start_idx = best_route[i]
-        end_idx = best_route[i + 1]
-        start_city = tsp.city_names[start_idx]
-        end_city = tsp.city_names[end_idx]
+        start_city = tsp.city_names[best_route[i]]
+        end_city = tsp.city_names[best_route[i + 1]]
 
         route_coords = get_route_coords(start_city, end_city)
 
-        if not route_coords or len(route_coords) < 2:
-            route_coords = [
-                tsp.get_city_coord(start_city),
-                tsp.get_city_coord(end_city),
-            ]
-
+        # Vermeide doppelte Punkte
         if coords:
             coords.extend(route_coords[1:])
         else:
             coords.extend(route_coords)
 
-    start_city_idx = best_route[0]
-    coords.append(tsp.get_city_coord(tsp.city_names[start_city_idx]))
+    # Runde schließen
+    coords.append(tsp.get_city_coord(tsp.city_names[best_route[0]]))
     return coords
 
 
-# Hilfsfunktion: prüft, ob eine Datei für die gegebene Richtung existiert
 def find_coords(s_city, e_city):
     s_city_norm = s_city.lower().replace(" ", "_")
     e_city_norm = e_city.lower().replace(" ", "_")
