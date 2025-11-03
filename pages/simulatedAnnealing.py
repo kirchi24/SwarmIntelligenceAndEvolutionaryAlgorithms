@@ -5,14 +5,13 @@ import plotly.graph_objects as go
 
 import sys
 import os
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 from src.SimulatedAnnealing.tsp_algorithm import tsp, get_sa_route_coords, total_distance, simulated_annealing
-from src.SimulatedAnnealing.visualization import plot_route
+from src.SimulatedAnnealing.plot_route import plot_route
 import matplotlib.pyplot as plt
-
+from io import BytesIO
 
 # Streamlit config
 st.set_page_config(page_title="Simulated Annealing - TSP", layout="wide")
@@ -231,12 +230,14 @@ with tabs[2]:
     )
 
     if len(selected_cities) < 3:
-        st.warning("Bitte wähle mindestens 3 Städte für eine Route aus." if lang=="DE" else "Please select at least 3 cities for a route.")
+        st.warning(
+            "Bitte wähle mindestens 3 Städte für eine Route aus." 
+            if lang=="DE" else "Please select at least 3 cities for a route."
+        )
     else:
-        # --- Start- und Endstadt automatisch setzen (TSP-Zyklus) ---
         start_city = selected_cities[0]
 
-        # --- Sidebar-Hyperparameter mit eindeutigen Keys ---
+        # --- Sidebar-Hyperparameter ---
         st.sidebar.header("SA-Hyperparameter (Light)")
         T_start = st.sidebar.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100, key="T_start_light")
         T_end = st.sidebar.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0, key="T_end_light")
@@ -245,13 +246,14 @@ with tabs[2]:
         reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1, key="reheat_light")
 
         if st.button("Run TSP Light", key="run_light"):
-            # --- Index der ausgewählten Städte ---
             selected_indices = [tsp.get_city_index(city) for city in selected_cities]
 
-            # --- Distanzmatrix für ausgewählte Städte extrahieren ---
-            light_distance_matrix = np.array([[tsp.distance[i,j] for j in selected_indices] for i in selected_indices])
+            # --- Distanzmatrix extrahieren ---
+            light_distance_matrix = np.array(
+                [[tsp.distance[i,j] for j in selected_indices] for i in selected_indices]
+            )
 
-            # --- Simulated Annealing auf die Light-Matrix anwenden ---
+            # --- Simulated Annealing ---
             best_route, best_distance, history = simulated_annealing(
                 light_distance_matrix,
                 start_city_index=0,
@@ -264,9 +266,6 @@ with tabs[2]:
                 return_history=True
             )
 
-            # Gesamtdistanz
-            from src.SimulatedAnnealing.tsp_algorithm import total_distance
-            total_dist = total_distance(best_route, tsp.distance)
             route_cities = [selected_cities[idx] for idx in best_route]
 
             st.subheader("Gefundene Route:")
@@ -275,72 +274,42 @@ with tabs[2]:
             st.text(f"{len(route_cities)+1}: {route_cities[0]} (Rückkehr)")
             st.success(f"Gesamtdistanz: {best_distance/1000:.2f} km")
 
-            st.subheader("Verbesserungsverlauf")
-            # History in km
-            history_km = [d / 1000 for d in history]
+            # --- Verbesserungsverlauf plotten ---
+            if history:
+                import plotly.graph_objects as go
+                history_km = [d / 1000 for d in history]
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    y=history_km,
+                    mode='lines+markers',
+                    name='Beste Distanz',
+                    line=dict(color='red'),
+                    marker=dict(size=4)
+                ))
+                fig.update_layout(
+                    title="Verbesserungsverlauf der SA",
+                    xaxis_title="Schritte",
+                    yaxis_title="Distanz [km]",
+                    template="plotly_white",
+                    height=400
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
-            fig = go.Figure()
-
-            fig.add_trace(go.Scatter(
-                y=history_km,
-                mode='lines+markers',
-                name='Beste Distanz',
-                line=dict(color='red'),
-                marker=dict(size=4)
-            ))
-
-            fig.update_layout(
-                title="Verbesserungsverlauf der SA",
-                xaxis_title="Schritte",
-                yaxis_title="Distanz [km]",
-                template="plotly_white",
-                height=400
-            )
-
-            st.plotly_chart(fig, use_container_width=True)
-
-            # --- Koordinaten für finale Route (inkl. Rückkehr zur Startstadt) ---
-            full_route = best_route + [best_route[0]]
-            sa_coords = get_sa_route_coords(full_route, tsp)
-
-            # --- Karte laden ---
-            map_img = Image.open("src/SimulatedAnnealing/landscape/austria_map.png").convert("RGBA")
-            draw = ImageDraw.Draw(map_img)
-            width, height = map_img.size
-
-            try:
-                from PIL import ImageFont
-                font = ImageFont.truetype("arial.ttf", 14)
-            except:
-                font = None
-
-            # --- Projektionsfunktion ---
-            def project(coord):
-                lon, lat = coord
-                left, right = 9.25, 17.25
-                top, bottom = 49.25, 46.25
-                x = int((lon - left) / (right - left) * width)
-                y = int((top - lat) / (top - bottom) * height)
-                return x, y
-
-            # --- Linien der Route zeichnen ---
-            for i in range(len(sa_coords)-1):
-                draw.line([project(sa_coords[i]), project(sa_coords[i+1])], fill=(255,0,0,255), width=3)
-
-            # --- Städtepunkte und Namen ---
-            for i, idx in enumerate(best_route):
-                city = tsp.city_names[idx]
-                x, y = project(tsp.get_city_coord(city))
-                color = (0,255,0,255) if i == 0 else (0,0,255,255)  # Startstadt grün
-                draw.ellipse([x-5, y-5, x+5, y+5], fill=color)
-                if font:
-                    draw.text((x+6, y-6), city, fill=(0,0,0,255), font=font)
-                else:
-                    draw.text((x+6, y-6), city, fill=(0,0,0,255))
-
+            # --- Finale Route direkt mit plot_route anzeigen ---
             st.subheader(f"Finale Route ab {start_city}")
-            st.image(map_img)
+            import matplotlib.pyplot as plt
+            from io import BytesIO
+            from src.SimulatedAnnealing.plot_route import plot_route
 
+            # plot_route erzeugt die Matplotlib-Figur
+            plot_route(route_cities)  
+
+            # In BytesIO speichern und in Streamlit anzeigen
+            buf = BytesIO()
+            plt.savefig(buf, format="png", bbox_inches="tight")
+            buf.seek(0)
+            st.image(buf)
+            plt.close()
 # =====================================================
 # TAB 3: TSP full
 # =====================================================
