@@ -170,8 +170,8 @@ def get_sa_route_coords(best_route, tsp):
 
 # Hilfsfunktion: prüft, ob eine Datei für die gegebene Richtung existiert
 def find_coords(s_city, e_city):
-    s_city_lower = s_city.lower()
-    e_city_lower = e_city.lower()
+    s_city_lower = s_city.lower().replace(" ", "_")
+    e_city_lower = e_city.lower().replace(" ", "_")
     for file_path in ROUTES_DIR.glob("route_*.json"):
         fname = file_path.stem.lower()
         if s_city_lower in fname and e_city_lower in fname:
