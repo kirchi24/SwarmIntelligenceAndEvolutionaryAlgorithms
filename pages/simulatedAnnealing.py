@@ -2,7 +2,15 @@ import streamlit as st
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import plotly.graph_objects as go
+
+import sys
+import os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from src.SimulatedAnnealing.tsp_algorithm import tsp, get_sa_route_coords, total_distance, simulated_annealing
+from src.SimulatedAnnealing.visualization import plot_route
 import matplotlib.pyplot as plt
 
 
@@ -223,7 +231,7 @@ with tabs[2]:
     )
 
     if len(selected_cities) < 3:
-        st.warning("Bitte wähle mindestens 3 Städte für eine Route aus." if lang=="DE" else "Please select at least 2 cities for a route.")
+        st.warning("Bitte wähle mindestens 3 Städte für eine Route aus." if lang=="DE" else "Please select at least 3 cities for a route.")
     else:
         # --- Start- und Endstadt automatisch setzen (TSP-Zyklus) ---
         start_city = selected_cities[0]
@@ -256,13 +264,16 @@ with tabs[2]:
                 return_history=True
             )
 
-            # Gefundene Route anzeigen
-            st.subheader("Gefundene Route:")
-            for i, idx in enumerate(best_route):
-                st.text(f"{i+1}: {tsp.city_names[idx]}")
-            st.text(f"{len(best_route)+1}: {tsp.city_names[best_route[0]]} (Rückkehr)")
+            # Gesamtdistanz
+            from src.SimulatedAnnealing.tsp_algorithm import total_distance
             total_dist = total_distance(best_route, tsp.distance)
-            st.success(f"Gesamtdistanz: {total_dist/1000:.2f} km")
+            route_cities = [selected_cities[idx] for idx in best_route]
+
+            st.subheader("Gefundene Route:")
+            for i, city in enumerate(route_cities):
+                st.text(f"{i+1}: {city}")
+            st.text(f"{len(route_cities)+1}: {route_cities[0]} (Rückkehr)")
+            st.success(f"Gesamtdistanz: {best_distance/1000:.2f} km")
 
             st.subheader("Verbesserungsverlauf")
             # History in km
