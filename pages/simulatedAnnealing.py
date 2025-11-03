@@ -1,8 +1,9 @@
 import streamlit as st
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-import time
-from src.SimulatedAnnealing.tsp_algorithm import tsp, get_all_routes, get_sa_route_coords, get_route_coords, simulated_annealing
+import plotly.graph_objects as go
+from src.SimulatedAnnealing.tsp_algorithm import tsp, get_sa_route_coords, total_distance, simulated_annealing
+import matplotlib.pyplot as plt
 
 
 # Streamlit config
@@ -49,7 +50,7 @@ T = {
         **Kühlstrategie:** Linear, exponentiell oder adaptiv.  
         **Parameter:** Starttemperatur, Abkühlrate, Iterationen.
         """,
-        "results": "2 Städte wählen und die beste Route mit dem TSP-Algorithmus berechnen.",
+        "results": "Stadt wählen und die beste Route mit dem TSP-Algorithmus berechnen.",
         "discussion": """
         **Diskussion**  
         - SA kann lokale Minima besser verlassen als gierige Algorithmen.  
@@ -72,7 +73,7 @@ T = {
         **Cooling schedule:** linear, exponential, or adaptive.  
         **Parameters:** initial temperature, cooling rate, iterations.
         """,
-        "results": "Select 2 cities and compute the best route using the TSP algorithm.",
+        "results": "Select city and compute the best route using the TSP algorithm.",
         "discussion": """
         **Discussion**  
         - SA can escape local minima better than greedy algorithms.  
@@ -101,7 +102,27 @@ with tabs[0]:
 # =====================================================
 with tabs[1]:
     st.markdown(T[lang]["methods"])
+    # Lade Distanzmatrix
+    dist_matrix = tsp.distance
+    city_names = tsp.get_all_names()
+    n = len(city_names)
 
+    st.title("Distanzmatrix der Städte")
+
+    # Heatmap plotten
+    fig, ax = plt.subplots(figsize=(10, 10))
+    cax = ax.matshow(dist_matrix, cmap='viridis')
+
+    # Achsenbeschriftung
+    ax.set_xticks(range(n))
+    ax.set_yticks(range(n))
+    ax.set_xticklabels(city_names, rotation=90, fontsize=8)
+    ax.set_yticklabels(city_names, fontsize=8)
+
+    # Farbskala
+    fig.colorbar(cax)
+
+    st.pyplot(fig)
 # =====================================================
 # TAB 2: RESULTS / ERGEBNISSE
 # =====================================================
@@ -123,36 +144,70 @@ with tabs[2]:
     if st.button("Run"):
         start_index = tsp.get_city_index(start_city)
 
-        # TSP berechnen
-        best_route, best_distance = simulated_annealing(
+        # --- TSP berechnen ---
+        best_route, best_distance, history = simulated_annealing(
             tsp.distance,
             start_city_index=start_index,
-            T_start=3000,
-            T_end=0.1,
-            alpha=0.9995,
-            max_iter=100000,
-            reheating_factor=1.2,
-            stagnation_limit=2500
+            T_start=T_start,
+            T_end=T_end,
+            alpha=alpha,
+            max_iter=max_iter,
+            reheating_factor=reheating_factor,
+            stagnation_limit=2500,
+            return_history=True
         )
 
+        # Gesamtdistanz
+        from src.SimulatedAnnealing.tsp_algorithm import total_distance
+        total_dist = total_distance(best_route, tsp.distance)
+
+        # Gefundene Route anzeigen
         st.subheader("Gefundene Route:")
         for i, idx in enumerate(best_route):
             st.text(f"{i+1}: {tsp.city_names[idx]}")
-        st.text(f"{len(best_route)+1}: {tsp.city_names[start_index]} (Rückkehr)")
+        st.text(f"{len(best_route)+1}: {tsp.city_names[best_route[0]]} (Rückkehr)")
+        st.success(f"Gesamtdistanz: {total_dist/1000:.2f} km")
 
-        sa_coords = get_sa_route_coords(best_route, tsp)
+        st.subheader("Verbesserungsverlauf")
+        # History in km
+        history_km = [d / 1000 for d in history]
 
-        # Karte laden
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            y=history_km,
+            mode='lines+markers',
+            name='Beste Distanz',
+            line=dict(color='red'),
+            marker=dict(size=4)
+        ))
+
+        fig.update_layout(
+            title="Verbesserungsverlauf der SA",
+            xaxis_title="Schritte",
+            yaxis_title="Distanz [km]",
+            template="plotly_white",
+            height=400
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # --- Koordinaten für finale Route (inkl. Rückkehr zur Startstadt) ---
+        full_route = best_route + [best_route[0]]
+        sa_coords = get_sa_route_coords(full_route, tsp)
+
+        # --- Karte laden ---
         map_img = Image.open("src/SimulatedAnnealing/landscape/austria_map.png").convert("RGBA")
         draw = ImageDraw.Draw(map_img)
         width, height = map_img.size
 
-        # Optional: Font für Städtenamen
         try:
+            from PIL import ImageFont
             font = ImageFont.truetype("arial.ttf", 14)
         except:
             font = None
 
+        # --- Projektionsfunktion ---
         def project(coord):
             lon, lat = coord
             left, right = 9.25, 17.25
@@ -161,24 +216,24 @@ with tabs[2]:
             y = int((top - lat) / (top - bottom) * height)
             return x, y
 
-        # Alle Linien der Route zeichnen
+        # --- Linien der Route zeichnen ---
         for i in range(len(sa_coords)-1):
             draw.line([project(sa_coords[i]), project(sa_coords[i+1])], fill=(255,0,0,255), width=3)
 
-        # Start- und Endpunkt verbinden, um Rundtour zu schließen
-        draw.line([project(sa_coords[-1]), project(sa_coords[0])], fill=(255,0,0,255), width=3)
-
-        # Städtepunkte + Namen
-        for idx in best_route:
+        # --- Städtepunkte und Namen ---
+        for i, idx in enumerate(best_route):
             city = tsp.city_names[idx]
             x, y = project(tsp.get_city_coord(city))
-            draw.ellipse([x-5, y-5, x+5, y+5], fill=(0,0,255,255))
+            color = (0,255,0,255) if i == 0 else (0,0,255,255)  # Startstadt grün
+            draw.ellipse([x-5, y-5, x+5, y+5], fill=color)
             if font:
                 draw.text((x+6, y-6), city, fill=(0,0,0,255), font=font)
             else:
                 draw.text((x+6, y-6), city, fill=(0,0,0,255))
 
-    st.image(map_img, caption=f"Gefundene Route ab {start_city} mit allen Städten")
+        st.subheader(f"Finale Route ab {start_city}")
+        st.image(map_img)
+
 
 
 # =====================================================

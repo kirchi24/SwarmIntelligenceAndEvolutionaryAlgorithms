@@ -143,7 +143,6 @@ def simulated_annealing(
 
 
 def get_sa_route_coords(best_route, tsp):
-    """Koordinaten für die gefundene SA-Route anhand der GeoJSON-Routen."""
     coords = []
     for i in range(len(best_route)-1):
         start_idx = best_route[i]
@@ -152,18 +151,18 @@ def get_sa_route_coords(best_route, tsp):
         end_city = tsp.city_names[end_idx]
 
         route_coords = get_route_coords(start_city, end_city)
-        if not route_coords:
+
+        if not route_coords or len(route_coords) < 2:
             route_coords = [tsp.get_city_coord(start_city), tsp.get_city_coord(end_city)]
 
         if coords:
-            coords.extend(route_coords[1:])
+            coords.extend(route_coords[1:]) 
         else:
             coords.extend(route_coords)
-    # Rückkehr zur Startstadt
+
     start_city_idx = best_route[0]
     coords.append(tsp.get_city_coord(tsp.city_names[start_city_idx]))
     return coords
-
 
 def get_route_coords(start_city, end_city):
     """Liefert Koordinaten zwischen zwei Städten."""
@@ -188,14 +187,3 @@ def get_route_coords(start_city, end_city):
     return [tsp.get_city_coord(start_city), tsp.get_city_coord(end_city)]
 
 
-def get_all_routes(best_route, tsp, start_city=None, end_city=None):
-    """
-    Gibt Koordinaten für:
-      - SA-Route: anhand der echten Straßen
-      - Echte Route zwischen Start- und Zielstadt (optional)
-    """
-    sa_coords = get_sa_route_coords(best_route, tsp)
-    real_coords = []
-    if start_city and end_city:
-        real_coords = get_route_coords(start_city, end_city)
-    return sa_coords, real_coords
