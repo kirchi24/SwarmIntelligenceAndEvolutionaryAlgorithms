@@ -170,20 +170,25 @@ def get_sa_route_coords(best_route, tsp):
 
 # Hilfsfunktion: prüft, ob eine Datei für die gegebene Richtung existiert
 def find_coords(s_city, e_city):
-    s_city_lower = s_city.lower().replace(" ", "_")
-    e_city_lower = e_city.lower().replace(" ", "_")
-    for file_path in ROUTES_DIR.glob("route_*.json"):
-        fname = file_path.stem.lower()
-        if s_city_lower in fname and e_city_lower in fname:
+    s_city_norm = s_city.lower().replace(" ", "_")
+    e_city_norm = e_city.lower().replace(" ", "_")
+
+    fname1 = f"route_{s_city_norm}_{e_city_norm}.json"
+    fname2 = f"route_{e_city_norm}_{s_city_norm}.json"
+
+    for fname in [fname1, fname2]:
+        file_path = ROUTES_DIR / fname
+        if file_path.exists():
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             features = data.get("features", [])
-            if not features:
-                return []
             coords = []
             for feature in features:
                 geom_coords = feature.get("geometry", {}).get("coordinates", [])
                 coords.extend(geom_coords)
+            # Wenn die gefundene Datei in umgekehrter Richtung war, umdrehen
+            if fname == fname2:
+                coords = coords[::-1]
             return coords
     return None
 
@@ -195,9 +200,5 @@ def get_route_coords(start_city, end_city):
     if coords:
         return coords
 
-    coords = find_coords(end_city, start_city)
-    if coords:
-        return coords[::-1]  # Route umdrehen, damit die Richtung stimmt
-
-    # 3. Fallback: direkte Stadtkoordinaten
+    # Fallback: gerade Linie, wenn keine Datei gefunden
     return [tsp.get_city_coord(start_city), tsp.get_city_coord(end_city)]
