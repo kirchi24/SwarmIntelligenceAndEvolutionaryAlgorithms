@@ -28,7 +28,6 @@ def fetch_route(city_from: str, city_to: str):
     file_name_alt1 = os.path.join(settings.routes_path, f"route_{city_from}_{city_to}.json")
     file_name_alt2 = os.path.join(settings.routes_path, f"route_{city_to}_{city_from}.json")
 
-    # only one direction of each city pair's route stored; check which exists
     if os.path.exists(file_name_alt1):
         route_file = file_name_alt1
     elif os.path.exists(file_name_alt2):
@@ -39,7 +38,6 @@ def fetch_route(city_from: str, city_to: str):
     with open(route_file, "r") as f:
         route_data = json.load(f)
 
-    # fetch the routes coordinates and store in a geopandas dataframe
     coords = route_data["features"][0]["geometry"]["coordinates"]
     route_line = LineString(coords)
     route_gdf = gpd.GeoDataFrame(geometry=[route_line], crs="EPSG:4326")

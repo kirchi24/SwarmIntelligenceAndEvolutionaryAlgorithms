@@ -38,7 +38,7 @@ lang = st.session_state["lang"]
 T = {
     "DE": {
         "title": "Simulated Annealing - Travelling Salesman Problem",
-        "tabs": ["Einführung", "Methoden", "Ergebnisse", "Diskussion"],
+        "tabs": ["Einführung", "Methoden", "TSPlight", "TSPfull", "Diskussion"],
         "intro": """
         Diese App dokumentiert den **Simulated Annealing Algorithmus** für das Travelling-Salesman-Problem (TSP).
         Ziel ist es, alle Städte **einmal zu besuchen** und die Gesamtdistanz zu minimieren.
@@ -51,6 +51,8 @@ T = {
         **Parameter:** Starttemperatur, Abkühlrate, Iterationen.
         """,
         "results": "Stadt wählen und die beste Route mit dem TSP-Algorithmus berechnen.",
+        "TSPlight": "Leichte Version des TSP zur schnellen Visualisierung der Route zwischen ausgewählten Städten.",
+        "TSPfull": "Vollversion des TSP mit allen Städten und vollständiger Optimierung.",
         "discussion": """
         **Diskussion**  
         - SA kann lokale Minima besser verlassen als gierige Algorithmen.  
@@ -61,7 +63,7 @@ T = {
     },
     "EN": {
         "title": "Simulated Annealing - Travelling Salesman Problem",
-        "tabs": ["Introduction", "Methods", "Results", "Discussion"],
+        "tabs": ["Introduction", "Methods", "TSPlight", "TSPfull",  "Discussion"],
         "intro": """
         This page documents the **Simulated Annealing algorithm** for the Travelling Salesman Problem (TSP). 
         The goal is to visit all cities **exactly once** and minimize total travel distance.
@@ -74,6 +76,8 @@ T = {
         **Parameters:** initial temperature, cooling rate, iterations.
         """,
         "results": "Select city and compute the best route using the TSP algorithm.",
+        "TSPlight": "Light version of the TSP for quick visualization of the route between selected cities.",
+        "TSPfull": "Full TSP version with all cities and complete optimization.",
         "discussion": """
         **Discussion**  
         - SA can escape local minima better than greedy algorithms.  
@@ -202,10 +206,135 @@ with tabs[1]:
            - Optional: history of best distance over iterations
         """)
 # =====================================================
-# TAB 2: RESULTS / ERGEBNISSE
+# TAB 2: TSP light
 # =====================================================
 with tabs[2]:
-    st.info(T[lang]["results"])
+    st.markdown(T[lang]["TSPlight"])
+    
+    # --- Städte laden ---
+    city_names = tsp.get_all_names()
+
+    # --- Benutzer wählt beliebig viele Städte ---
+    selected_cities = st.multiselect(
+        "Wähle die Route (beliebig viele Städte)", 
+        options=city_names,
+        default=[city_names[0]],
+        key="selected_cities_light"
+    )
+
+    if len(selected_cities) < 3:
+        st.warning("Bitte wähle mindestens 3 Städte für eine Route aus." if lang=="DE" else "Please select at least 2 cities for a route.")
+    else:
+        # --- Start- und Endstadt automatisch setzen (TSP-Zyklus) ---
+        start_city = selected_cities[0]
+
+        # --- Sidebar-Hyperparameter mit eindeutigen Keys ---
+        st.sidebar.header("SA-Hyperparameter (Light)")
+        T_start = st.sidebar.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100, key="T_start_light")
+        T_end = st.sidebar.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0, key="T_end_light")
+        alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 0.999, 0.995, step=0.001, key="alpha_light")
+        max_iter = st.sidebar.slider("Max. Iterationen", 1000, 50000, 10000, step=1000, key="max_iter_light")
+        reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1, key="reheat_light")
+
+        if st.button("Run TSP Light", key="run_light"):
+            # --- Index der ausgewählten Städte ---
+            selected_indices = [tsp.get_city_index(city) for city in selected_cities]
+
+            # --- Distanzmatrix für ausgewählte Städte extrahieren ---
+            light_distance_matrix = np.array([[tsp.distance[i,j] for j in selected_indices] for i in selected_indices])
+
+            # --- Simulated Annealing auf die Light-Matrix anwenden ---
+            best_route, best_distance, history = simulated_annealing(
+                light_distance_matrix,
+                start_city_index=0,
+                T_start=T_start,
+                T_end=T_end,
+                alpha=alpha,
+                max_iter=max_iter,
+                reheating_factor=reheating_factor,
+                stagnation_limit=1000,
+                return_history=True
+            )
+
+            # Gefundene Route anzeigen
+            st.subheader("Gefundene Route:")
+            for i, idx in enumerate(best_route):
+                st.text(f"{i+1}: {tsp.city_names[idx]}")
+            st.text(f"{len(best_route)+1}: {tsp.city_names[best_route[0]]} (Rückkehr)")
+            total_dist = total_distance(best_route, tsp.distance)
+            st.success(f"Gesamtdistanz: {total_dist/1000:.2f} km")
+
+            st.subheader("Verbesserungsverlauf")
+            # History in km
+            history_km = [d / 1000 for d in history]
+
+            fig = go.Figure()
+
+            fig.add_trace(go.Scatter(
+                y=history_km,
+                mode='lines+markers',
+                name='Beste Distanz',
+                line=dict(color='red'),
+                marker=dict(size=4)
+            ))
+
+            fig.update_layout(
+                title="Verbesserungsverlauf der SA",
+                xaxis_title="Schritte",
+                yaxis_title="Distanz [km]",
+                template="plotly_white",
+                height=400
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            # --- Koordinaten für finale Route (inkl. Rückkehr zur Startstadt) ---
+            full_route = best_route + [best_route[0]]
+            sa_coords = get_sa_route_coords(full_route, tsp)
+
+            # --- Karte laden ---
+            map_img = Image.open("src/SimulatedAnnealing/landscape/austria_map.png").convert("RGBA")
+            draw = ImageDraw.Draw(map_img)
+            width, height = map_img.size
+
+            try:
+                from PIL import ImageFont
+                font = ImageFont.truetype("arial.ttf", 14)
+            except:
+                font = None
+
+            # --- Projektionsfunktion ---
+            def project(coord):
+                lon, lat = coord
+                left, right = 9.25, 17.25
+                top, bottom = 49.25, 46.25
+                x = int((lon - left) / (right - left) * width)
+                y = int((top - lat) / (top - bottom) * height)
+                return x, y
+
+            # --- Linien der Route zeichnen ---
+            for i in range(len(sa_coords)-1):
+                draw.line([project(sa_coords[i]), project(sa_coords[i+1])], fill=(255,0,0,255), width=3)
+
+            # --- Städtepunkte und Namen ---
+            for i, idx in enumerate(best_route):
+                city = tsp.city_names[idx]
+                x, y = project(tsp.get_city_coord(city))
+                color = (0,255,0,255) if i == 0 else (0,0,255,255)  # Startstadt grün
+                draw.ellipse([x-5, y-5, x+5, y+5], fill=color)
+                if font:
+                    draw.text((x+6, y-6), city, fill=(0,0,0,255), font=font)
+                else:
+                    draw.text((x+6, y-6), city, fill=(0,0,0,255))
+
+            st.subheader(f"Finale Route ab {start_city}")
+            st.image(map_img)
+
+# =====================================================
+# TAB 3: TSP full
+# =====================================================
+with tabs[3]:
+    st.markdown(T[lang]['TSPfull'])
 
     # --- Städte laden ---
     city_names = tsp.get_all_names()
@@ -317,5 +446,5 @@ with tabs[2]:
 # =====================================================
 # TAB 3: DISCUSSION / DISKUSSION
 # =====================================================
-with tabs[3]:
+with tabs[4]:
     st.markdown(T[lang]["discussion"])
