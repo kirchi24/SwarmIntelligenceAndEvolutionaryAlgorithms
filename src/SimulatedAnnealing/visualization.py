@@ -25,8 +25,8 @@ def fetch_route(city_from: str, city_to: str):
     output:
         - route_gdf: geopandas frame containing the route between the given cities
     """
-    file_name_alt1 = f"{settings.routes_path}route_{city_from}_{city_to}.json"
-    file_name_alt2 = f"{settings.routes_path}route_{city_to}_{city_from}.json"
+    file_name_alt1 = os.path.join(settings.routes_path, f"route_{city_from}_{city_to}.json")
+    file_name_alt2 = os.path.join(settings.routes_path, f"route_{city_to}_{city_from}.json")
 
     # only one direction of each city pair's route stored; check which exists
     if os.path.exists(file_name_alt1):

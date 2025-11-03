@@ -102,27 +102,105 @@ with tabs[0]:
 # =====================================================
 with tabs[1]:
     st.markdown(T[lang]["methods"])
-    # Lade Distanzmatrix
+
+    # -------------------
+    # Distanzmatrix
+    # -------------------
     dist_matrix = tsp.distance
     city_names = tsp.get_all_names()
     n = len(city_names)
 
-    st.title("Distanzmatrix der Städte")
+    st.subheader("Distanzmatrix der Städte" if lang=="DE" else "Distance Matrix of Cities")
 
-    # Heatmap plotten
     fig, ax = plt.subplots(figsize=(10, 10))
     cax = ax.matshow(dist_matrix, cmap='viridis')
 
-    # Achsenbeschriftung
     ax.set_xticks(range(n))
     ax.set_yticks(range(n))
     ax.set_xticklabels(city_names, rotation=90, fontsize=8)
     ax.set_yticklabels(city_names, fontsize=8)
 
-    # Farbskala
     fig.colorbar(cax)
-
     st.pyplot(fig)
+
+    # -------------------
+    # Algorithmus detailliert erklären
+    # -------------------
+    if lang == "DE":
+        st.markdown("""
+        **Simulated Annealing Algorithmus für das Travelling Salesman Problem**  
+
+        1. **Startlösung:**  
+           - Eine gierige Nearest-Neighbor-Lösung wird erzeugt, beginnend bei einer gewählten Startstadt.  
+           - Diese Route besucht alle Städte genau einmal und kehrt zurück zur Startstadt.
+
+        2. **Nachbarschaftserzeugung:**  
+           - Drei Operationen zur Erzeugung einer Nachbarroute:  
+             - **2-Opt:** Invertiert ein zufälliges Segment der Route.  
+             - **Reinsertion:** Entfernt eine Stadt und fügt sie an einer anderen Position wieder ein.  
+             - **Swap:** Vertauscht zwei Städte.  
+           - Eine der drei wird zufällig gewählt (mit bestimmten Wahrscheinlichkeiten).
+
+        3. **Energiefunktion:**  
+           - Gesamtdistanz der Route.  
+           - Ungültige Werte oder NaNs führen zu unendlicher Distanz, damit sie abgelehnt werden.
+
+        4. **Akzeptanzkriterium:**  
+           - Verbesserte Lösungen werden immer akzeptiert.  
+           - Verschlechterte Lösungen werden mit Wahrscheinlichkeit 
+             \(\exp(-\Delta / T)\) akzeptiert (Metropolis-Kriterium).  
+           - Dadurch kann der Algorithmus lokale Minima verlassen.
+
+        5. **Kühlstrategie:**  
+           - Exponentielle Abkühlung: \(T_{neu} = \alpha \cdot T_{alt}\)  
+           - Dynamisches Reheating: Bei Stagnation wird die Temperatur erhöht, um aus lokalen Minima zu entkommen.
+
+        6. **Stoppkriterien:**  
+           - Endtemperatur erreicht  
+           - Maximale Iterationen überschritten
+
+        7. **Ausgabe:**  
+           - Beste gefundene Route  
+           - Gesamtdistanz  
+           - Optional: Verlauf der besten Distanz über Iterationen
+        """)
+    else:
+        st.markdown("""
+        **Simulated Annealing Algorithm for the Travelling Salesman Problem**  
+
+        1. **Initial solution:**  
+           - A greedy Nearest-Neighbor solution is generated, starting from a selected city.  
+           - Visits all cities exactly once and returns to the starting city.
+
+        2. **Neighborhood generation:**  
+           - Three operations to create neighbor routes:  
+             - **2-Opt:** Inverts a random segment of the route.  
+             - **Reinsertion:** Removes a city and inserts it at a different position.  
+             - **Swap:** Swaps two cities.  
+           - One of these is randomly chosen (with defined probabilities).
+
+        3. **Energy function:**  
+           - Total distance of the route.  
+           - Invalid or NaN distances are treated as infinite to reject bad solutions.
+
+        4. **Acceptance criterion:**  
+           - Improved solutions are always accepted.  
+           - Worse solutions are accepted with probability \(\exp(-\Delta / T)\) (Metropolis criterion).  
+           - Allows the algorithm to escape local minima.
+
+        5. **Cooling schedule:**  
+           - Exponential cooling: \(T_{new} = \alpha \cdot T_{old}\)  
+           - Dynamic reheating: Temperature is increased when stagnation occurs to escape local minima.
+
+        6. **Stopping criteria:**  
+           - Final temperature reached  
+           - Maximum number of iterations
+
+        7. **Output:**  
+           - Best route found  
+           - Total distance  
+           - Optional: history of best distance over iterations
+        """)
 # =====================================================
 # TAB 2: RESULTS / ERGEBNISSE
 # =====================================================
