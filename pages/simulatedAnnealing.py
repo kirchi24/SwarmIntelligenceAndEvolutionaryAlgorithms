@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
-from PIL import Image, ImageDraw
-
+from PIL import Image, ImageDraw, ImageFont
+import time
 from src.SimulatedAnnealing.tsp_algorithm import tsp, get_all_routes, get_sa_route_coords, get_route_coords, simulated_annealing
 
 
@@ -108,11 +108,11 @@ with tabs[1]:
 with tabs[2]:
     st.info(T[lang]["results"])
 
-    # Auswahlfelder für Start und Ziel
+    # --- Städte laden ---
     city_names = tsp.get_all_names()
     start_city = st.selectbox("Startstadt", city_names)
-    end_city = st.selectbox("Zielstadt", city_names, index=1)
 
+    # --- Sidebar-Hyperparameter ---
     st.sidebar.header("SA-Hyperparameter")
     T_start = st.sidebar.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100)
     T_end = st.sidebar.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0)
@@ -120,39 +120,39 @@ with tabs[2]:
     max_iter = st.sidebar.slider("Max. Iterationen", 1000, 100000, 20000, step=1000)
     reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1)
 
-    if start_city == end_city:
-        st.warning("Start- und Zielstadt dürfen nicht gleich sein!")
-    else:
-        # --- Submatrix für gewählte Städte ---
-        indices = [tsp.get_city_index(start_city), tsp.get_city_index(end_city)]
-        dist_matrix = tsp.distance[np.ix_(indices, indices)]
+    if st.button("Run"):
+        start_index = tsp.get_city_index(start_city)
 
-        with st.spinner("Berechne optimale Route..."):
-            best_route, best_distance, history = simulated_annealing(
-                tsp.distance, 
-                T_start=T_start, 
-                T_end=T_end, 
-                alpha=alpha, 
-                reheating_factor=reheating_factor,
-                max_iter=max_iter,
-                return_history=True
-            )
+        # TSP berechnen
+        best_route, best_distance = simulated_annealing(
+            tsp.distance,
+            start_city_index=start_index,
+            T_start=3000,
+            T_end=0.1,
+            alpha=0.9995,
+            max_iter=100000,
+            reheating_factor=1.2,
+            stagnation_limit=2500
+        )
 
-        st.success(f"Beste gefundene Route: {best_route} — Distanz: {best_distance /1000:.2f} km")
+        st.subheader("Gefundene Route:")
+        for i, idx in enumerate(best_route):
+            st.text(f"{i+1}: {tsp.city_names[idx]}")
+        st.text(f"{len(best_route)+1}: {tsp.city_names[start_index]} (Rückkehr)")
 
-        # --- Verlauf visualisieren ---
-        st.subheader("Verbesserungsverlauf")
-        st.line_chart(history, height=200)
-
-        # --- Karte zeichnen ---
-        st.subheader("Gefundene Route")
+        sa_coords = get_sa_route_coords(best_route, tsp)
 
         # Karte laden
         map_img = Image.open("src/SimulatedAnnealing/landscape/austria_map.png").convert("RGBA")
         draw = ImageDraw.Draw(map_img)
         width, height = map_img.size
 
-        # --- Projektionsfunktion ---
+        # Optional: Font für Städtenamen
+        try:
+            font = ImageFont.truetype("arial.ttf", 14)
+        except:
+            font = None
+
         def project(coord):
             lon, lat = coord
             left, right = 9.25, 17.25
@@ -161,17 +161,25 @@ with tabs[2]:
             y = int((top - lat) / (top - bottom) * height)
             return x, y
 
-        # Echte Route zwischen Start und Ziel
-        true_coords = get_route_coords(start_city, end_city)
-        for i in range(len(true_coords) - 1):
-            draw.line([project(true_coords[i]), project(true_coords[i + 1])], fill=(0, 0, 255, 255), width=3)
+        # Alle Linien der Route zeichnen
+        for i in range(len(sa_coords)-1):
+            draw.line([project(sa_coords[i]), project(sa_coords[i+1])], fill=(255,0,0,255), width=3)
 
-        # SA-Route (rot)
-        sa_coords = get_sa_route_coords(best_route, tsp)
-        for i in range(len(sa_coords) - 1):
-            draw.line([project(sa_coords[i]), project(sa_coords[i + 1])], fill=(255, 0, 0, 255), width=2)
+        # Start- und Endpunkt verbinden, um Rundtour zu schließen
+        draw.line([project(sa_coords[-1]), project(sa_coords[0])], fill=(255,0,0,255), width=3)
 
-        st.image(map_img, caption="🔵 Originalroute  |  🔴 SA-Route")
+        # Städtepunkte + Namen
+        for idx in best_route:
+            city = tsp.city_names[idx]
+            x, y = project(tsp.get_city_coord(city))
+            draw.ellipse([x-5, y-5, x+5, y+5], fill=(0,0,255,255))
+            if font:
+                draw.text((x+6, y-6), city, fill=(0,0,0,255), font=font)
+            else:
+                draw.text((x+6, y-6), city, fill=(0,0,0,255))
+
+    st.image(map_img, caption=f"Gefundene Route ab {start_city} mit allen Städten")
+
 
 # =====================================================
 # TAB 3: DISCUSSION / DISKUSSION

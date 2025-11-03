@@ -14,7 +14,7 @@ import geopandas as gpd
 from shapely.geometry import LineString
 import os
 import matplotlib.cm as cm
-from  import
+from config import settings
 
 
 def fetch_route(city_from: str, city_to: str):
