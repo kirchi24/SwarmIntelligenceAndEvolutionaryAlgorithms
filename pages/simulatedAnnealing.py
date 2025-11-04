@@ -108,7 +108,6 @@ tabs = st.tabs(T[lang]["tabs"])
 with tabs[0]:
     st.markdown(T[lang]["intro"])
     if lang == "DE":
-        st.header("Methods — Klassen & Konzepte")
         st.markdown(
             """
             Simulated Annealing (SA) ist ein **stochastischer Optimierungsalgorithmus**, 
@@ -122,7 +121,6 @@ with tabs[0]:
             """
         )
     else:
-        st.header("Methods — Classes & Concepts")
         st.markdown(
             """
             Simulated Annealing (SA) is a **stochastic optimization algorithm** inspired by the cooling process of metals.  
