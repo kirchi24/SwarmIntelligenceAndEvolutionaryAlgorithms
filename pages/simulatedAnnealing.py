@@ -16,9 +16,8 @@ from io import BytesIO
 # Streamlit config
 st.set_page_config(page_title="Simulated Annealing - TSP", layout="wide")
 
-# ---------------------------
 # Sprachumschaltung (EN / DE)
-# ---------------------------
+
 if "lang" not in st.session_state:
     st.session_state["lang"] = "DE"
 
@@ -51,11 +50,6 @@ T = {
         Ziel ist es, alle Städte **einmal zu besuchen** und die Gesamtdistanz zu minimieren.
         """,
         "methods": """
-        **Lösungsdarstellung:** Permutation der Städte.  
-        **Energiefunktion:** Gesamtdistanz der Route.  
-        **Nachbarschaftserzeugung:** Inversion oder Swap zweier Städte.  
-        **Kühlstrategie:** Linear, exponentiell oder adaptiv.  
-        **Parameter:** Starttemperatur, Abkühlrate, Iterationen.
         """,
         "results": "Stadt wählen und die beste Route mit dem TSP-Algorithmus berechnen.",
         "TSPlight": "Leichte Version des TSP zur schnellen Visualisierung der Route zwischen ausgewählten Städten.",
@@ -76,11 +70,6 @@ T = {
         The goal is to visit all cities **exactly once** and minimize total travel distance.
         """,
         "methods": """
-        **Solution representation:** permutation of cities.  
-        **Energy function:** total route distance.  
-        **Neighbor generation:** inversion or swap of two cities.  
-        **Cooling schedule:** linear, exponential, or adaptive.  
-        **Parameters:** initial temperature, cooling rate, iterations.
         """,
         "results": "Select city and compute the best route using the TSP algorithm.",
         "TSPlight": "Light version of the TSP for quick visualization of the route between selected cities.",
@@ -91,6 +80,7 @@ T = {
         - Solution quality depends on cooling schedule, neighbor generation, and initial temperature.  
         - Route visualization shows convergence behavior.  
         - Limitations: large city sets, parameter tuning is crucial.
+        - 
         """
     }
 }
@@ -110,23 +100,23 @@ with tabs[0]:
     if lang == "DE":
         st.markdown(
             """
-            Simulated Annealing (SA) ist ein **stochastischer Optimierungsalgorithmus**, 
+            - Simulated Annealing (SA) ist ein **stochastischer Optimierungsalgorithmus**, 
             der von der Abkühlung fester Stoffe inspiriert ist.  
-            Zu Beginn ist die "Temperatur" hoch – das System akzeptiert auch schlechtere Lösungen, 
+            - Zu Beginn ist die "Temperatur" hoch – das System akzeptiert auch schlechtere Lösungen, 
             um **lokale Minima zu vermeiden**.  
-            Mit sinkender Temperatur werden nur noch **bessere oder leicht schlechtere** Lösungen akzeptiert, 
+            - Mit sinkender Temperatur werden nur noch **bessere oder leicht schlechtere** Lösungen akzeptiert, 
             bis das System stabil wird.  
-            So lässt sich eine **annähernd optimale Lösung** für kombinatorische Probleme wie das 
+            - So lässt sich eine **annähernd optimale Lösung** für kombinatorische Probleme wie das 
             **Travelling Salesman Problem (TSP)** finden.
             """
         )
     else:
         st.markdown(
             """
-            Simulated Annealing (SA) is a **stochastic optimization algorithm** inspired by the cooling process of metals.  
-            At high "temperature", the algorithm accepts even worse solutions to **escape local minima**.  
-            As the temperature decreases, it becomes more selective, focusing on improving or slightly worse moves.  
-            This gradual cooling helps find a **near-optimal solution** for combinatorial problems such as the 
+            - Simulated Annealing (SA) is a **stochastic optimization algorithm** inspired by the cooling process of metals.  
+            - At high "temperature", the algorithm accepts even worse solutions to **escape local minima**.  
+            - As the temperature decreases, it becomes more selective, focusing on improving or slightly worse moves.  
+            - This gradual cooling helps find a **near-optimal solution** for combinatorial problems such as the 
             **Travelling Salesman Problem (TSP)**.
            """
         )    
@@ -134,13 +124,16 @@ with tabs[0]:
 # TAB 1: METHODS / METHODEN
 # =====================================================
 with tabs[1]:
+    # -------------------
+    # DISTANZMATRIX ANZEIGEN
+    # -------------------
     st.markdown(T[lang]["methods"])
-    # Distanzmatrix
+
     dist_matrix = tsp.distance
     city_names = tsp.get_all_names()
     n = len(city_names)
 
-    st.subheader("Distanzmatrix der Städte" if lang=="DE" else "Distance Matrix of Cities")
+    st.subheader("Distanzmatrix der Städte" if lang == "DE" else "Distance Matrix of Cities")
 
     fig, ax = plt.subplots(figsize=(10, 10))
     cax = ax.matshow(dist_matrix, cmap='viridis')
@@ -153,84 +146,115 @@ with tabs[1]:
     fig.colorbar(cax)
     st.pyplot(fig)
 
-    # -------------------
-    # Algorithmus detailliert erklären
-    # -------------------
     if lang == "DE":
         st.markdown("""
-        **Simulated Annealing Algorithmus für das Travelling Salesman Problem**  
-
-        1. **Startlösung:**  
-           - Eine gierige Nearest-Neighbor-Lösung wird erzeugt, beginnend bei einer gewählten Startstadt.  
-           - Diese Route besucht alle Städte genau einmal und kehrt zurück zur Startstadt.
-
-        2. **Nachbarschaftserzeugung:**  
-           - Drei Operationen zur Erzeugung einer Nachbarroute:  
-             - **2-Opt:** Invertiert ein zufälliges Segment der Route.  
-             - **Reinsertion:** Entfernt eine Stadt und fügt sie an einer anderen Position wieder ein.  
-             - **Swap:** Vertauscht zwei Städte.  
-           - Eine der drei wird zufällig gewählt (mit bestimmten Wahrscheinlichkeiten).
-
-        3. **Energiefunktion:**  
-           - Gesamtdistanz der Route.  
-           - Ungültige Werte oder NaNs führen zu unendlicher Distanz, damit sie abgelehnt werden.
-
-        4. **Akzeptanzkriterium:**  
-           - Verbesserte Lösungen werden immer akzeptiert.  
-           - Verschlechterte Lösungen werden mit Wahrscheinlichkeit 
-             \(\exp(-\Delta / T)\) akzeptiert (Metropolis-Kriterium).  
-           - Dadurch kann der Algorithmus lokale Minima verlassen.
-
-        5. **Kühlstrategie:**  
-           - Exponentielle Abkühlung: \(T_{neu} = \alpha \cdot T_{alt}\)  
-           - Dynamisches Reheating: Bei Stagnation wird die Temperatur erhöht, um aus lokalen Minima zu entkommen.
-
-        6. **Stoppkriterien:**  
-           - Endtemperatur erreicht  
-           - Maximale Iterationen überschritten
-
-        7. **Ausgabe:**  
-           - Beste gefundene Route  
-           - Gesamtdistanz  
-           - Optional: Verlauf der besten Distanz über Iterationen
+        - Mit der obigen Distanzmatrix können wir die Entfernungen zwischen den Städten ablesen.
+        - Der Simulated Annealing Algorithmus nutzt diese Matrix, um die Gesamtdistanz einer Route zu berechnen.
+        - Hiermit wurde überprüft, ob zwischen allen Städten eine Verbindung besteht und die Distanzen plausibel sind.
         """)
     else:
         st.markdown("""
-        **Simulated Annealing Algorithm for the Travelling Salesman Problem**  
-
-        1. **Initial solution:**  
-           - A greedy Nearest-Neighbor solution is generated, starting from a selected city.  
-           - Visits all cities exactly once and returns to the starting city.
-
-        2. **Neighborhood generation:**  
-           - Three operations to create neighbor routes:  
-             - **2-Opt:** Inverts a random segment of the route.  
-             - **Reinsertion:** Removes a city and inserts it at a different position.  
-             - **Swap:** Swaps two cities.  
-           - One of these is randomly chosen (with defined probabilities).
-
-        3. **Energy function:**  
-           - Total distance of the route.  
-           - Invalid or NaN distances are treated as infinite to reject bad solutions.
-
-        4. **Acceptance criterion:**  
-           - Improved solutions are always accepted.  
-           - Worse solutions are accepted with probability \(\exp(-\Delta / T)\) (Metropolis criterion).  
-           - Allows the algorithm to escape local minima.
-
-        5. **Cooling schedule:**  
-           - Exponential cooling: \(T_{new} = \alpha \cdot T_{old}\)  
-           - Dynamic reheating: Temperature is increased when stagnation occurs to escape local minima.
-
-        6. **Stopping criteria:**  
-           - Final temperature reached  
-           - Maximum number of iterations
-
-        7. **Output:**  
-           - Best route found  
-           - Total distance  
-           - Optional: history of best distance over iterations
+        - The above distance matrix shows the distances between cities.
+        - The Simulated Annealing algorithm uses this matrix to compute the total distance of a route.
+        - This matrix was verified to ensure all cities are connected and distances are plausible.
         """)
+
+
+    st.markdown("---")
+
+    # -------------------
+    # ALGORITHMUS-ERKLÄRUNGEN
+    # -------------------
+    if lang == "DE":
+        st.markdown("""
+        ## Simulated Annealing Algorithmus für das Travelling Salesman Problem (TSP)
+
+        ### 1. Startlösung
+        - Eine gierige **Nearest-Neighbor-Lösung** wird erzeugt, beginnend bei einer gewählten Startstadt.
+        - Diese Route besucht jede Stadt genau einmal und kehrt dann zur Startstadt zurück.
+
+        ### 2. Nachbarschaftserzeugung
+        Drei verschiedene Operationen erzeugen alternative Routen:
+        - **2-Opt:** Invertiert ein zufälliges Segment der Route.
+        - **Reinsertion:** Entfernt eine Stadt und fügt sie an einer anderen Position wieder ein.
+        - **Swap:** Vertauscht zwei Städte.
+        Eine dieser Operationen wird mit vordefinierter Wahrscheinlichkeit zufällig ausgewählt.
+
+        ### 3. Energiefunktion
+        - Bewertet die Qualität einer Route anhand der **Gesamtdistanz**.
+        - Ungültige oder unendliche Werte werden als „unendlich“ behandelt und verworfen.
+
+        ### 4. Akzeptanzkriterium
+        - **Bessere Lösungen** werden immer akzeptiert.
+        - **Schlechtere Lösungen** werden mit Wahrscheinlichkeit $P = \\exp(-\\Delta / T)$ akzeptiert (Metropolis-Kriterium).
+        - So kann der Algorithmus lokale Minima verlassen.
+
+        ### 5. Kühlstrategie
+        - **Exponentielle Abkühlung:** $T_{neu} = \\alpha \\cdot T_{alt}$
+        - **Dynamisches Reheating:** Falls über viele Iterationen keine Verbesserung erfolgt, wird die Temperatur kurzfristig erhöht, um neue Bereiche zu durchsuchen.
+                    
+        ### 6. Stoppkriterien
+        - Endtemperatur $ T_{end} $   
+        - Maximale Anzahl an Iterationen überschritten
+
+        ### 7. Ausgabe
+        - Beste gefundene Route  
+        - Gesamtdistanz  
+
+        ---  
+
+        ### Implementierungsdetails
+        - `total_distance(route, dist_matrix)` → Berechnet Gesamtdistanz einer Route.
+        - `nearest_neighbor_solution(dist_matrix, start)` → Erzeugt Startlösung.
+        - `two_opt()`, `reinsertion()`, `swap()` → Nachbarschaftsoperatoren.
+        - `simulated_annealing()` → Führt den gesamten Optimierungsprozess aus.
+        """)
+    else:
+        st.markdown("""
+        ## Simulated Annealing Algorithm for the Travelling Salesman Problem (TSP)
+
+        ### 1. Initial Solution
+        - A greedy **Nearest-Neighbor** solution is generated, starting from a chosen city.
+        - The route visits all cities once and returns to the starting point.
+
+        ### 2. Neighborhood Generation
+        Three different operations create alternative routes:
+        - **2-Opt:** Reverses a random segment of the route.
+        - **Reinsertion:** Removes a city and reinserts it at another position.
+        - **Swap:** Exchanges two cities.
+        One of these operations is chosen randomly with defined probabilities.
+
+        ### 3. Energy Function
+        - Evaluates the total **distance** of the route.
+        - Invalid or infinite values are treated as infinite (rejected).
+
+        ### 4. Acceptance Criterion
+        - **Better solutions** are always accepted.
+        - **Worse solutions** are accepted with probability $P = \\exp(-\\Delta / T) $ (Metropolis criterion).
+        - This allows the algorithm to escape local minima.
+
+
+        ### 5. Cooling Schedule
+        - **Exponential cooling:**  ($T_{neu} = \\alpha \\cdot T_{alt}$)
+        - **Dynamic reheating:** If stagnation occurs for many iterations,
+          temperature is temporarily increased to escape local minima.
+
+        ### 6. Stopping Criteria
+        - Final temperature $ T_{end} $ reached  
+        - Maximum number of iterations exceeded
+
+        ### 7. Output
+        - Best route found  
+        - Total distance  
+        ---  
+
+        ### Implementation Details 
+        - `total_distance(route, dist_matrix)` → Computes total route distance.
+        - `nearest_neighbor_solution(dist_matrix, start)` → Builds initial greedy route.
+        - `two_opt()`, `reinsertion()`, `swap()` → Neighborhood operators.
+        - `simulated_annealing()` → Executes the full optimization process.
+        """)
+
 # =====================================================
 # TAB 2: TSP light
 # =====================================================
@@ -447,3 +471,4 @@ with tabs[3]:
 # =====================================================
 with tabs[4]:
     st.markdown(T[lang]["discussion"])
+

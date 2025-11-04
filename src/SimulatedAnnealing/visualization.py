@@ -90,5 +90,5 @@ if __name__ == "__main__":
     # example_route = ["Graz", "Klagenfurt", "Villach", "Spittal_an_der_Drau", "Salzburg",
     #     "Graz"]
        
-    example_route = ["Amstetten", "Dornbirn", "Graz", "Amstetten"]
+    example_route = ["Amstetten", "Bregrenz", "Graz","Innsbruck", "Amstetten"]
     plot_route(example_route)
