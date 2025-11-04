@@ -107,16 +107,37 @@ tabs = st.tabs(T[lang]["tabs"])
 # =====================================================
 with tabs[0]:
     st.markdown(T[lang]["intro"])
-
+    if lang == "DE":
+        st.header("Methods — Klassen & Konzepte")
+        st.markdown(
+            """
+            Simulated Annealing (SA) ist ein **stochastischer Optimierungsalgorithmus**, 
+            der von der Abkühlung fester Stoffe inspiriert ist.  
+            Zu Beginn ist die "Temperatur" hoch – das System akzeptiert auch schlechtere Lösungen, 
+            um **lokale Minima zu vermeiden**.  
+            Mit sinkender Temperatur werden nur noch **bessere oder leicht schlechtere** Lösungen akzeptiert, 
+            bis das System stabil wird.  
+            So lässt sich eine **annähernd optimale Lösung** für kombinatorische Probleme wie das 
+            **Travelling Salesman Problem (TSP)** finden.
+            """
+        )
+    else:
+        st.header("Methods — Classes & Concepts")
+        st.markdown(
+            """
+            Simulated Annealing (SA) is a **stochastic optimization algorithm** inspired by the cooling process of metals.  
+            At high "temperature", the algorithm accepts even worse solutions to **escape local minima**.  
+            As the temperature decreases, it becomes more selective, focusing on improving or slightly worse moves.  
+            This gradual cooling helps find a **near-optimal solution** for combinatorial problems such as the 
+            **Travelling Salesman Problem (TSP)**.
+           """
+        )    
 # =====================================================
 # TAB 1: METHODS / METHODEN
 # =====================================================
 with tabs[1]:
     st.markdown(T[lang]["methods"])
-
-    # -------------------
     # Distanzmatrix
-    # -------------------
     dist_matrix = tsp.distance
     city_names = tsp.get_all_names()
     n = len(city_names)
