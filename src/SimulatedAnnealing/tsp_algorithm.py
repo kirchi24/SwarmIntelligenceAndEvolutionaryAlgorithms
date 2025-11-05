@@ -95,7 +95,6 @@ def simulated_annealing(
     - Start bei fixierter Startstadt, Rundreise.
     - Dynamisches Reheating bei Stagnation.
     """
-    n = len(dist_matrix)
     current_route = nearest_neighbor_solution(dist_matrix, start=start_city_index)
     current_distance = total_distance(current_route, dist_matrix)
 
@@ -103,7 +102,7 @@ def simulated_annealing(
     best_distance = current_distance
     history = [best_distance]
 
-    T = T_start
+    T_act = T_start
     no_improve = 0
 
     for _ in range(max_iter):
@@ -115,7 +114,7 @@ def simulated_annealing(
         new_distance = total_distance(neighbor, dist_matrix)
         delta = new_distance - current_distance
 
-        if delta < 0 or random.random() < math.exp(-delta / (T + 1e-9)):
+        if delta < 0 or random.random() < math.exp(-delta / (T_act + 1e-9)):
             current_route = neighbor
             current_distance = new_distance
             if current_distance < best_distance:
@@ -128,13 +127,13 @@ def simulated_annealing(
             no_improve += 1
 
         history.append(best_distance)
-        T *= alpha
+        T_act *= alpha
 
         if no_improve > stagnation_limit:
-            T *= reheating_factor
+            T_act *= reheating_factor
             no_improve = 0
 
-        if T < T_end:
+        if T_act < T_end:
             break
 
     if return_history:
