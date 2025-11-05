@@ -104,10 +104,11 @@ def simulated_annealing(
 
     T_act = T_start
     no_improve = 0
-
+    iteration_count = 0
     stopping_reason = "Reached max iterations"
 
     for _ in range(max_iter):
+        iteration_count = _ + 1
         # if in local minima long time only use 2-opt in order to get even better solutions -> local search because only small changes
         if neighborhood_boost and no_improve > (stagnation_limit * 0.75):
             neighbor = two_opt(current_route)
@@ -141,8 +142,8 @@ def simulated_annealing(
             break
 
     if return_history:
-        return best_route, best_distance, stopping_reason, history
-    return best_route, best_distance, stopping_reason
+        return best_route, best_distance, stopping_reason, history, iteration_count
+    return best_route, best_distance, stopping_reason, iteration_count
 
 
 def get_sa_route_coords(best_route, tsp):

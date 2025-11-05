@@ -317,7 +317,7 @@ with tabs[2]:
             )
 
             # --- Simulated Annealing ---
-            best_route, best_distance, stopping_reason, history = simulated_annealing(
+            best_route, best_distance, stopping_reason, history, iterations  = simulated_annealing(
                 light_distance_matrix,
                 start_city_index=start_city_index,
                 T_start=T_start,
@@ -337,8 +337,11 @@ with tabs[2]:
             for i, city in enumerate(route_cities):
                 st.text(f"{i+1}: {city}")
             st.text(f"{len(route_cities)+1}: {route_cities[0]} (Rückkehr)")
-            st.success(f"Gesamtdistanz: {best_distance/1000:.2f} km - Stoppgrund: {stopping_reason}")
-
+            st.success(
+                f"Gesamtdistanz: {best_distance/1000:.2f} km - "
+                f"Stoppgrund: {stopping_reason} - "
+                f"Iterationen: {iterations}"
+            )
             # --- Verbesserungsverlauf plotten ---
             if history:
                 import plotly.graph_objects as go
@@ -400,7 +403,7 @@ with tabs[3]:
         start_index = tsp.get_city_index(start_city)
 
         # --- TSP berechnen ---
-        best_route, best_distance, stopping_reason, history = simulated_annealing(
+        best_route, best_distance, stopping_reason, history, iterations = simulated_annealing(
             tsp.distance,
             start_city_index=start_index,
             T_start=T_start,
@@ -422,7 +425,11 @@ with tabs[3]:
         for i, idx in enumerate(best_route):
             st.text(f"{i+1}: {tsp.city_names[idx]}")
         st.text(f"{len(best_route)+1}: {tsp.city_names[best_route[0]]} (Rückkehr)")
-        st.success(f"Gesamtdistanz: {total_dist/1000:.2f} km - Stoppgrund: {stopping_reason}")
+        st.success(
+            f"Gesamtdistanz: {best_distance/1000:.2f} km - "
+            f"Stoppgrund: {stopping_reason} - "
+            f"Iterationen: {iterations}"
+        )
 
         st.subheader("Verbesserungsverlauf")
         # History in km
