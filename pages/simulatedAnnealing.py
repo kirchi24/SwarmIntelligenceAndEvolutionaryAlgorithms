@@ -287,9 +287,11 @@ with tabs[2]:
         alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 0.999, 0.995, step=0.001, key="alpha_light")
         max_iter = st.sidebar.slider("Max. Iterationen", 1000, 50000, 10000, step=1000, key="max_iter_light")
         reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1, key="reheat_light")
+        stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=500, key="stagnation_light")
 
         if st.button("Run TSP Light", key="run_light"):
             selected_indices = [tsp.get_city_index(city) for city in selected_cities]
+            start_city_index = selected_indices[0]
 
             # --- Distanzmatrix extrahieren ---
             light_distance_matrix = np.array(
@@ -299,13 +301,13 @@ with tabs[2]:
             # --- Simulated Annealing ---
             best_route, best_distance, history = simulated_annealing(
                 light_distance_matrix,
-                start_city_index=0,
+                start_city_index=start_city_index,
                 T_start=T_start,
                 T_end=T_end,
                 alpha=alpha,
                 max_iter=max_iter,
                 reheating_factor=reheating_factor,
-                stagnation_limit=1000,
+                stagnation_limit=stagnation_limit,
                 return_history=True
             )
 
@@ -370,9 +372,11 @@ with tabs[3]:
     alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 0.999, 0.995, step=0.001)
     max_iter = st.sidebar.slider("Max. Iterationen", 1000, 100000, 20000, step=1000)
     reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1)
+    stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=500)
 
     if st.button("Run"):
         start_index = tsp.get_city_index(start_city)
+        print(stagnation_limit)
 
         # --- TSP berechnen ---
         best_route, best_distance, history = simulated_annealing(
@@ -383,7 +387,7 @@ with tabs[3]:
             alpha=alpha,
             max_iter=max_iter,
             reheating_factor=reheating_factor,
-            stagnation_limit=2500,
+            stagnation_limit=stagnation_limit,
             return_history=True
         )
 
@@ -405,6 +409,7 @@ with tabs[3]:
         fig = go.Figure()
 
         fig.add_trace(go.Scatter(
+            x=list(range(len(history_km))),
             y=history_km,
             mode='lines+markers',
             name='Beste Distanz',
