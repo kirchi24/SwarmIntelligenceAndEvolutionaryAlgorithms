@@ -105,6 +105,8 @@ def simulated_annealing(
     T_act = T_start
     no_improve = 0
 
+    stopping_reason = "Reached max iterations"
+
     for _ in range(max_iter):
         # if in local minima long time only use 2-opt in order to get even better solutions -> local search because only small changes
         if neighborhood_boost and no_improve > (stagnation_limit * 0.75):
@@ -135,11 +137,12 @@ def simulated_annealing(
             no_improve = 0
 
         if T_act < T_end:
+            stopping_reason = "Temperature threshold reached"
             break
 
     if return_history:
-        return best_route, best_distance, history
-    return best_route, best_distance
+        return best_route, best_distance, stopping_reason, history
+    return best_route, best_distance, stopping_reason
 
 
 def get_sa_route_coords(best_route, tsp):

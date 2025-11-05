@@ -102,7 +102,7 @@ with tabs[0]:
             """
             - Simulated Annealing (SA) ist ein **stochastischer Optimierungsalgorithmus**, 
             der von der Abkühlung fester Stoffe inspiriert ist.  
-            - Zu Beginn ist die "Temperatur" hoch – das System akzeptiert auch schlechtere Lösungen, 
+            - Zu Beginn ist die "Temperatur" hoch - das System akzeptiert auch schlechtere Lösungen, 
             um **lokale Minima zu vermeiden**.  
             - Mit sinkender Temperatur werden nur noch **bessere oder leicht schlechtere** Lösungen akzeptiert, 
             bis das System stabil wird.  
@@ -182,7 +182,7 @@ with tabs[1]:
         Eine dieser Operationen wird zufällig entsprechend vordefinierter Wahrscheinlichkeiten ausgewählt.  
 
         ### 2.2. Verhalten und Lokalität von 2-Opt
-        2-Opt invertiert ein Segment der Route, wodurch einige Verbindungen länger oder kürzer werden können. Jede Operation verändert **nur zwei Kanten**, behält die Gesamtstruktur der Route bei und hat dennoch starke Wirkung – ideal für die Intensivierung der lokalen Suche.
+        2-Opt invertiert ein Segment der Route, wodurch einige Verbindungen länger oder kürzer werden können. Jede Operation verändert **nur zwei Kanten**, behält die Gesamtstruktur der Route bei und hat dennoch starke Wirkung - ideal für die Intensivierung der lokalen Suche.
 
         ### 3. Energiefunktion
         - Bewertet die Qualität einer Route anhand der **Gesamtdistanz**.
@@ -274,7 +274,7 @@ with tabs[2]:
     selected_cities = st.multiselect(
         "Wähle die Route (beliebig viele Städte)", 
         options=city_names,
-        default=[city_names[0]],
+        default=city_names[0:3],
         key="selected_cities_light"
     )
 
@@ -290,8 +290,8 @@ with tabs[2]:
         st.sidebar.header("SA-Hyperparameter (Light)")
         T_start = st.sidebar.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100, key="T_start_light")
         T_end = st.sidebar.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0, key="T_end_light")
-        alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 0.999, 0.995, step=0.001, key="alpha_light")
-        max_iter = st.sidebar.slider("Max. Iterationen", 1000, 50000, 10000, step=1000, key="max_iter_light")
+        alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 1.0, 0.995, step=0.001, key="alpha_light")
+        max_iter = st.sidebar.slider("Max. Iterationen", 1000, 25000, 10000, step=1000, key="max_iter_light")
         reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1, key="reheat_light")
         stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=250, key="stagnation_light")
         neighborhood_boost = st.sidebar.checkbox("Nachbarschaftsboost aktivieren", value=True, key="neighborhood_boost_light")
@@ -306,7 +306,7 @@ with tabs[2]:
             )
 
             # --- Simulated Annealing ---
-            best_route, best_distance, history = simulated_annealing(
+            best_route, best_distance, stopping_reason, history = simulated_annealing(
                 light_distance_matrix,
                 start_city_index=start_city_index,
                 T_start=T_start,
@@ -325,7 +325,7 @@ with tabs[2]:
             for i, city in enumerate(route_cities):
                 st.text(f"{i+1}: {city}")
             st.text(f"{len(route_cities)+1}: {route_cities[0]} (Rückkehr)")
-            st.success(f"Gesamtdistanz: {best_distance/1000:.2f} km")
+            st.success(f"Gesamtdistanz: {best_distance/1000:.2f} km - Stoppgrund: {stopping_reason}")
 
             # --- Verbesserungsverlauf plotten ---
             if history:
@@ -377,8 +377,8 @@ with tabs[3]:
     st.sidebar.header("SA-Hyperparameter")
     T_start = st.sidebar.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100)
     T_end = st.sidebar.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0)
-    alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 0.999, 0.995, step=0.001)
-    max_iter = st.sidebar.slider("Max. Iterationen", 1000, 100000, 20000, step=1000)
+    alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 1.0, 0.995, step=0.001)
+    max_iter = st.sidebar.slider("Max. Iterationen", 1000, 25000, 20000, step=1000)
     reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1)
     stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=250)
     neighborhood_boost = st.sidebar.checkbox("Nachbarschaftsboost aktivieren", value=True, key="neighborhood_boost_full")
@@ -387,7 +387,7 @@ with tabs[3]:
         start_index = tsp.get_city_index(start_city)
 
         # --- TSP berechnen ---
-        best_route, best_distance, history = simulated_annealing(
+        best_route, best_distance, stopping_reason, history = simulated_annealing(
             tsp.distance,
             start_city_index=start_index,
             T_start=T_start,
@@ -409,7 +409,7 @@ with tabs[3]:
         for i, idx in enumerate(best_route):
             st.text(f"{i+1}: {tsp.city_names[idx]}")
         st.text(f"{len(best_route)+1}: {tsp.city_names[best_route[0]]} (Rückkehr)")
-        st.success(f"Gesamtdistanz: {total_dist/1000:.2f} km")
+        st.success(f"Gesamtdistanz: {total_dist/1000:.2f} km - Stoppgrund: {stopping_reason}")
 
         st.subheader("Verbesserungsverlauf")
         # History in km
