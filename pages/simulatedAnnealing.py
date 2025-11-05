@@ -358,7 +358,7 @@ with tabs[2]:
                 fig.update_layout(
                     title="Verbesserungsverlauf der SA",
                     xaxis=dict(title="Schritte", range=[0, len(history_km)]),
-                    yaxis=dict(title="Distanz [km]", range=[0, 5000]),
+                    yaxis=dict(title="Distanz [km]", range=[0, max(history_km)]),
                     template="plotly_white",
                     height=400
                 )
@@ -449,7 +449,7 @@ with tabs[3]:
         fig.update_layout(
             title="Verbesserungsverlauf der SA",
             xaxis=dict(title="Schritte", range=[0, len(history_km)]),
-            yaxis=dict(title="Distanz [km]", range=[0, 5000]),
+            yaxis=dict(title="Distanz [km]", range=[0, max(history_km)]),
             template="plotly_white",
             height=400
         )
