@@ -57,9 +57,16 @@ T = {
         "discussion": """
         **Diskussion**  
         - SA kann lokale Minima besser verlassen als gierige Algorithmen.  
-        - Qualität hängt von Kühlstrategie, Nachbarschaftserzeugung und Starttemperatur ab.  
-        - Visualisierung der Route zeigt Konvergenzverhalten.  
-        - Einschränkungen: große Stadtmengen, Parametertuning entscheidend.
+        - Qualität hängt von Kühlstrategie, Nachbarschaftserzeugung und Starttemperatur ab.   
+        - Die **Kühlstrategie** hat einen entscheidenden Einfluss auf die Qualität der Lösung und die Konvergenzgeschwindigkeit.  
+        - Eine **langsame Abkühlung** (z. B. geringe Reduktion der Temperatur pro Iteration) ermöglicht es, länger nach besseren Lösungen zu suchen und lokale Minima zu vermeiden – die Laufzeit steigt jedoch deutlich.  
+        - Eine **schnelle Abkühlung** führt zu kürzeren Berechnungszeiten, kann aber dazu führen, dass das Verfahren zu früh „einfriert“ und in suboptimalen Lösungen steckenbleibt.  
+        - Ein gutes Gleichgewicht zwischen **Exploration** (Suche in neuen Gebieten der Lösungslandschaft) und **Exploitation** (Verfeinerung guter Lösungen) ist entscheidend.  
+        - Die Kühlstrategie beeinflusst somit direkt, wie effektiv der Algorithmus zwischen diesen Phasen wechselt.  
+        - Für große Städtemengen ist eine adaptive oder problemabhängige Kühlrate oft vorteilhaft.  
+        - Insgesamt bestimmt die Wahl der Kühlstrategie maßgeblich, ob der Algorithmus eine nahezu optimale Route findet oder nur eine akzeptable Näherung erreicht.
+
+
         """
     },
     "EN": {
@@ -76,11 +83,15 @@ T = {
         "TSPfull": "Full TSP version with all cities and complete optimization.",
         "discussion": """
         **Discussion**  
-        - SA can escape local minima better than greedy algorithms.  
-        - Solution quality depends on cooling schedule, neighbor generation, and initial temperature.  
-        - Route visualization shows convergence behavior.  
-        - Limitations: large city sets, parameter tuning is crucial.
-        - 
+        - Simulated Annealing (SA) can escape local minima more effectively than greedy algorithms.  
+        - Solution quality depends on the cooling schedule, neighborhood generation, and initial temperature.  
+        - The **cooling strategy** has a decisive impact on both the solution quality and the convergence speed.  
+        - A **slow cooling** schedule (e.g., small temperature reduction per iteration) allows the algorithm to explore longer and avoid local minima, but it significantly increases runtime.  
+        - A **fast cooling** schedule reduces computation time but may cause the algorithm to "freeze" too early, resulting in suboptimal solutions.  
+        - Finding a good balance between **exploration** (searching new regions of the solution space) and **exploitation** (refining good solutions) is essential.  
+        - The cooling strategy directly determines how effectively the algorithm transitions between these two phases.  
+        - For large city sets, adaptive or problem-specific cooling rates are often beneficial.  
+        - Ultimately, the choice of cooling strategy largely determines whether the algorithm finds a near-optimal route or merely an acceptable approximation.
         """
     }
 }
