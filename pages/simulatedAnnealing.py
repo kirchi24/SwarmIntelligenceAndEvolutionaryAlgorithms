@@ -174,11 +174,15 @@ with tabs[1]:
         - Diese Route besucht jede Stadt genau einmal und kehrt dann zur Startstadt zurück.
 
         ### 2. Nachbarschaftserzeugung
-        Drei verschiedene Operationen erzeugen alternative Routen:
-        - **2-Opt:** Invertiert ein zufälliges Segment der Route.
-        - **Reinsertion:** Entfernt eine Stadt und fügt sie an einer anderen Position wieder ein.
-        - **Swap:** Vertauscht zwei Städte.
-        Eine dieser Operationen wird mit vordefinierter Wahrscheinlichkeit zufällig ausgewählt.
+        Drei verschiedene Operationen erzeugen alternative Routen:  
+        - **2-Opt:** Invertiert ein zufälliges Segment der Route. Dabei werden **nur zwei Kanten verändert**, der Rest der Route bleibt unverändert.  
+        - **Reinsertion:** Entfernt eine Stadt und fügt sie an einer anderen Position wieder ein. Dies erzeugt mittlere lokale Veränderungen, die helfen, flache lokale Minima zu verlassen.  
+        - **Swap:** Vertauscht zwei Städte. Dies erzeugt sehr kleine, schnelle Veränderungen und erhöht die Zufälligkeit besonders in frühen Phasen der Suche.  
+
+        Eine dieser Operationen wird zufällig entsprechend vordefinierter Wahrscheinlichkeiten ausgewählt.  
+
+        ### 2.2. Verhalten und Lokalität von 2-Opt
+        2-Opt invertiert ein Segment der Route, wodurch einige Verbindungen länger oder kürzer werden können. Jede Operation verändert **nur zwei Kanten**, behält die Gesamtstruktur der Route bei und hat dennoch starke Wirkung – ideal für die Intensivierung der lokalen Suche.
 
         ### 3. Energiefunktion
         - Bewertet die Qualität einer Route anhand der **Gesamtdistanz**.
@@ -219,10 +223,13 @@ with tabs[1]:
 
         ### 2. Neighborhood Generation
         Three different operations create alternative routes:
-        - **2-Opt:** Reverses a random segment of the route.
-        - **Reinsertion:** Removes a city and reinserts it at another position.
-        - **Swap:** Exchanges two cities.
-        One of these operations is chosen randomly with defined probabilities.
+        - **2-Opt:** Selects two cut points and reverses the segment between them. This changes only two route connections, keeping the rest of the path intact.
+        - **Reinsertion:** Removes one city and reinserts it at another position in the route. Produces medium-sized local changes that help escape shallow local minima.
+        - **Swap:** Exchanges the positions of two cities. Generates very small, quick variations and increases randomness early in the search.
+        One of these operations is chosen randomly uniformly.
+                    
+        ### 2.2. 2-Opt Behavior and Locality
+        2-Opt reverses a route segment, which can make some connections longer or shorter. Each move changes **only two edges**, keeping the overall tour structure intact while still having a strong impact, making it ideal for local search intensification.
 
         ### 3. Energy Function
         - Evaluates the total **distance** of the route.
@@ -232,7 +239,6 @@ with tabs[1]:
         - **Better solutions** are always accepted.
         - **Worse solutions** are accepted with probability $P = \\exp(-\\Delta / T) $ (Metropolis criterion).
         - This allows the algorithm to escape local minima.
-
 
         ### 5. Cooling Schedule
         - **Exponential cooling:**  ($T_{neu} = \\alpha \\cdot T_{alt}$)
@@ -287,7 +293,8 @@ with tabs[2]:
         alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 0.999, 0.995, step=0.001, key="alpha_light")
         max_iter = st.sidebar.slider("Max. Iterationen", 1000, 50000, 10000, step=1000, key="max_iter_light")
         reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1, key="reheat_light")
-        stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=500, key="stagnation_light")
+        stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=250, key="stagnation_light")
+        neighborhood_boost = st.sidebar.checkbox("Nachbarschaftsboost aktivieren", value=True, key="neighborhood_boost_light")
 
         if st.button("Run TSP Light", key="run_light"):
             selected_indices = [tsp.get_city_index(city) for city in selected_cities]
@@ -308,7 +315,8 @@ with tabs[2]:
                 max_iter=max_iter,
                 reheating_factor=reheating_factor,
                 stagnation_limit=stagnation_limit,
-                return_history=True
+                return_history=True,
+                neighborhood_boost=neighborhood_boost
             )
 
             route_cities = [selected_cities[idx] for idx in best_route]
@@ -372,11 +380,11 @@ with tabs[3]:
     alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 0.999, 0.995, step=0.001)
     max_iter = st.sidebar.slider("Max. Iterationen", 1000, 100000, 20000, step=1000)
     reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1)
-    stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=500)
+    stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=250)
+    neighborhood_boost = st.sidebar.checkbox("Nachbarschaftsboost aktivieren", value=True, key="neighborhood_boost_full")
 
     if st.button("Run"):
         start_index = tsp.get_city_index(start_city)
-        print(stagnation_limit)
 
         # --- TSP berechnen ---
         best_route, best_distance, history = simulated_annealing(
@@ -388,7 +396,8 @@ with tabs[3]:
             max_iter=max_iter,
             reheating_factor=reheating_factor,
             stagnation_limit=stagnation_limit,
-            return_history=True
+            return_history=True,
+            neighborhood_boost=neighborhood_boost
         )
 
         # Gesamtdistanz

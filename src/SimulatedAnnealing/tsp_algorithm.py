@@ -70,9 +70,9 @@ def swap(route):
 def get_neighbor(route):
     """Wählt zufällig 2-opt, Reinsertion oder Swap für Nachbarschaft."""
     r = random.random()
-    if r < 0.4:
+    if r < 0.33:
         return two_opt(route)
-    elif r < 0.8:
+    elif r < 0.66:
         return reinsertion(route)
     else:
         return swap(route)
@@ -106,7 +106,8 @@ def simulated_annealing(
     no_improve = 0
 
     for _ in range(max_iter):
-        if neighborhood_boost and no_improve > stagnation_limit // 4:
+        # if in local minima long time only use 2-opt in order to get even better solutions -> local search because only small changes
+        if neighborhood_boost and no_improve > (stagnation_limit * 0.75):
             neighbor = two_opt(current_route)
         else:
             neighbor = get_neighbor(current_route)
