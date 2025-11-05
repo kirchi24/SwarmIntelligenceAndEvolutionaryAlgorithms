@@ -319,7 +319,8 @@ with tabs[2]:
                 neighborhood_boost=neighborhood_boost
             )
 
-            route_cities = [selected_cities[idx] for idx in best_route]
+            # select found route and normalize names
+            route_cities = [selected_cities[idx].replace(" ", "_") for idx in best_route]
 
             st.subheader("Gefundene Route:")
             for i, city in enumerate(route_cities):
@@ -333,16 +334,17 @@ with tabs[2]:
                 history_km = [d / 1000 for d in history]
                 fig = go.Figure()
                 fig.add_trace(go.Scatter(
+                    x=list(range(len(history_km))),
                     y=history_km,
                     mode='lines+markers',
                     name='Beste Distanz',
                     line=dict(color='red'),
-                    marker=dict(size=4)
+                    marker=dict(size=2)
                 ))
                 fig.update_layout(
                     title="Verbesserungsverlauf der SA",
-                    xaxis_title="Schritte",
-                    yaxis_title="Distanz [km]",
+                    xaxis=dict(title="Schritte", range=[0, len(history_km)]),
+                    yaxis=dict(title="Distanz [km]", range=[0, 5000]),
                     template="plotly_white",
                     height=400
                 )
@@ -423,13 +425,13 @@ with tabs[3]:
             mode='lines+markers',
             name='Beste Distanz',
             line=dict(color='red'),
-            marker=dict(size=4)
+            marker=dict(size=2)
         ))
 
         fig.update_layout(
             title="Verbesserungsverlauf der SA",
-            xaxis_title="Schritte",
-            yaxis_title="Distanz [km]",
+            xaxis=dict(title="Schritte", range=[0, len(history_km)]),
+            yaxis=dict(title="Distanz [km]", range=[0, 5000]),
             template="plotly_white",
             height=400
         )
