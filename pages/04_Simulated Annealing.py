@@ -135,60 +135,21 @@ with tabs[0]:
 # TAB 1: METHODS / METHODEN
 # =====================================================
 with tabs[1]:
-    # -------------------
-    # DISTANZMATRIX ANZEIGEN
-    # -------------------
-    st.markdown(T[lang]["methods"])
-
-    dist_matrix = tsp.distance
-    city_names = tsp.get_all_names()
-    n = len(city_names)
-
-    st.subheader("Distanzmatrix der Städte" if lang == "DE" else "Distance Matrix of Cities")
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-    cax = ax.matshow(dist_matrix, cmap='viridis')
-
-    ax.set_xticks(range(n))
-    ax.set_yticks(range(n))
-    ax.set_xticklabels(city_names, rotation=90, fontsize=8)
-    ax.set_yticklabels(city_names, fontsize=8)
-
-    fig.colorbar(cax)
-    st.pyplot(fig)
-
-    if lang == "DE":
-        st.markdown("""
-        - Mit der obigen Distanzmatrix können wir die Entfernungen zwischen den Städten ablesen.
-        - Der Simulated Annealing Algorithmus nutzt diese Matrix, um die Gesamtdistanz einer Route zu berechnen.
-        - Hiermit wurde überprüft, ob zwischen allen Städten eine Verbindung besteht und die Distanzen plausibel sind.
-        """)
-    else:
-        st.markdown("""
-        - The above distance matrix shows the distances between cities.
-        - The Simulated Annealing algorithm uses this matrix to compute the total distance of a route.
-        - This matrix was verified to ensure all cities are connected and distances are plausible.
-        """)
-
-
-    st.markdown("---")
-
-    # -------------------
-    # ALGORITHMUS-ERKLÄRUNGEN
-    # -------------------
     if lang == "DE":
         st.markdown("""
         ## Simulated Annealing Algorithmus für das Travelling Salesman Problem (TSP)
 
         ### 1. Startlösung
-        - Eine gierige **Nearest-Neighbor-Lösung** wird erzeugt, beginnend bei einer gewählten Startstadt.
-        - Diese Route besucht jede Stadt genau einmal und kehrt dann zur Startstadt zurück.
+        - Der Algorithmus startet mit einer **Nearest-Neighbor-Heuristik** (`nearest_neighbor_solution()`), beginnend bei einer fixierten Startstadt (`start_city_index`).
+        - Diese Heuristik baut eine erste Rundreise auf, indem sie stets die **nächste unbesuchte Stadt** wählt.  
+        - Die Gesamtdistanz dieser Startlösung wird als **aktuelle Lösung** und zugleich als **beste bisher gefundene Lösung** gesetzt.
+
 
         ### 2. Nachbarschaftserzeugung
         Drei verschiedene Operationen erzeugen alternative Routen:  
-        - **2-Opt:** Invertiert ein zufälliges Segment der Route. Dabei werden **nur zwei Kanten verändert**, der Rest der Route bleibt unverändert.  
-        - **Reinsertion:** Entfernt eine Stadt und fügt sie an einer anderen Position wieder ein. Dies erzeugt mittlere lokale Veränderungen, die helfen, flache lokale Minima zu verlassen.  
-        - **Swap:** Vertauscht zwei Städte. Dies erzeugt sehr kleine, schnelle Veränderungen und erhöht die Zufälligkeit besonders in frühen Phasen der Suche.  
+        - In jeder Iteration wird eine **neue Nachbarroute** aus der aktuellen Route erzeugt:
+        - Standardmäßig durch `get_neighbor(current_route)`, das zufällig eine der lokalen Änderungen auswählt (z. B. Swap, Reinsertion, 2-Opt).
+        - Falls sich die Lösung **über längere Zeit nicht verbessert** (mehr als `0.75 * stagnation_limit` Iterationen ohne Verbesserung), wird gezielt der **2-Opt-Operator** eingesetzt (`neighborhood_boost=True`), um die Suche lokal zu intensivieren.
 
         Eine dieser Operationen wird zufällig entsprechend vordefinierter Wahrscheinlichkeiten ausgewählt.  
 
@@ -209,12 +170,17 @@ with tabs[1]:
         - **Dynamisches Reheating:** Falls über viele Iterationen keine Verbesserung erfolgt, wird die Temperatur kurzfristig erhöht, um neue Bereiche zu durchsuchen.
                     
         ### 6. Stoppkriterien
-        - Endtemperatur $ T_{end} $   
-        - Maximale Anzahl an Iterationen überschritten
+        Der Algorithmus endet, wenn eine der folgenden Bedingungen erfüllt ist:
+        1. **Temperatur zu niedrig:** $ T < T_{\\text{end}} $
+        2. **Maximale Iterationen:** $ \\text{iteration\_count} > \\text{max\_iter} $
+        
+        Das jeweilige **Abbruchkriterium** wird im Code als `stopping_reason` gespeichert.
 
-        ### 7. Ausgabe
-        - Beste gefundene Route  
-        - Gesamtdistanz  
+
+        ### 7. Rückgabe
+        - **Beste gefundene Route** (`best_route`)
+        - **Minimale Gesamtdistanz** (`best_distance`)
+        - Optional: **Historie der besten Distanzen pro Iteration** (`return_history=True`)
 
         ---  
 
@@ -272,6 +238,45 @@ with tabs[1]:
         - `simulated_annealing()` → Executes the full optimization process.
         """)
 
+
+        # -------------------
+    # DISTANZMATRIX ANZEIGEN
+    # -------------------
+    st.markdown(T[lang]["methods"])
+
+    dist_matrix = tsp.distance
+    city_names = tsp.get_all_names()
+    n = len(city_names)
+
+    st.subheader("Distanzmatrix der Städte" if lang == "DE" else "Distance Matrix of Cities")
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    cax = ax.matshow(dist_matrix, cmap='viridis')
+
+    ax.set_xticks(range(n))
+    ax.set_yticks(range(n))
+    ax.set_xticklabels(city_names, rotation=90, fontsize=8)
+    ax.set_yticklabels(city_names, fontsize=8)
+
+    fig.colorbar(cax)
+    st.pyplot(fig)
+
+    st.markdown("---")
+
+    if lang == "DE":
+        st.markdown("""
+        - Mit der obigen Distanzmatrix können wir die Entfernungen zwischen den Städten ablesen.
+        - Der Simulated Annealing Algorithmus nutzt diese Matrix, um die Gesamtdistanz einer Route zu berechnen.
+        - Hiermit wurde überprüft, ob zwischen allen Städten eine Verbindung besteht und die Distanzen plausibel sind.
+        """)
+    else:
+        st.markdown("""
+        - The above distance matrix shows the distances between cities.
+        - The Simulated Annealing algorithm uses this matrix to compute the total distance of a route.
+        - This matrix was verified to ensure all cities are connected and distances are plausible.
+        """)
+
+
 # =====================================================
 # TAB 2: TSP light
 # =====================================================
@@ -297,28 +302,47 @@ with tabs[2]:
     else:
         start_city = selected_cities[0]
 
-        # --- Sidebar-Hyperparameter ---
-        st.sidebar.header("SA-Hyperparameter (Light)")
-        T_start = st.sidebar.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100, key="T_start_light")
-        T_end = st.sidebar.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0, key="T_end_light")
-        alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 1.0, 0.995, step=0.001, key="alpha_light")
-        max_iter = st.sidebar.slider("Max. Iterationen", 1000, 25000, 10000, step=1000, key="max_iter_light")
-        reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1, key="reheat_light")
-        stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=250, key="stagnation_light")
-        neighborhood_boost = st.sidebar.checkbox("Nachbarschaftsboost aktivieren", value=True, key="neighborhood_boost_light")
+        # ---- Hyperparameter ---
+        st.header("SA-Hyperparameter (Light)")
+        T_start = st.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100, key="T_start_light")
+        T_end = st.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0, key="T_end_light")
+        alpha = st.slider("Abkühlrate (alpha)", 0.95, 1.0, 0.995, step=0.001, key="alpha_light")
+        max_iter = st.slider("Max. Iterationen", 1000, 25000, 10000, step=1000, key="max_iter_light")
+        reheating_factor = st.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1, key="reheat_light")
+        stagnation_limit = st.slider("Stagnationslimit", 500, 10000, 2500, step=250, key="stagnation_light")
+        neighborhood_boost = st.checkbox("Nachbarschaftsboost aktivieren", value=True, key="neighborhood_boost_light")
+
+        distance_objective = st.selectbox(
+            "Wähle dein Ziel:",
+            ["Distanz", "Dauer", "Schritte"],
+            index=0,
+            key="distance_objective_light"
+        )
 
         if st.button("Run TSP Light", key="run_light"):
+            # --- Nur die gewählten Städte berücksichtigen ---
             selected_indices = [tsp.get_city_index(city) for city in selected_cities]
-            start_city_index = selected_indices[0]
 
-            # --- Distanzmatrix extrahieren ---
-            light_distance_matrix = np.array(
-                [[tsp.distance[i,j] for j in selected_indices] for i in selected_indices]
+            # --- Zielmetrik bestimmen ---
+            selected_metric = (
+                tsp.distance if distance_objective == "Distanz" else
+                tsp.duration if distance_objective == "Dauer" else
+                tsp.steps_count
             )
 
-            # --- Simulated Annealing ---
-            best_route, best_distance, stopping_reason, history, iterations  = simulated_annealing(
-                light_distance_matrix,
+            # --- Reduzierte Distanzmatrix erstellen ---
+            light_distance_matrix = np.array([
+                [selected_metric[i, j] for j in selected_indices]
+                for i in selected_indices
+            ])
+
+            # --- Startindex in der REDUZIERTEN Matrix bestimmen ---
+            # (immer die erste ausgewählte Stadt)
+            start_city_index = 0
+
+            # --- Simulated Annealing mit NUR ausgewählten Städten ---
+            best_route, best_distance, stopping_reason, history, iterations = simulated_annealing(
+                dist_matrix=light_distance_matrix,
                 start_city_index=start_city_index,
                 T_start=T_start,
                 T_end=T_end,
@@ -328,7 +352,7 @@ with tabs[2]:
                 stagnation_limit=stagnation_limit,
                 return_history=True,
                 neighborhood_boost=neighborhood_boost
-            )
+            )   
 
             # select found route and normalize names
             route_cities = [selected_cities[idx].replace(" ", "_") for idx in best_route]
@@ -338,27 +362,27 @@ with tabs[2]:
                 st.text(f"{i+1}: {city}")
             st.text(f"{len(route_cities)+1}: {route_cities[0]} (Rückkehr)")
             st.success(
-                f"Gesamtdistanz: {best_distance/1000:.2f} km - "
+                f"Gesamtdistanz: {best_distance:.1f} - "
                 f"Stoppgrund: {stopping_reason} - "
                 f"Iterationen: {iterations}"
             )
             # --- Verbesserungsverlauf plotten ---
             if history:
                 import plotly.graph_objects as go
-                history_km = [d / 1000 for d in history]
+                history_km = [d for d in history]
                 fig = go.Figure()
                 fig.add_trace(go.Scatter(
                     x=list(range(len(history_km))),
                     y=history_km,
                     mode='lines+markers',
-                    name='Beste Distanz',
+                    name=f'Beste{distance_objective}',
                     line=dict(color='red'),
                     marker=dict(size=2)
                 ))
                 fig.update_layout(
                     title="Verbesserungsverlauf der SA",
                     xaxis=dict(title="Schritte", range=[0, len(history_km)]),
-                    yaxis=dict(title="Distanz [km]", range=[0, max(history_km)]),
+                    yaxis=dict(title=distance_objective, range=[0, max(history_km)]),
                     template="plotly_white",
                     height=400
                 )
@@ -390,21 +414,31 @@ with tabs[3]:
     start_city = st.selectbox("Startstadt", city_names)
 
     # --- Sidebar-Hyperparameter ---
-    st.sidebar.header("SA-Hyperparameter")
-    T_start = st.sidebar.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100)
-    T_end = st.sidebar.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0)
-    alpha = st.sidebar.slider("Abkühlrate (alpha)", 0.95, 1.0, 0.995, step=0.001)
-    max_iter = st.sidebar.slider("Max. Iterationen", 1000, 25000, 20000, step=1000)
-    reheating_factor = st.sidebar.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1)
-    stagnation_limit = st.sidebar.slider("Stagnationslimit", 500, 10000, 2500, step=250)
-    neighborhood_boost = st.sidebar.checkbox("Nachbarschaftsboost aktivieren", value=True, key="neighborhood_boost_full")
+    st.header("SA-Hyperparameter")
+    T_start = st.slider("Starttemperatur (T_start)", 100, 10000, 2000, step=100)
+    T_end = st.slider("Endtemperatur (T_end)", 0.1, 50.0, 1.0)
+    alpha = st.slider("Abkühlrate (alpha)", 0.95, 1.0, 0.995, step=0.001)
+    max_iter = st.slider("Max. Iterationen", 1000, 25000, 20000, step=1000)
+    reheating_factor = st.slider("Reheating-Faktor", 1.0, 2.0, 1.1, step=0.1)
+    stagnation_limit = st.slider("Stagnationslimit", 500, 10000, 2500, step=250)
+    neighborhood_boost = st.checkbox("Nachbarschaftsboost aktivieren", value=True, key="neighborhood_boost_full")
+    distance_objective = st.selectbox(
+        "Wähle dein Ziel:",
+        ["Distanz", "Dauer", "Schritte"],
+        index=0,
+        key="distance_objective_full"
+    )
 
     if st.button("Run"):
         start_index = tsp.get_city_index(start_city)
 
+        selected_metric = tsp.distance if distance_objective == "Distanz" else (
+            tsp.duration if distance_objective == "Dauer" else tsp.steps_count
+        )
+
         # --- TSP berechnen ---
         best_route, best_distance, stopping_reason, history, iterations = simulated_annealing(
-            tsp.distance,
+            selected_metric,
             start_city_index=start_index,
             T_start=T_start,
             T_end=T_end,
@@ -426,14 +460,14 @@ with tabs[3]:
             st.text(f"{i+1}: {tsp.city_names[idx]}")
         st.text(f"{len(best_route)+1}: {tsp.city_names[best_route[0]]} (Rückkehr)")
         st.success(
-            f"Gesamtdistanz: {best_distance/1000:.2f} km - "
+            f"Gesamtdistanz: {best_distance:.1f} - "
             f"Stoppgrund: {stopping_reason} - "
             f"Iterationen: {iterations}"
         )
 
         st.subheader("Verbesserungsverlauf")
         # History in km
-        history_km = [d / 1000 for d in history]
+        history_km = [d for d in history]
 
         fig = go.Figure()
 
@@ -441,7 +475,7 @@ with tabs[3]:
             x=list(range(len(history_km))),
             y=history_km,
             mode='lines+markers',
-            name='Beste Distanz',
+            name=f'Beste{distance_objective}',
             line=dict(color='red'),
             marker=dict(size=2)
         ))
@@ -449,7 +483,7 @@ with tabs[3]:
         fig.update_layout(
             title="Verbesserungsverlauf der SA",
             xaxis=dict(title="Schritte", range=[0, len(history_km)]),
-            yaxis=dict(title="Distanz [km]", range=[0, max(history_km)]),
+            yaxis=dict(title=distance_objective, range=[0, max(history_km)]),
             template="plotly_white",
             height=400
         )
