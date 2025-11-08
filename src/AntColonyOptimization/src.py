@@ -1,4 +1,5 @@
-from cmath import tau
+import numpy as np
+import plotly.express as px
 import numpy as np
 
 """ 
@@ -233,9 +234,6 @@ def run_aco(
 # ---------------------------
 # Example usage
 # ---------------------------
-import plotly.graph_objects as go
-import numpy as np
-
 if __name__ == "__main__":
     # small demo problem
     N = 6  # nurses
@@ -265,8 +263,6 @@ if __name__ == "__main__":
     print("Day-wise schedule (nurses x days x shifts):")
     print(best_schedule)
 
-    import plotly.express as px
-    import numpy as np
 
     # flatten tau_history for animation
     N, D, S = tau_history[0].shape
