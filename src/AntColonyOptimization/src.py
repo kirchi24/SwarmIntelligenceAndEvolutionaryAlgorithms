@@ -156,18 +156,84 @@ def select_best_schedule(all_schedules: list, scores: list):
     best_score, breakdown = heuristic_score(best)
     return best, best_score, breakdown
 
-# Ant Colony main loop (conceptually!)
+# ---------------------------
+# ACO main loop
+# ---------------------------
+def run_aco(
+    tau_init,
+    num_ants=50,
+    max_iters=100,
+    alpha=1.0,
+    beta=5.0,
+    rho=0.1,
+    Q=1.0,
+    verbose=True,
+    seed=None,
+):
+    """
+    Run a basic ACO.
+    Returns best_schedule, best_score, pheromone_matrix
+    """
+    if seed is not None:
+        np.random.seed(seed)
+
+    tau = tau_init.copy().astype(float)
+    N, D, S = tau.shape
+
+    # ensure initial pheromone positive
+    tau[tau <= 0] = 1.0
+
+    best_overall_score = float("inf")
+    best_overall_schedule = None
+    best_breakdown = None
+
+    for itr in range(max_iters):
+        # each ant constructs a schedule
+        all_schedules = [construct_schedule(tau, alpha=alpha, beta=beta) for _ in range(num_ants)]
+        scores = [heuristic_score(s)[0] for s in all_schedules]
+
+        # update pheromones
+        update_pheromones(tau, all_schedules, scores, rho=rho, Q=Q)
+
+        # track best in this iteration
+        local_best_idx = int(np.argmin(scores))
+        local_best_score = scores[local_best_idx]
+        if local_best_score < best_overall_score:
+            best_overall_score = local_best_score
+            best_overall_schedule = all_schedules[local_best_idx]
+            _, best_breakdown = heuristic_score(best_overall_schedule)
+
+        if verbose and (itr % max(1, max_iters // 10) == 0 or itr == max_iters - 1):
+            print(f"Iter {itr+1}/{max_iters}  best_score_so_far={best_overall_score:.2f}  local_best={local_best_score:.2f}")
+
+    return best_overall_schedule, best_overall_score, best_breakdown, tau
+
+
+# ---------------------------
+# Example usage
+# ---------------------------
 if __name__ == "__main__":
-    max_iters = 100
-    num_ants = 100
-    tau = np.zeros((5, 3, 2))  # start with small dimensions
+    # small demo problem
+    N = 6   # nurses
+    D = 7   # days
+    S = 3   # shifts (morning, afternoon, night)
 
-    for iteration in range(max_iters):
-        # construct individual schedules for the whole weak with each ant
-        all_schedules = [construct_schedule(tau) for _ in range(num_ants)]
+    # initialize pheromone (N,D,S) with small positive values
+    tau0 = np.ones((N, D, S)) * 0.1
 
-        # evaluate all of those schedules
-        scores = [heuristic_score(X)[0] for X in all_schedules]
+    best_schedule, best_score, breakdown, tau_final = run_aco(
+        tau0,
+        num_ants=30,
+        max_iters=60,
+        alpha=1.0,
+        beta=5.0,
+        rho=0.1,
+        Q=100.0,
+        verbose=True,
+        seed=42,
+    )
 
-        # to do: optimum_schedule = run_aco(....)
-        # --> implement the 'rest' of the ACO logic (pheromone updates, etc.) here
+    print("\nBest score:", best_score)
+    print("Breakdown:", breakdown)
+    # Show schedule summary (shifts per nurse)
+    print("Shifts per nurse:", np.nansum(best_schedule, axis=(1, 2)))
