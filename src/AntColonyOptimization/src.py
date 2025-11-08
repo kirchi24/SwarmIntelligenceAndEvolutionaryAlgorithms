@@ -20,8 +20,8 @@ def construct_schedule(tau: np.array, alpha: float = 1, beta: float = 5) -> np.a
     schedule = np.full((N, D, S), np.nan)
     for d in range(D):
         for s in range(S):
-            etas = [eta_function(schedule, n, d, s) for n in range(N)]
-            probs = (tau[:, s, d] ** alpha) * (etas**beta)
+            etas = np.array([eta_function(schedule, n, d, s) for n in range(N)])
+            probs = (tau[:, d, s] ** alpha) * (etas ** beta)
             probs /= probs.sum()
 
             # choose at least 2 nurses per shift
