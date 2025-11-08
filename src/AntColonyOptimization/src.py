@@ -149,9 +149,12 @@ def update_pheromones(tau: np.ndarray, all_schedules: list, scores: list, rho: f
     np.clip(tau, pheromone_min, pheromone_max, out=tau)
 
 
-def select_best_schedule(all_schedules, scores):
-    pass
-
+def select_best_schedule(all_schedules: list, scores: list):
+    """Return best schedule (lowest score) and its score & breakdown."""
+    idx = int(np.argmin(scores))
+    best = all_schedules[idx]
+    best_score, breakdown = heuristic_score(best)
+    return best, best_score, breakdown
 
 # Ant Colony main loop (conceptually!)
 if __name__ == "__main__":
