@@ -1,3 +1,4 @@
+from cmath import tau
 import numpy as np
 
 """ 
@@ -21,7 +22,7 @@ def construct_schedule(tau: np.array, alpha: float = 1, beta: float = 5) -> np.a
     for d in range(D):
         for s in range(S):
             etas = np.array([eta_function(schedule, n, d, s) for n in range(N)])
-            probs = (tau[:, d, s] ** alpha) * (etas ** beta)
+            probs = (tau[:, d, s] ** alpha) * (etas**beta)
             probs /= probs.sum()
 
             # choose at least 2 nurses per shift
@@ -126,10 +127,12 @@ def eta_function(partial_schedule, n, d, s):
 
 def evaporate_pheromones(tau: np.ndarray, rho: float):
     """Evaporate pheromones: tau <- (1-rho) * tau"""
-    tau *= (1.0 - rho)
+    tau *= 1.0 - rho
 
 
-def deposit_pheromones(tau: np.ndarray, schedule: np.ndarray, score: float, Q: float = 1.0):
+def deposit_pheromones(
+    tau: np.ndarray, schedule: np.ndarray, score: float, Q: float = 1.0
+):
     """
     Deposit pheromone where schedule has assignments.
     Use amount proportional to Q / (1 + score) so better (lower) scores deposit more.
@@ -139,7 +142,15 @@ def deposit_pheromones(tau: np.ndarray, schedule: np.ndarray, score: float, Q: f
     tau[mask] += deposit_amount
 
 
-def update_pheromones(tau: np.ndarray, all_schedules: list, scores: list, rho: float = 0.1, Q: float = 1.0, pheromone_min=1e-6, pheromone_max=1e6):
+def update_pheromones(
+    tau: np.ndarray,
+    all_schedules: list,
+    scores: list,
+    rho: float = 0.1,
+    Q: float = 1.0,
+    pheromone_min=1e-6,
+    pheromone_max=1e6,
+):
     """Evaporate then deposit from each ant's schedule."""
     evaporate_pheromones(tau, rho)
     for sched, sc in zip(all_schedules, scores):
@@ -155,6 +166,7 @@ def select_best_schedule(all_schedules: list, scores: list):
     best = all_schedules[idx]
     best_score, breakdown = heuristic_score(best)
     return best, best_score, breakdown
+
 
 # ---------------------------
 # ACO main loop
@@ -189,7 +201,9 @@ def run_aco(
 
     for itr in range(max_iters):
         # each ant constructs a schedule
-        all_schedules = [construct_schedule(tau, alpha=alpha, beta=beta) for _ in range(num_ants)]
+        all_schedules = [
+            construct_schedule(tau, alpha=alpha, beta=beta) for _ in range(num_ants)
+        ]
         scores = [heuristic_score(s)[0] for s in all_schedules]
 
         # update pheromones
@@ -204,7 +218,9 @@ def run_aco(
             _, best_breakdown = heuristic_score(best_overall_schedule)
 
         if verbose and (itr % max(1, max_iters // 10) == 0 or itr == max_iters - 1):
-            print(f"Iter {itr+1}/{max_iters}  best_score_so_far={best_overall_score:.2f}  local_best={local_best_score:.2f}")
+            print(
+                f"Iter {itr+1}/{max_iters}  best_score_so_far={best_overall_score:.2f}  local_best={local_best_score:.2f}"
+            )
 
     return best_overall_schedule, best_overall_score, best_breakdown, tau
 
@@ -214,9 +230,9 @@ def run_aco(
 # ---------------------------
 if __name__ == "__main__":
     # small demo problem
-    N = 6   # nurses
-    D = 7   # days
-    S = 3   # shifts (morning, afternoon, night)
+    N = 6  # nurses
+    D = 7  # days
+    S = 3  # shifts (morning, afternoon, night)
 
     # initialize pheromone (N,D,S) with small positive values
     tau0 = np.ones((N, D, S)) * 0.1
