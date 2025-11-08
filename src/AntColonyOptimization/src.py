@@ -253,3 +253,6 @@ if __name__ == "__main__":
     print("Breakdown:", breakdown)
     # Show schedule summary (shifts per nurse)
     print("Shifts per nurse:", np.nansum(best_schedule, axis=(1, 2)))
+
+    print("Day-wise schedule (nurses x days x shifts):")
+    print(best_schedule)
