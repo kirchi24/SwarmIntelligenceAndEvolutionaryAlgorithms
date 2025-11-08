@@ -181,11 +181,8 @@ def run_aco(
     Q=1.0,
     verbose=True,
     seed=None,
+    return_tau_history=False,  # neu
 ):
-    """
-    Run a basic ACO.
-    Returns best_schedule, best_score, pheromone_matrix
-    """
     if seed is not None:
         np.random.seed(seed)
 
@@ -199,8 +196,9 @@ def run_aco(
     best_overall_schedule = None
     best_breakdown = None
 
+    tau_history = []  # Liste für die Historie
+
     for itr in range(max_iters):
-        # each ant constructs a schedule
         all_schedules = [
             construct_schedule(tau, alpha=alpha, beta=beta) for _ in range(num_ants)
         ]
@@ -208,6 +206,9 @@ def run_aco(
 
         # update pheromones
         update_pheromones(tau, all_schedules, scores, rho=rho, Q=Q)
+
+        # speichern der aktuellen tau-Matrix
+        tau_history.append(tau.copy())
 
         # track best in this iteration
         local_best_idx = int(np.argmin(scores))
@@ -222,12 +223,19 @@ def run_aco(
                 f"Iter {itr+1}/{max_iters}  best_score_so_far={best_overall_score:.2f}  local_best={local_best_score:.2f}"
             )
 
-    return best_overall_schedule, best_overall_score, best_breakdown, tau
+    if return_tau_history:
+        return best_overall_schedule, best_overall_score, best_breakdown, tau, tau_history
+    else:
+        return best_overall_schedule, best_overall_score, best_breakdown, tau
+
 
 
 # ---------------------------
 # Example usage
 # ---------------------------
+import plotly.graph_objects as go
+import numpy as np
+
 if __name__ == "__main__":
     # small demo problem
     N = 6  # nurses
@@ -237,22 +245,68 @@ if __name__ == "__main__":
     # initialize pheromone (N,D,S) with small positive values
     tau0 = np.ones((N, D, S)) * 0.1
 
-    best_schedule, best_score, breakdown, tau_final = run_aco(
+    # run ACO with tau history
+    best_schedule, best_score, breakdown, tau_final, tau_history = run_aco(
         tau0,
         num_ants=30,
-        max_iters=60,
+        max_iters=100,
         alpha=1.0,
         beta=5.0,
         rho=0.1,
         Q=100.0,
         verbose=True,
         seed=42,
+        return_tau_history=True,
     )
 
     print("\nBest score:", best_score)
     print("Breakdown:", breakdown)
-    # Show schedule summary (shifts per nurse)
     print("Shifts per nurse:", np.nansum(best_schedule, axis=(1, 2)))
-
     print("Day-wise schedule (nurses x days x shifts):")
     print(best_schedule)
+
+    import plotly.express as px
+    import numpy as np
+
+    # flatten tau_history for animation
+    N, D, S = tau_history[0].shape
+    frames = []
+    x, y, z, c, iteration = [], [], [], [], []
+
+    for itr, tau_matrix in enumerate(tau_history):
+        for n in range(N):
+            for d in range(D):
+                for s in range(S):
+                    x.append(n)
+                    y.append(d)
+                    z.append(s)
+                    c.append(tau_matrix[n, d, s])
+                    iteration.append(itr+1)  # iteration index
+
+    # create a DataFrame for Plotly Express
+    import pandas as pd
+    df = pd.DataFrame({
+        "Nurse": x,
+        "Day": y,
+        "Shift": z,
+        "Pheromone": c,
+        "Iteration": iteration
+    })
+
+    # 3D scatter with animation over iterations
+    fig = px.scatter_3d(
+        df,
+        x="Nurse",
+        y="Day",
+        z="Shift",
+        color="Pheromone",
+        animation_frame="Iteration",
+        color_continuous_scale="Viridis",
+        range_color=[df["Pheromone"].min(), df["Pheromone"].max()],
+    )
+
+    fig.update_layout(
+        scene=dict(xaxis_title='Nurse', yaxis_title='Day', zaxis_title='Shift'),
+        title="Pheromone evolution over iterations"
+    )
+    fig.show()
