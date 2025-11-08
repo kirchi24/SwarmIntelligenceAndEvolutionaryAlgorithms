@@ -1,0 +1,142 @@
+import numpy as np
+
+""" 
+Your setup would look something like this:
+
+# dimensions
+N = 10   # nurses
+D = 7    # days
+S = 3    # shifts
+
+# 3D pheromone and schedule matrices
+tau = np.ones((N, D, S))         # pheromone memory
+schedule = np.nan((N, D, S))     # initial schedule (unassigned slots are set to nan)
+
+"""
+
+
+def construct_schedule(tau: np.array, alpha: float = 1, beta: float = 5) -> np.array:
+    N, D, S = tau.shape
+    schedule = np.full((N, D, S), np.nan)
+    for d in range(D):
+        for s in range(S):
+            etas = [eta_function(schedule, n, d, s) for n in range(N)]
+            probs = (tau[:, s, d] ** alpha) * (etas**beta)
+            probs /= probs.sum()
+
+            # choose at least 2 nurses per shift
+            chosen = np.random.choice(N, size=2, replace=False, p=probs)
+            schedule[chosen, d, s] = 1
+    return schedule
+
+
+def heuristic_score(
+    schedule, required_per_shift=2, penalties=[10000, 5000, 3000, 400, 300]
+):
+    """
+    schedule: N x S x D matrix of 0s, 1s, or np.nan for undecided slots
+    required_per_shift: amount of nurses necessary per shift
+    penalties: penalties for violations of
+        - coverage (less than two nurses per shift),
+        - rest (morning shift following previous night shift),
+        - maximum daily work (more than two shifts a day),
+        - fairness (unfair distribution of shifts across nurses)
+        - days off (less than one day of rest every week)
+    """
+
+    N, D, S = schedule.shape
+    morning = 0
+    night = S - 1
+
+    # penalty for violation of coverage
+    coverage = schedule.sum(axis=0)  # shape (D, S)
+    coverage_deficit_matrix = np.maximum(0, required_per_shift - coverage)
+    coverage_deficit = int(np.nansum(coverage_deficit_matrix))  # scalar count
+
+    # penalty for rest violation
+    rest_violations = 0
+    # for days 0..D-2, if nurse works night d and morning d+1 -> violation
+    if D >= 2:
+        night_work = schedule[:, : D - 1, night]  # shape (N, D-1)
+        next_morning = schedule[:, 1:D, morning]  # shape (N, D-1)
+        rest_violations = int(
+            np.nansum(
+                np.logical_and(np.nan_to_num(night_work), np.nan_to_num(next_morning))
+            )
+        )
+
+    # penalty for violation of maximum daily work
+    shifts_per_nurse_day = np.nansum(schedule, axis=2)  # shape (N, D)
+    daily_over_matrix = np.maximum(0, shifts_per_nurse_day - 2)
+    daily_over = float(np.nansum(daily_over_matrix))
+
+    # penalty for fairness violation
+    shifts_per_nurse = np.nansum(schedule, axis=(1, 2))  # shape (N,)
+    mean_shifts = np.nanmean(shifts_per_nurse) if N > 0 else 0.0
+    fairness_penalty = float(np.nansum((shifts_per_nurse - mean_shifts) ** 2))
+
+    # penalty for days-off violation
+    days_off_per_nurse = np.nansum(
+        shifts_per_nurse_day == 0, axis=1
+    )  # days off per nurse
+    dayoff_violations = int(np.nansum(days_off_per_nurse == 0))
+
+    # sum up hard and soft penalties
+    hard_penalty = (
+        penalties[0] * coverage_deficit
+        + penalties[1] * rest_violations
+        + penalties[2] * daily_over
+    )
+
+    soft_penalty = penalties[3] * fairness_penalty + penalties[4] * dayoff_violations
+
+    total_score = hard_penalty + soft_penalty
+
+    # Return breakdown for analysis
+    breakdown = {
+        "coverage_deficit_count": coverage_deficit,
+        "rest_violations": rest_violations,
+        "daily_over_count": daily_over,
+        "fairness_raw": fairness_penalty,
+        "dayoff_violations": dayoff_violations,
+        "hard_penalty": hard_penalty,
+        "soft_penalty": soft_penalty,
+        "total_score": total_score,
+        "mean_shifts_per_nurse": float(mean_shifts),
+        "shifts_per_nurse": shifts_per_nurse.tolist(),
+    }
+
+    return total_score, breakdown
+
+
+def eta_function(partial_schedule, n, d, s):
+    """
+    1. assume you'd schedule nurse n for shift s on day d
+    2. calculate the penalty of the schedule found so far
+    3. undo the schedule assignment again (this was just for calculating the score)
+    4. write everything into a heuristic desirability score (eta) in (0,1]
+    """
+    partial_schedule[n, d, s] = 1
+    total_score, _ = heuristic_score(partial_schedule)
+    partial_schedule[n, d, s] = np.nan
+    eta_value = 1 / (1 + total_score)  # 0: worst, 1: best
+
+    return eta_value
+
+
+# Ant Colony main loop (conceptually!)
+if __name__ == "__main__":
+    max_iters = 100
+    num_ants = 100
+    tau = np.zeros(
+        (5, 3, 2)
+    )  # start with small dimensions (5 nurses, three days, 2 shifts), then scale up
+    for iteration in range(max_iters):
+        # construct individual schedules for the whole weak with each ant
+        all_schedules = [construct_schedule(tau) for _ in range(num_ants)]
+
+        # evaluate all of those schedules
+        scores = [heuristic_score(X)[0] for X in all_schedules]
+
+        # to do: optimum_schedule = run_aco(....)
+        # --> implement the 'rest' of the ACO logic (pheromone updates, etc.) here
