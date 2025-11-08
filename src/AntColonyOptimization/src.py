@@ -124,13 +124,32 @@ def eta_function(partial_schedule, n, d, s):
     return eta_value
 
 
+def run_aco():
+    pass
+
+
+def update_pheromones(tau, all_schedules, scores):
+    pass
+
+
+def evaporate_pheromones(tau, rho):
+    pass
+
+
+def deposit_pheromones(tau, schedule, score):
+    pass
+
+
+def select_best_schedule(all_schedules, scores):
+    pass
+
+
 # Ant Colony main loop (conceptually!)
 if __name__ == "__main__":
     max_iters = 100
     num_ants = 100
-    tau = np.zeros(
-        (5, 3, 2)
-    )  # start with small dimensions (5 nurses, three days, 2 shifts), then scale up
+    tau = np.zeros((5, 3, 2))  # start with small dimensions
+
     for iteration in range(max_iters):
         # construct individual schedules for the whole weak with each ant
         all_schedules = [construct_schedule(tau) for _ in range(num_ants)]
