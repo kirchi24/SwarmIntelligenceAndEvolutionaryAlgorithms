@@ -124,20 +124,29 @@ def eta_function(partial_schedule, n, d, s):
     return eta_value
 
 
-def run_aco():
-    pass
+def evaporate_pheromones(tau: np.ndarray, rho: float):
+    """Evaporate pheromones: tau <- (1-rho) * tau"""
+    tau *= (1.0 - rho)
 
 
-def update_pheromones(tau, all_schedules, scores):
-    pass
+def deposit_pheromones(tau: np.ndarray, schedule: np.ndarray, score: float, Q: float = 1.0):
+    """
+    Deposit pheromone where schedule has assignments.
+    Use amount proportional to Q / (1 + score) so better (lower) scores deposit more.
+    """
+    deposit_amount = Q / (1.0 + score)
+    mask = ~np.isnan(schedule) & (schedule == 1)
+    tau[mask] += deposit_amount
 
 
-def evaporate_pheromones(tau, rho):
-    pass
+def update_pheromones(tau: np.ndarray, all_schedules: list, scores: list, rho: float = 0.1, Q: float = 1.0, pheromone_min=1e-6, pheromone_max=1e6):
+    """Evaporate then deposit from each ant's schedule."""
+    evaporate_pheromones(tau, rho)
+    for sched, sc in zip(all_schedules, scores):
+        deposit_pheromones(tau, sched, sc, Q=Q)
 
-
-def deposit_pheromones(tau, schedule, score):
-    pass
+    # clamp to avoid numerical extremes
+    np.clip(tau, pheromone_min, pheromone_max, out=tau)
 
 
 def select_best_schedule(all_schedules, scores):
