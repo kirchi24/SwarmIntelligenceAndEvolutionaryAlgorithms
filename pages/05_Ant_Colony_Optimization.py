@@ -42,10 +42,16 @@ with tabs[0]:
 with tabs[1]:
     st.markdown("## Methoden / Implementierung")
     st.markdown("### Pheromon-Aktualisierung")
-    st.markdown(
-        "Für jede Ameise k wird die Pheromonmatrix $\\tau_{n,d,s}$ wie folgt aktualisiert:"
-    )
+    st.subheader("Wie funktionieren Pheromone in der Ameisenkolonieoptimierung?")
 
+    st.markdown("""
+    In der **Ameisenkolonieoptimierung (Ant Colony Optimization, ACO)** wird die Suche nach einer guten Lösung durch **Pheromone** gesteuert.  
+    Jede Ameise hinterlässt auf den Pfaden (oder hier: *Dienstzuweisungen*) eine **Pheromonspur**.  
+    Diese Spur ist umso stärker, je **besser** die gefundene Lösung ist.  
+
+    ---
+    """
+    )
     st.latex(r"\tau_{n,d,s} \leftarrow (1 - \rho)\,\tau_{n,d,s} + \sum_k \Delta\tau_{n,d,s}^{(k)}")
 
     st.markdown("Dabei gilt:")
@@ -77,6 +83,47 @@ with tabs[1]:
     """
     )
 
+ 
+    # Beispielhafte Simulation der Pheromonentwicklung
+    iterations = np.arange(0, 50)
+    pheromone_good = 1 - np.exp(-0.1 * iterations)  # simulierte Verstärkung bei guter Lösung
+    pheromone_bad = 0.3 * np.exp(-0.05 * iterations)  # simulierte Verdunstung schlechter Lösung
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=iterations,
+        y=pheromone_good,
+        mode="lines+markers",
+        name="Gute Lösung",
+        line=dict(color="green", width=3)
+    ))
+    fig.add_trace(go.Scatter(
+        x=iterations,
+        y=pheromone_bad,
+        mode="lines+markers",
+        name="Schlechte Lösung",
+        line=dict(color="gray", dash="dot", width=2)
+    ))
+
+    fig.update_layout(
+        title="Entwicklung der Pheromonintensität über Iterationen",
+        xaxis_title="Iteration",
+        yaxis_title="Pheromonwert τ",
+        width=800,
+        height=400,
+        legend_title="Lösungsqualität",
+        template="plotly_white"
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.info("""
+    **Interpretation:**
+    - Die *grüne Kurve* zeigt, wie sich das Pheromon auf einem guten Pfad mit der Zeit verstärkt.  
+    - Die *graue Kurve* zeigt, wie schwache Pheromone auf schlechten Pfaden verdunsten.  
+    - Im Gleichgewicht konzentrieren sich die Ameisen auf wenige, qualitativ hochwertige Lösungen.
+    """)
+
 # ---------------------------
 # Tab 3: Results
 # ---------------------------
@@ -86,7 +133,7 @@ with tabs[2]:
     # ---------------------------
     # Interaktive Parameter
     # ---------------------------
-    N = st.number_input("Anzahl Krankenschwestern", min_value=3, max_value=20, value=6, step=1)
+    N = st.number_input("Anzahl Krankenschwestern", min_value=3, max_value=20, value=10, step=1)
     D = st.number_input("Anzahl Tage", min_value=1, max_value=14, value=7, step=1)
     S = st.number_input("Anzahl Schichten pro Tag", min_value=1, max_value=5, value=3, step=1)
 
@@ -172,7 +219,7 @@ with tabs[2]:
         st.write("### Beste Schedule pro Schicht (1 = Nurse arbeitet, 0 = frei)")
         st.write(" FS = Frühschicht, SS = Spätschicht, NS = Nachtschicht ")
 
-        best_schedule_num = np.nan_to_num(best_schedule, 0)  # NaN -> 0
+        best_schedule_num = np.nan_to_num(best_schedule, 0)
 
         # Spaltenlabels: Tag1_FS, Tag1_SS, Tag1_NS, Tag2_FS ...
         columns = []
@@ -180,12 +227,13 @@ with tabs[2]:
             for s_label in ["FS", "SS", "NS"]:
                 columns.append(f"Tag {d+1}_{s_label}")
 
-        # Daten in 2D umformen: Nurses x (Days*Shifts)
-        data_2d = best_schedule_num.reshape(N, D*S)
+        # 2D-Daten: Nurses × (Days*Shifts)
+        data_2d = best_schedule_num.reshape(N, D * S)
 
-        # Heatmap: 1 grün, 0 grau
-        colorscale = [[0, 'lightgray'], [1, 'lightgreen']]
+        # Farbskala
+        colorscale = [[0, 'white'], [1, 'lightgreen']]
 
+        # Heatmap
         fig = go.Figure(data=go.Heatmap(
             z=data_2d,
             x=columns,
@@ -197,12 +245,38 @@ with tabs[2]:
             texttemplate="%{text}"
         ))
 
+        # ---------------------------
+        # Abwechselnde Tageshintergründe
+        # ---------------------------
+        shapes = []
+        for d in range(D):
+            # Jede Taggruppe (3 Spalten = FS, SS, NS)
+            x0 = d * S - 0.5
+            x1 = (d + 1) * S - 0.5
+
+            # Nur jeden zweiten Tag einfärben
+            if d % 2 == 0:
+                shapes.append(dict(
+                    type="rect",
+                    xref="x",
+                    yref="paper",
+                    x0=x0,
+                    x1=x1,
+                    y0=0,
+                    y1=1,
+                    fillcolor="rgba(230,230,230,0.6)",  # leichtes Grau
+                    line_width=0,
+                    layer="below"
+                ))
+
         fig.update_layout(
             title="Dienstplan Heatmap (grün = Schicht zugewiesen)",
             xaxis_nticks=21,
             yaxis_autorange='reversed',
             width=1000,
-            height=400
+            height=400,
+            shapes=shapes,
+            plot_bgcolor='white'
         )
 
         st.plotly_chart(fig, use_container_width=True)
