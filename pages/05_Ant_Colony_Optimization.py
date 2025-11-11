@@ -82,8 +82,8 @@ with tabs[1]:
     st.markdown("**Intuition:**")
     st.markdown(
     """
-    - Schlechte Lösungen verlieren Gewicht: $ \\tau \leftarrow (1-\\rho)\, \\tau $
-    - Gute Lösungen verstärken Pfade: $\\tau \leftarrow \\tau + \dfrac{Q}{1 + L_k}$  
+    - Schlechte Lösungen verlieren Gewicht: $ \\tau \\leftarrow (1-\\rho)\, \\tau $
+    - Gute Lösungen verstärken Pfade: $\\tau \leftarrow \\tau + \\dfrac{Q}{1 + L_k}$  
     - Gleichgewicht zwischen Vergessen und Lernen fokussiert den Algorithmus auf gute Lösungen
     """
     )
@@ -291,6 +291,7 @@ with tabs[2]:
         fig_bar.update_layout(
             title="Gesamtanzahl der Schichten pro Krankenschwester",
             yaxis_title="Anzahl Schichten",
+            yaxis_range=[0, 7],
             xaxis_title="Krankenschwester",
             yaxis=dict(tick0=0, dtick=1),
             width=800,
@@ -350,12 +351,21 @@ with tabs[3]:
     st.markdown("## Diskussion")
     st.markdown(
         """
-    - Analyse der Lösungsqualität und Effizienz  
-    - Vergleich erwarteter vs. unerwarteter Ergebnisse  
-    - Limitationen der Implementierung  
-    - Mögliche Verbesserungen (z. B. dynamische Heuristik, adaptive Parameterwahl)  
-    - Komplexität bei größeren Problemgrößen
-"""
+        **Vorteile der ACO-Methode:**
+        - Flexibel bei der Modellierung komplexer Einschränkungen  
+        - Gute Balance zwischen Exploration und Exploitation durch Pheromonmechanismus  
+
+        **Nachteile und Herausforderungen:**
+        - Sensitivität gegenüber Parameterwahl (ρ, Q, Anzahl Ameisen)  
+        - Rechenintensiv bei großen Problemgrößen  
+        - Gefahr des Premature Convergence bei zu starker Fokussierung auf bestimmte Pfade  
+
+        **Mögliche Verbesserungen:**
+        - Adaptive Parameteranpassung während der Laufzeit  
+        - Hybridisierung mit anderen Optimierungsverfahren (z. B. genetische Algorithmen)  
+        - Erweiterte Heuristiken zur Initialisierung und Pfadauswahl  
+        """
+        
     )
 
 

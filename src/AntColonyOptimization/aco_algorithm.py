@@ -270,6 +270,11 @@ def run_aco(
 # Example usage
 # ---------------------------
 if __name__ == "__main__":
+    import numpy as np
+    import pandas as pd
+    import plotly.express as px
+    import plotly.graph_objects as go
+
     # small demo problem
     N = 6  # nurses
     D = 7  # days
@@ -289,7 +294,7 @@ if __name__ == "__main__":
     ) = run_aco(
         tau0,
         num_ants=30,
-        max_iters=50,
+        max_iters=100,
         alpha=1.0,
         beta=5.0,
         rho=0.1,
@@ -305,9 +310,9 @@ if __name__ == "__main__":
     print("Day-wise schedule (nurses x days x shifts):")
     print(best_schedule)
 
-    # -------------------------------
+    # ========================
     # Score-History Plot
-    # -------------------------------
+    # ========================
     fig_score = go.Figure()
     fig_score.add_trace(
         go.Scatter(
@@ -327,15 +332,15 @@ if __name__ == "__main__":
     )
     fig_score.show()
 
-    # -------------------------------
-    # Pheromon-Historie Animation (flüssig)
-    # -------------------------------
-    # Reduziere Datenmenge für flüssige Animation: nur jede 5. Iteration
-    selected_iters = range(0, len(tau_history), 5)
-    x, y, z, c, iteration_list = [], [], [], [], []
+    # ========================
+    # Pheromon-Historie Animation
+    # ========================
+    # flatten tau_history for animation
+    N, D, S = tau_history[0].shape
+    frames = []
+    x, y, z, c, iteration = [], [], [], [], []
 
-    for itr in selected_iters:
-        tau_matrix = tau_history[itr]
+    for itr, tau_matrix in enumerate(tau_history):
         for n in range(N):
             for d in range(D):
                 for s in range(S):
@@ -343,26 +348,28 @@ if __name__ == "__main__":
                     y.append(d)
                     z.append(s)
                     c.append(tau_matrix[n, d, s])
-                    iteration_list.append(itr + 1)
+                    iteration.append(itr+1)  # iteration index
 
-    df_pheromone = pd.DataFrame({
+    # create a DataFrame for Plotly Express
+    import pandas as pd
+    df = pd.DataFrame({
         "Nurse": x,
         "Day": y,
         "Shift": z,
         "Pheromone": c,
-        "Iteration": iteration_list
+        "Iteration": iteration
     })
 
     # 3D scatter with animation over iterations
     fig = px.scatter_3d(
-        df_pheromone,
+        df,
         x="Nurse",
         y="Day",
         z="Shift",
         color="Pheromone",
         animation_frame="Iteration",
         color_continuous_scale="Viridis",
-        range_color=[df_pheromone["Pheromone"].min(), df_pheromone["Pheromone"].max()],
+        range_color=[df["Pheromone"].min(), df["Pheromone"].max()],
     )
 
     fig.update_layout(
