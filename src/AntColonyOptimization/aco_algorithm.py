@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
 
@@ -159,62 +161,110 @@ def select_best_schedule(all_schedules: list, scores: list):
 # ---------------------------
 def run_aco(
     tau_init,
-    num_ants=50,
-    max_iters=100,
+    num_ants=30,
+    max_iters=50,
     alpha=1.0,
     beta=5.0,
     rho=0.1,
     Q=1.0,
     verbose=True,
     seed=None,
-    return_tau_history=False,  # neu
+    return_tau_history=False,
+    progress_callback=None,  
 ):
+    """
+    Führt die Ant Colony Optimization (ACO) aus.
+
+    Parameters
+    ----------
+    tau_init : np.ndarray
+        Anfangswerte der Pheromonmatrix (N, D, S)
+    num_ants : int
+        Anzahl der Ameisen pro Iteration
+    max_iters : int
+        Maximale Anzahl Iterationen
+    alpha, beta, rho, Q : float
+        Standardparameter der ACO
+    verbose : bool
+        Print-Ausgaben im Terminal
+    seed : int
+        Zufalls-Seed für Reproduzierbarkeit
+    return_tau_history : bool
+        Falls True, komplette Pheromonhistorie zurückgeben
+    progress_callback : callable
+        Optional. Wird nach jeder Iteration mit (current_iter, total_iters, best_score_so_far) aufgerufen.
+
+    Returns
+    -------
+    best_schedule, best_score, breakdown, tau, tau_history, best_score_history
+    """
+    import numpy as np
+
     if seed is not None:
         np.random.seed(seed)
 
     tau = tau_init.copy().astype(float)
     N, D, S = tau.shape
 
-    # ensure initial pheromone positive
+    # Sicherstellen, dass alle Werte positiv sind
     tau[tau <= 0] = 1.0
 
     best_overall_score = float("inf")
     best_overall_schedule = None
     best_breakdown = None
 
-    tau_history = []  # Liste für die Historie
+    tau_history = []
+    best_score_history = []  
 
     for itr in range(max_iters):
-        all_schedules = [
-            construct_schedule(tau, alpha=alpha, beta=beta) for _ in range(num_ants)
-        ]
+        # 1 Konstruktion von Lösungen
+        all_schedules = [construct_schedule(tau, alpha=alpha, beta=beta) for _ in range(num_ants)]
         scores = [heuristic_score(s)[0] for s in all_schedules]
 
-        # update pheromones
+        # 2 Pheromon-Update
         update_pheromones(tau, all_schedules, scores, rho=rho, Q=Q)
 
-        # speichern der aktuellen tau-Matrix
-        tau_history.append(tau.copy())
-
-        # track best in this iteration
+        # 3 Aktuellen besten Score bestimmen
         local_best_idx = int(np.argmin(scores))
         local_best_score = scores[local_best_idx]
+        best_score_history.append(local_best_score) 
+
+        # 4 Global bestes Ergebnis aktualisieren
         if local_best_score < best_overall_score:
             best_overall_score = local_best_score
             best_overall_schedule = all_schedules[local_best_idx]
             _, best_breakdown = heuristic_score(best_overall_schedule)
 
+        # 5 Fortschritt melden (optional an Streamlit)
+        if progress_callback is not None:
+            progress_callback(itr + 1, max_iters, best_overall_score)
+
+        # 6 Optional: Pheromonhistorie speichern
+        if return_tau_history:
+            tau_history.append(tau.copy())
+
         if verbose and (itr % max(1, max_iters // 10) == 0 or itr == max_iters - 1):
-            print(
-                f"Iter {itr+1}/{max_iters}  best_score_so_far={best_overall_score:.2f}  local_best={local_best_score:.2f}"
-            )
+            print(f"Iter {itr+1}/{max_iters} | best={best_overall_score:.2f} | local={local_best_score:.2f}")
 
+    # Rückgabe inkl. History
     if return_tau_history:
-        return best_overall_schedule, best_overall_score, best_breakdown, tau, tau_history
+        return (
+            best_overall_schedule,
+            best_overall_score,
+            best_breakdown,
+            tau,
+            tau_history,
+            best_score_history,
+        )
     else:
-        return best_overall_schedule, best_overall_score, best_breakdown, tau
-
-
+        return (
+            best_overall_schedule,
+            best_overall_score,
+            best_breakdown,
+            tau,
+            None,
+            best_score_history,
+        )
 
 # ---------------------------
 # Example usage
@@ -228,11 +278,18 @@ if __name__ == "__main__":
     # initialize pheromone (N,D,S) with small positive values
     tau0 = np.ones((N, D, S)) * 0.1
 
-    # run ACO with tau history
-    best_schedule, best_score, breakdown, tau_final, tau_history = run_aco(
+    # run ACO with tau and score history
+    (
+        best_schedule,
+        best_score,
+        breakdown,
+        tau_final,
+        tau_history,
+        best_score_history,
+    ) = run_aco(
         tau0,
         num_ants=30,
-        max_iters=100,
+        max_iters=50,
         alpha=1.0,
         beta=5.0,
         rho=0.1,
@@ -248,13 +305,37 @@ if __name__ == "__main__":
     print("Day-wise schedule (nurses x days x shifts):")
     print(best_schedule)
 
+    # -------------------------------
+    # Score-History Plot
+    # -------------------------------
+    fig_score = go.Figure()
+    fig_score.add_trace(
+        go.Scatter(
+            y=best_score_history,
+            mode="lines+markers",
+            line=dict(color="green", width=3),
+            name="Best Score per Iteration",
+        )
+    )
+    fig_score.update_layout(
+        title="Best Score over Iterations",
+        xaxis_title="Iteration",
+        yaxis_title="Best Score",
+        template="plotly_white",
+        width=800,
+        height=400,
+    )
+    fig_score.show()
 
-    # flatten tau_history for animation
-    N, D, S = tau_history[0].shape
-    frames = []
-    x, y, z, c, iteration = [], [], [], [], []
+    # -------------------------------
+    # Pheromon-Historie Animation (flüssig)
+    # -------------------------------
+    # Reduziere Datenmenge für flüssige Animation: nur jede 5. Iteration
+    selected_iters = range(0, len(tau_history), 5)
+    x, y, z, c, iteration_list = [], [], [], [], []
 
-    for itr, tau_matrix in enumerate(tau_history):
+    for itr in selected_iters:
+        tau_matrix = tau_history[itr]
         for n in range(N):
             for d in range(D):
                 for s in range(S):
@@ -262,28 +343,26 @@ if __name__ == "__main__":
                     y.append(d)
                     z.append(s)
                     c.append(tau_matrix[n, d, s])
-                    iteration.append(itr+1)  # iteration index
+                    iteration_list.append(itr + 1)
 
-    # create a DataFrame for Plotly Express
-    import pandas as pd
-    df = pd.DataFrame({
+    df_pheromone = pd.DataFrame({
         "Nurse": x,
         "Day": y,
         "Shift": z,
         "Pheromone": c,
-        "Iteration": iteration
+        "Iteration": iteration_list
     })
 
     # 3D scatter with animation over iterations
     fig = px.scatter_3d(
-        df,
+        df_pheromone,
         x="Nurse",
         y="Day",
         z="Shift",
         color="Pheromone",
         animation_frame="Iteration",
         color_continuous_scale="Viridis",
-        range_color=[df["Pheromone"].min(), df["Pheromone"].max()],
+        range_color=[df_pheromone["Pheromone"].min(), df_pheromone["Pheromone"].max()],
     )
 
     fig.update_layout(
