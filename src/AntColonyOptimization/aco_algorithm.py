@@ -2,21 +2,6 @@ import numpy as np
 import plotly.express as px
 import numpy as np
 
-""" 
-Your setup would look something like this:
-
-# dimensions
-N = 10   # nurses
-D = 7    # days
-S = 3    # shifts
-
-# 3D pheromone and schedule matrices
-tau = np.ones((N, D, S))         # pheromone memory
-schedule = np.nan((N, D, S))     # initial schedule (unassigned slots are set to nan)
-
-"""
-
-
 def construct_schedule(tau: np.array, alpha: float = 1, beta: float = 5) -> np.array:
     N, D, S = tau.shape
     schedule = np.full((N, D, S), np.nan)

@@ -3,6 +3,11 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from src.AntColonyOptimization.aco_algorithm import run_aco
 
 # Streamlit-Konfiguration
 st.set_page_config(
