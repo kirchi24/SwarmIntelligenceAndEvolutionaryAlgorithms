@@ -151,12 +151,12 @@ with tabs[2]:
     D = st.sidebar.slider("Anzahl Tage", 1, 14, 7, 1)
     S = st.sidebar.slider("Anzahl Schichten pro Tag", 1, 5, 3, 1)
 
-    alpha = st.sidebar.slider("Alpha (Pheromone Gewicht)", 0.1, 5.0, 1.0, 0.1)
-    beta = st.sidebar.slider("Beta (Heuristik Gewicht)", 0.1, 10.0, 5.0, 0.1)
-    rho = st.sidebar.slider("Verdunstungsrate ρ", 0.0, 1.0, 0.1, 0.01)
+    alpha = st.sidebar.slider("Alpha (Pheromone Gewicht)", 0.5, 2.0, 1.0, 0.1)
+    beta = st.sidebar.slider("Beta (Heuristik Gewicht)", 3.0, 5.0, 4.0, 0.1)
+    rho = st.sidebar.slider("Verdunstungsrate ρ", 0.0, 1.0, 0.3, 0.01)
     Q = st.sidebar.slider("Pheromon Verstärkung Q", 1.0, 200.0, 100.0, 1.0)
-    num_ants = st.sidebar.slider("Anzahl Ameisen pro Iteration", 1, 100, 30, 1)
-    max_iters = st.sidebar.slider("Maximale Iterationen", 1, 500, 50, 1)
+    num_ants = st.sidebar.slider("Anzahl Ameisen pro Iteration", 30, 100, 30, 1)
+    max_iters = st.sidebar.slider("Maximale Iterationen", 1, 200, 50, 1)
     seed = st.sidebar.number_input("Random Seed", 0, 9999, 42)
     np.random.seed(seed)
 
