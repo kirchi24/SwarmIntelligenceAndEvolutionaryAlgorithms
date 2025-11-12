@@ -1,3 +1,4 @@
+from random import seed
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -199,15 +200,11 @@ def run_aco(
     -------
     best_schedule, best_score, breakdown, tau, tau_history, best_score_history, best_pheromone_history
     """
-    import numpy as np
-
     if seed is not None:
         np.random.seed(seed)
 
     tau = tau_init.copy().astype(float)
-
-    # Sicherstellen, dass alle Werte positiv sind
-    tau[tau <= 0] = 0.1
+    tau[tau <= 0] = 0.1  # alle Werte positiv halten
 
     best_overall_score = float("inf")
     best_overall_schedule = None
@@ -216,44 +213,46 @@ def run_aco(
     best_schedule_pheromone_history = []
 
     for itr in range(max_iters):
-        # 1 Konstruktion von Lösungen
+        # Lösungen erzeugen und bewerten
         all_schedules = [
             construct_schedule(tau, alpha=alpha, beta=beta) for _ in range(num_ants)
         ]
         scores = [heuristic_score(s)[0] for s in all_schedules]
 
-        # 2 Pheromon-Update
-        update_pheromones(tau, all_schedules, scores, rho=rho, Q=Q)
+        # Besten Plan dieser Runde bestimmen
+        local_best_score = np.min(scores)
+        best_idxs = np.where(np.isclose(scores, local_best_score))[0]
+        local_best_idx = max(
+            best_idxs,
+            key=lambda i: np.nansum(
+                tau[(~np.isnan(all_schedules[i])) & (all_schedules[i] == 1)]
+            ),
+        )
 
-        # 3 Aktuellen besten Score bestimmen
-        local_best_idx = int(np.argmin(scores))
-        local_best_score = scores[local_best_idx]
-
-        # 4 Global bestes Ergebnis aktualisieren
-        if local_best_score < best_overall_score:
+        # Global besten Plan ggf. aktualisieren
+        if local_best_score <= best_overall_score:
             best_overall_score = local_best_score
             best_overall_schedule = all_schedules[local_best_idx]
 
-        # compute pheromone amount on current global best schedule (after update)
+        # Pheromone aktualisieren
+        update_pheromones(tau, all_schedules, scores, rho=rho, Q=Q)
+
+        # Pheromonmenge auf bestem Plan speichern
         if best_overall_schedule is not None:
-            mask_best = (~np.isnan(best_overall_schedule)) & (
-                best_overall_schedule == 1
-            )
+            mask_best = (~np.isnan(best_overall_schedule)) & (best_overall_schedule == 1)
             pheromone_on_best = float(np.nansum(tau[mask_best]))
         else:
             pheromone_on_best = 0.0
         best_schedule_pheromone_history.append(pheromone_on_best)
 
-        # 5 Fortschritt melden (optional an Streamlit)
+        # Fortschritt und Historie
         if progress_callback is not None:
             progress_callback(itr + 1, max_iters, best_overall_score)
-
-        # 6 Optional: Pheromonhistorie speichern
         if return_tau_history:
             tau_history.append(tau.copy())
 
         if verbose and (itr % max(1, max_iters // 10) == 0 or itr == max_iters - 1):
-            print(f"Iter {itr+1}/{max_iters}")
+            print(f"Iter {itr+1}/{max_iters} | Best: {best_overall_score:.2f}")
 
     _, best_breakdown = heuristic_score(best_overall_schedule)
 
