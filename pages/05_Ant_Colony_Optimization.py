@@ -161,6 +161,8 @@ with tabs[2]:
     Q = st.slider("Pheromon Verstärkung Q", 1.0, 200.0, 100.0, 1.0)
     num_ants = st.slider("Anzahl Ameisen pro Iteration", 1, 100, 30, 1)
     max_iters = st.slider("Maximale Iterationen", 1, 500, 50, 1)
+    seed = st.sidebar.number_input("Random Seed", 0, 9999, 42)
+    np.random.seed(seed)
 
     if st.button("ACO ausführen"):
         tau_init = np.ones((N, D, S)) * 0.1
@@ -193,7 +195,7 @@ with tabs[2]:
             rho=rho,
             Q=Q,
             verbose=False,
-            seed=42,
+            seed=seed,
             return_tau_history=True,
             progress_callback=update_progress,
         )
