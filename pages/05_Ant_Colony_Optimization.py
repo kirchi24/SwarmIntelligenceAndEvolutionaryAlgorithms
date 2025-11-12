@@ -29,7 +29,7 @@ with tabs[0]:
     st.markdown(
         """
     Ant Colony Optimization (ACO) ist eine metaheuristische Methode, inspiriert vom Nahrungssucheverhalten realer Ameisen. 
-    Sie eignet sich besonders für kombinatorische Optimierungsprobleme, z. B. das Travelling Salesman Problem (TSP) 
+    Sie eignet sich besonders für kombinatorische Optimierungsprobleme, z.B. das Travelling Salesman Problem (TSP) 
     oder das Nurse Scheduling Problem (NSP).
 
     **Stärken:**
@@ -60,13 +60,13 @@ with tabs[1]:
     """
     )
     st.latex(
-        r"\tau_{n,d,s} \leftarrow (1 - \rho)\,\tau_{n,d,s} + \sum_k \Delta\tau_{n,d,s}^{(k)}"
+        r"\tau_{n,d,s} \leftarrow (1 - \rho) \tau_{n,d,s} + \sum_k \Delta \tau_{n,d,s}^{(k)}"
     )
 
     st.markdown("Dabei gilt:")
     st.latex(
         r"""
-    \Delta\tau_{n,d,s}^{(k)} =
+    \Delta \tau_{n,d,s}^{(k)} =
     \begin{cases}
     \dfrac{Q}{1 + L_k}, & \text{wenn Ameise k die Zuweisung gesetzt hat} \\
     0, & \text{sonst}
@@ -77,7 +77,7 @@ with tabs[1]:
     st.markdown("**Parameter:**")
     st.markdown(
         """
-    - ρ — Verdunstungsrate (z. B. 0,1 → 10 % Verlust pro Iteration)  
+    - ρ — Verdunstungsrate (z.B. 0,1 → 10% Verlust pro Iteration)  
     - Q — Verstärkungsfaktor für abgelegtes Pheromon  
     - Lₖ — Kosten / Score der Ameise k (je kleiner, desto besser)
     """
@@ -86,7 +86,7 @@ with tabs[1]:
     st.markdown("**Intuition:**")
     st.markdown(
         """
-    - Schlechte Lösungen verlieren Gewicht: $ \\tau \\leftarrow (1-\\rho)\, \\tau $
+    - Schlechte Lösungen verlieren Gewicht: $ \\tau \\leftarrow (1-\\rho) \\tau $
     - Gute Lösungen verstärken Pfade: $\\tau \leftarrow \\tau + \\dfrac{Q}{1 + L_k}$  
     - Gleichgewicht zwischen Vergessen und Lernen fokussiert den Algorithmus auf gute Lösungen
     """
@@ -151,16 +151,16 @@ with tabs[2]:
     # ---------------------------
     # Interaktive Parameter
     # ---------------------------
-    N = st.slider("Anzahl Krankenschwestern", 3, 20, 10, 1)
-    D = st.slider("Anzahl Tage", 1, 14, 7, 1)
-    S = st.slider("Anzahl Schichten pro Tag", 1, 5, 3, 1)
+    N = st.sidebar.slider("Anzahl Krankenschwestern", 3, 20, 10, 1)
+    D = st.sidebar.slider("Anzahl Tage", 1, 14, 7, 1)
+    S = st.sidebar.slider("Anzahl Schichten pro Tag", 1, 5, 3, 1)
 
-    alpha = st.slider("Alpha (Pheromone Gewicht)", 0.1, 5.0, 1.0, 0.1)
-    beta = st.slider("Beta (Heuristik Gewicht)", 0.1, 10.0, 5.0, 0.1)
-    rho = st.slider("Verdunstungsrate ρ", 0.0, 1.0, 0.1, 0.01)
-    Q = st.slider("Pheromon Verstärkung Q", 1.0, 200.0, 100.0, 1.0)
-    num_ants = st.slider("Anzahl Ameisen pro Iteration", 1, 100, 30, 1)
-    max_iters = st.slider("Maximale Iterationen", 1, 500, 50, 1)
+    alpha = st.sidebar.slider("Alpha (Pheromone Gewicht)", 0.1, 5.0, 1.0, 0.1)
+    beta = st.sidebar.slider("Beta (Heuristik Gewicht)", 0.1, 10.0, 5.0, 0.1)
+    rho = st.sidebar.slider("Verdunstungsrate ρ", 0.0, 1.0, 0.1, 0.01)
+    Q = st.sidebar.slider("Pheromon Verstärkung Q", 1.0, 200.0, 100.0, 1.0)
+    num_ants = st.sidebar.slider("Anzahl Ameisen pro Iteration", 1, 100, 30, 1)
+    max_iters = st.sidebar.slider("Maximale Iterationen", 1, 500, 50, 1)
     seed = st.sidebar.number_input("Random Seed", 0, 9999, 42)
     np.random.seed(seed)
 
@@ -397,7 +397,7 @@ with tabs[3]:
 
         **Mögliche Verbesserungen:**
         - Adaptive Parameteranpassung während der Laufzeit  
-        - Hybridisierung mit anderen Optimierungsverfahren (z. B. genetische Algorithmen)  
+        - Hybridisierung mit anderen Optimierungsverfahren (z.B. genetische Algorithmen)  
         - Erweiterte Heuristiken zur Initialisierung und Pfadauswahl  
         """
     )
