@@ -197,7 +197,7 @@ def run_aco(
 
     Returns
     -------
-    best_schedule, best_score, breakdown, tau, tau_history, best_score_history
+    best_schedule, best_score, breakdown, tau, tau_history, best_score_history, best_pheromone_history
     """
     import numpy as np
 
@@ -205,17 +205,15 @@ def run_aco(
         np.random.seed(seed)
 
     tau = tau_init.copy().astype(float)
-    N, D, S = tau.shape
 
     # Sicherstellen, dass alle Werte positiv sind
-    tau[tau <= 0] = 1.0
+    tau[tau <= 0] = 0.1
 
     best_overall_score = float("inf")
     best_overall_schedule = None
     best_breakdown = None
-
     tau_history = []
-    best_score_history = []
+    best_schedule_pheromone_history = []
 
     for itr in range(max_iters):
         # 1 Konstruktion von Lösungen
@@ -230,13 +228,21 @@ def run_aco(
         # 3 Aktuellen besten Score bestimmen
         local_best_idx = int(np.argmin(scores))
         local_best_score = scores[local_best_idx]
-        best_score_history.append(local_best_score)
 
         # 4 Global bestes Ergebnis aktualisieren
         if local_best_score < best_overall_score:
             best_overall_score = local_best_score
             best_overall_schedule = all_schedules[local_best_idx]
-            _, best_breakdown = heuristic_score(best_overall_schedule)
+
+        # compute pheromone amount on current global best schedule (after update)
+        if best_overall_schedule is not None:
+            mask_best = (~np.isnan(best_overall_schedule)) & (
+                best_overall_schedule == 1
+            )
+            pheromone_on_best = float(np.nansum(tau[mask_best]))
+        else:
+            pheromone_on_best = 0.0
+        best_schedule_pheromone_history.append(pheromone_on_best)
 
         # 5 Fortschritt melden (optional an Streamlit)
         if progress_callback is not None:
@@ -247,29 +253,18 @@ def run_aco(
             tau_history.append(tau.copy())
 
         if verbose and (itr % max(1, max_iters // 10) == 0 or itr == max_iters - 1):
-            print(
-                f"Iter {itr+1}/{max_iters} | best={best_overall_score:.2f} | local={local_best_score:.2f}"
-            )
+            print(f"Iter {itr+1}/{max_iters}")
 
-    # Rückgabe inkl. History
-    if return_tau_history:
-        return (
-            best_overall_schedule,
-            best_overall_score,
-            best_breakdown,
-            tau,
-            tau_history,
-            best_score_history,
-        )
-    else:
-        return (
-            best_overall_schedule,
-            best_overall_score,
-            best_breakdown,
-            tau,
-            None,
-            best_score_history,
-        )
+    _, best_breakdown = heuristic_score(best_overall_schedule)
+
+    return (
+        best_overall_schedule,
+        best_overall_score,
+        best_breakdown,
+        tau,
+        tau_history,
+        best_schedule_pheromone_history,
+    )
 
 
 # ---------------------------
@@ -282,7 +277,7 @@ if __name__ == "__main__":
     import plotly.graph_objects as go
 
     # small demo problem
-    N = 6  # nurses
+    N = 10  # nurses
     D = 7  # days
     S = 3  # shifts (morning, afternoon, night)
 
@@ -297,6 +292,7 @@ if __name__ == "__main__":
         tau_final,
         tau_history,
         best_score_history,
+        best_pheromone_history,
     ) = run_aco(
         tau0,
         num_ants=30,

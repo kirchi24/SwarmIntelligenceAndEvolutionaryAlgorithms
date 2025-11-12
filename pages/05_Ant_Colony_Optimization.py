@@ -181,7 +181,7 @@ with tabs[2]:
             breakdown,
             tau_final,
             tau_history,
-            best_score_history,
+            best_shedule_pheromone_history,
         ) = run_aco(
             tau_init,
             num_ants=num_ants,
@@ -209,16 +209,16 @@ with tabs[2]:
         fig_score = go.Figure()
         fig_score.add_trace(
             go.Scatter(
-                y=best_score_history,
+                y=best_shedule_pheromone_history,
                 mode="lines+markers",
                 name="Best Score",
                 line=dict(color="green", width=3),
             )
         )
         fig_score.update_layout(
-            title="Entwicklung des besten Scores über die Iterationen",
+            title="Entwicklung der Pheromone des besten Plans über Iterationen",
             xaxis_title="Iteration",
-            yaxis_title="Bester Score",
+            yaxis_title="Pheromonstärke",
             template="plotly_white",
             width=800,
             height=400,
@@ -233,7 +233,7 @@ with tabs[2]:
 
         best_schedule_num = np.nan_to_num(best_schedule, 0)
         columns = [
-            f"Tag {d+1}_{label}" for d in range(D) for label in ["FS", "SS", "NS"][:S]
+            f"Tag {d}_{label}" for d in range(D) for label in ["FS", "SS", "NS"][:S]
         ]
         data_2d = best_schedule_num.reshape(N, D * S)
 
@@ -242,7 +242,7 @@ with tabs[2]:
             data=go.Heatmap(
                 z=data_2d,
                 x=columns,
-                y=[f"KS{i+1}" for i in range(N)],
+                y=[f"KS{i}" for i in range(N)],
                 colorscale=colorscale,
                 showscale=False,
                 hoverongaps=False,
@@ -291,7 +291,7 @@ with tabs[2]:
 
         df_shifts = pd.DataFrame(
             {
-                "Krankenschwester": [f"KS{i+1}" for i in range(N)],
+                "Krankenschwester": [f"KS{i}" for i in range(N)],
                 "Anzahl Schichten": shifts_per_nurse,
             }
         )
@@ -320,7 +320,7 @@ with tabs[2]:
         fig_bar.update_layout(
             title="Gesamtanzahl der Schichten pro Krankenschwester",
             yaxis_title="Anzahl Schichten",
-            yaxis_range=[0, 7],
+            yaxis_range=[0, 10],
             xaxis_title="Krankenschwester",
             yaxis=dict(tick0=0, dtick=1),
             width=800,
