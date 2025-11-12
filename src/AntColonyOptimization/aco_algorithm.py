@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
 
+
 def construct_schedule(tau: np.array, alpha: float = 1, beta: float = 5) -> np.array:
     N, D, S = tau.shape
     schedule = np.full((N, D, S), np.nan)
@@ -170,7 +171,7 @@ def run_aco(
     verbose=True,
     seed=None,
     return_tau_history=False,
-    progress_callback=None,  
+    progress_callback=None,
 ):
     """
     Führt die Ant Colony Optimization (ACO) aus.
@@ -214,11 +215,13 @@ def run_aco(
     best_breakdown = None
 
     tau_history = []
-    best_score_history = []  
+    best_score_history = []
 
     for itr in range(max_iters):
         # 1 Konstruktion von Lösungen
-        all_schedules = [construct_schedule(tau, alpha=alpha, beta=beta) for _ in range(num_ants)]
+        all_schedules = [
+            construct_schedule(tau, alpha=alpha, beta=beta) for _ in range(num_ants)
+        ]
         scores = [heuristic_score(s)[0] for s in all_schedules]
 
         # 2 Pheromon-Update
@@ -227,7 +230,7 @@ def run_aco(
         # 3 Aktuellen besten Score bestimmen
         local_best_idx = int(np.argmin(scores))
         local_best_score = scores[local_best_idx]
-        best_score_history.append(local_best_score) 
+        best_score_history.append(local_best_score)
 
         # 4 Global bestes Ergebnis aktualisieren
         if local_best_score < best_overall_score:
@@ -244,7 +247,9 @@ def run_aco(
             tau_history.append(tau.copy())
 
         if verbose and (itr % max(1, max_iters // 10) == 0 or itr == max_iters - 1):
-            print(f"Iter {itr+1}/{max_iters} | best={best_overall_score:.2f} | local={local_best_score:.2f}")
+            print(
+                f"Iter {itr+1}/{max_iters} | best={best_overall_score:.2f} | local={local_best_score:.2f}"
+            )
 
     # Rückgabe inkl. History
     if return_tau_history:
@@ -265,6 +270,7 @@ def run_aco(
             None,
             best_score_history,
         )
+
 
 # ---------------------------
 # Example usage
@@ -348,17 +354,14 @@ if __name__ == "__main__":
                     y.append(d)
                     z.append(s)
                     c.append(tau_matrix[n, d, s])
-                    iteration.append(itr+1)  # iteration index
+                    iteration.append(itr + 1)  # iteration index
 
     # create a DataFrame for Plotly Express
     import pandas as pd
-    df = pd.DataFrame({
-        "Nurse": x,
-        "Day": y,
-        "Shift": z,
-        "Pheromone": c,
-        "Iteration": iteration
-    })
+
+    df = pd.DataFrame(
+        {"Nurse": x, "Day": y, "Shift": z, "Pheromone": c, "Iteration": iteration}
+    )
 
     # 3D scatter with animation over iterations
     fig = px.scatter_3d(
@@ -373,7 +376,7 @@ if __name__ == "__main__":
     )
 
     fig.update_layout(
-        scene=dict(xaxis_title='Nurse', yaxis_title='Day', zaxis_title='Shift'),
-        title="Pheromone evolution over iterations"
+        scene=dict(xaxis_title="Nurse", yaxis_title="Day", zaxis_title="Shift"),
+        title="Pheromone evolution over iterations",
     )
     fig.show()
