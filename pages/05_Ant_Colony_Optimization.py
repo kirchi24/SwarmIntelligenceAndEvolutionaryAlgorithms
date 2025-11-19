@@ -83,7 +83,7 @@ with tabs[1]:
     st.markdown(
         """
     - Schlechte Lösungen verlieren Gewicht: $ \\tau \\leftarrow (1-\\rho) \\tau $
-    - Gute Lösungen verstärken Pfade: $\\tau \leftarrow \\tau + \\dfrac{Q}{1 + L_k}$  
+    - Gute Lösungen verstärken Pfade: $\\tau \\leftarrow \\tau + \\dfrac{Q}{1 + L_k}$  
     - Gleichgewicht zwischen Vergessen und Lernen fokussiert den Algorithmus auf gute Lösungen
     """
     )
