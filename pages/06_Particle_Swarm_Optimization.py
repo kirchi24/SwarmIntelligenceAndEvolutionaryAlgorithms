@@ -80,7 +80,7 @@ with tabs[1]:
         Jeder Partikel kodiert ein **Feature-Subset** als Vektor aus Realszahlen:
 
         $$
-        x = [x_1, x_2, \dots, x_{54}]
+        x = [x_1, x_2, \\dots, x_{54}]
         $$
 
         Wir verwenden **kontinuierliche Werte** für die Optimierung:
@@ -146,7 +146,6 @@ with tabs[1]:
         + (1-\alpha)\left(1 - \frac{n_\text{selected}}{N_\text{features}}\right)
         """
     )
-
 
     # Plot: Beispielhafte Visualisierung von Velocity Updates
     st.subheader(
@@ -221,42 +220,64 @@ with tabs[2]:
             max_depth=max_depth,
             progress_callback=progress_callback,
         )
+
         end_time = time.time()
         elapsed_time = end_time - start_time
-        st.info(f"PSO-Durchlaufzeit: {elapsed_time:.2f} Sekunden")
+        best_features, best_fitness, best_f1, fitness_curve, f1_curve = results
+
         st.info(
-            f"Zeit pro Forest Auswertung: {elapsed_time * 1000 / (n_particles * iterations)} Millisekunden"
+            f"PSO-Durchlaufzeit: {elapsed_time:.2f} Sekunden \t Zeit pro Forest Auswertung: {elapsed_time * 1000 / (n_particles * iterations)} Millisekunden"
+        )
+        st.success(
+            f"PSO abgeschlossen! Bester Fitnesswert: {best_fitness:.4f} mit einem F1-Score von {best_f1:.4f} \t Anzahl ausgewählter Features: {sum(best_features)} / 54"
         )
 
-        best_features, best_fitness, fitness_curve = results
+        fig = go.Figure()
 
-        st.success(f"PSO abgeschlossen! Bester Fitnesswert: {best_fitness:.4f}")
-        st.markdown(f"**Anzahl ausgewählter Features:** {sum(best_features)} / 54")
-
-        # Plot: Fitnesskurve
-        fig_curve = go.Figure()
-        fig_curve.add_trace(
+        # Fitnesskurve
+        fig.add_trace(
             go.Scatter(
                 y=fitness_curve,
                 mode="lines+markers",
-                line=dict(color="green", width=3),
+                name="Fitness",
+                line=dict(color="green", width=3)
             )
         )
-        fig_curve.update_layout(
-            title="Fitnessverlauf über die Iterationen",
-            xaxis_title="Iteration",
-            yaxis_title="Fitness",
-            template="plotly_white",
-            height=400,
-        )
-        st.plotly_chart(fig_curve, use_container_width=True)
 
-        # Feature-Maske anzeigen
-        st.write("### Ausgewählte Features (1 = ausgewählt)")
-        df_mask = pd.DataFrame(
-            {"Feature": [f"f{i:02d}" for i in range(54)], "Selected": best_features}
+        # F1-Score-Kurve
+        fig.add_trace(
+            go.Scatter(
+                y=f1_curve,
+                mode="lines+markers",
+                name="F1-Score",
+                line=dict(color="blue", width=3, dash="dash")
+            )
         )
-        st.dataframe(df_mask)
+
+        fig.update_layout(
+            title="Fitness und F1-Score Verlauf über die Iterationen",
+            xaxis=dict(title="Iteration"),
+            yaxis=dict(
+                title="Wert",
+                range=[0, 1],  # Achse bei 0 starten
+            ),
+            template="plotly_white",
+            height=500
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # best_features: 0/1-Maske
+        feature_names = [f"f{i:02d}" for i in range(len(best_features))]
+        df_mask = pd.DataFrame({
+            "Feature": feature_names,
+            "Selected": best_features
+        })
+
+        # Nur ausgewählte Features auflisten
+        selected_features = df_mask[df_mask["Selected"] == 1]["Feature"].tolist()
+        st.write(f"### Ausgewählte Features ({len(selected_features)})")
+        st.write(selected_features)
 
 # =====================================================================
 # TAB 4 — DISCUSSION

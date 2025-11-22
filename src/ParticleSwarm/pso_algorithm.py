@@ -100,11 +100,11 @@ def evaluate(
     clf.fit(Xtr, y_train)
     pred = clf.predict(Xte)
 
-    macro_acc = fast_macro_f1(y_test, pred)
+    macro_f1 = fast_macro_f1(y_test, pred)
     sparsity_penalty = 1 - len(selected) / n_features
 
-    fitness = alpha * macro_acc + (1 - alpha) * sparsity_penalty
-    return fitness, mask
+    fitness = alpha * macro_f1 + (1 - alpha) * sparsity_penalty
+    return fitness, mask, macro_f1
 
 
 # ==========================================================
@@ -160,6 +160,7 @@ def run_pso(
     global_best_score = -np.inf
 
     fitness_history = []
+    f1_history = []
 
     # ------------------------------------
     # PSO loop
@@ -167,7 +168,7 @@ def run_pso(
     for it in range(iterations):
         # evaluate particles
         for i in range(n_particles):
-            fitness, mask = evaluate(
+            fitness, mask, f1 = evaluate(
                 positions[i],
                 X_train,
                 X_test,
@@ -188,8 +189,10 @@ def run_pso(
                 global_best_score = fitness
                 global_best_pos = positions[i].copy()
                 global_mask = mask.copy()
+                global_f1 = f1
 
         fitness_history.append(global_best_score)
+        f1_history.append(global_f1)
 
         if progress_callback:
             progress_callback(it + 1, iterations, global_best_score)
@@ -206,7 +209,7 @@ def run_pso(
             positions[i] += velocities[i]
 
     best_features = global_mask
-    return best_features, global_best_score, fitness_history
+    return best_features, global_best_score, global_f1, fitness_history, f1_history
 
 
 # ==========================================================
