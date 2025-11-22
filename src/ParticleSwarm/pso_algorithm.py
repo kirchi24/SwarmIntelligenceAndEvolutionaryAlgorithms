@@ -28,22 +28,30 @@ except Exception:
 # ==========================================================
 # Utility-Funktionen
 # ==========================================================
-def macro_class_accuracy(y_true, y_pred):
-    labels = np.unique(y_true)
-    accs = []
-    per_class = {}
-    for lab in labels:
-        mask = (y_true == lab)
-        if np.sum(mask) == 0:
-            acc = 0
-        else:
-            acc = np.mean(y_pred[mask] == y_true[mask])
-        per_class[lab] = float(acc)
-        accs.append(acc)
-    return float(np.mean(accs)), per_class
+def fast_macro_f1(y_true, y_pred):
+    """ Optimized macro F1-score calculation """
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+
+    labels = np.union1d(y_true, y_pred)
+    idx_t = np.searchsorted(labels, y_true)
+    idx_p = np.searchsorted(labels, y_pred)
+
+    # Confusion matrix
+    cm = np.zeros((labels.size, labels.size), int)
+    np.add.at(cm, (idx_t, idx_p), 1)
+
+    TP = np.diag(cm)
+    FP = cm.sum(axis=0) - TP
+    FN = cm.sum(axis=1) - TP
+
+    denom = 2*TP + FP + FN
+    f1 = 2*TP / np.where(denom == 0, 1, denom)
+
+    return float(f1.mean())
 
 
-def quick_eda(X, y, top_n=10):
+def quick_exploratory_data_analysis(X, y, top_n=10):
     print(f"Data shape: {X.shape}")
     print("\nClass distribution:")
     cnt = Counter(y)
@@ -63,6 +71,40 @@ def quick_eda(X, y, top_n=10):
         )
     print()
     return desc
+
+
+# ------------------------------------
+# Fitness function
+# ------------------------------------
+def evaluate(position, X_train, X_test, y_train, y_test, alpha=0.7, n_estimators=50):
+    """
+    Evaluates a particle's position.
+    Position is a real-valued vector; apply sigmoid and threshold at 0.5 to get feature mask.
+    Returns fitness score and binary mask.
+    """
+    mask = (1 / (1 + np.exp(-position)) > 0.5).astype(int)
+    selected = np.where(mask == 1)[0]
+    n_features = X_train.shape[1]
+
+    if len(selected) == 0:
+        return -999, mask
+
+    Xtr = X_train[:, selected]
+    Xte = X_test[:, selected]
+
+    clf = RandomForestClassifier(
+        n_estimators=n_estimators,
+        random_state=42,
+        n_jobs=1
+    )
+    clf.fit(Xtr, y_train)
+    pred = clf.predict(Xte)
+
+    macro_acc = fast_macro_f1(y_test, pred)
+    sparsity_penalty = 1 - len(selected) / n_features
+
+    fitness = alpha * macro_acc + (1 - alpha) * sparsity_penalty
+    return fitness, mask
 
 
 # ==========================================================
@@ -113,44 +155,18 @@ def run_pso(
     personal_best_scores = np.full(n_particles, -np.inf)
 
     global_best_pos = None
+    global_mask = None
     global_best_score = -np.inf
 
     fitness_history = []
 
     # ------------------------------------
-    # Fitness function
-    # ------------------------------------
-    def evaluate(position):
-        mask = (1 / (1 + np.exp(-position)) > 0.5).astype(int)
-        selected = np.where(mask == 1)[0]
-
-        if len(selected) == 0:
-            return -999, mask
-
-        Xtr = X_train[:, selected]
-        Xte = X_test[:, selected]
-
-        clf = RandomForestClassifier(
-            n_estimators=n_estimators,
-            random_state=42,
-            n_jobs=1
-        )
-        clf.fit(Xtr, y_train)
-        pred = clf.predict(Xte)
-
-        macro_acc, _ = macro_class_accuracy(y_test, pred)
-        sparsity_penalty = 1 - len(selected) / n_features
-
-        fitness = alpha * macro_acc + (1 - alpha) * sparsity_penalty
-        return fitness, mask
-
-    # ------------------------------------
     # PSO loop
     # ------------------------------------
     for it in range(iterations):
-
+        # evaluate particles
         for i in range(n_particles):
-            fitness, mask = evaluate(positions[i])
+            fitness, mask = evaluate(positions[i], X_train, X_test, y_train, y_test, alpha, n_estimators)
 
             # update personal best
             if fitness > personal_best_scores[i]:
@@ -161,6 +177,7 @@ def run_pso(
             if fitness > global_best_score:
                 global_best_score = fitness
                 global_best_pos = positions[i].copy()
+                global_mask = mask.copy()
 
         fitness_history.append(global_best_score)
 
@@ -178,7 +195,7 @@ def run_pso(
             velocities[i] = w * velocities[i] + cognitive + social
             positions[i] += velocities[i]
 
-    best_features = (1 / (1 + np.exp(-global_best_pos)) > 0.5).astype(int)
+    best_features = global_mask
     return best_features, global_best_score, fitness_history
 
 
@@ -194,7 +211,7 @@ def main():
     print(f"Loaded: X={X.shape}, y={y.shape}")
 
     print("\n2) EDA")
-    quick_eda(X, y)
+    quick_exploratory_data_analysis(X, y)
 
     print("\n3) Train/Test Split + Scaling")
     X_train, X_test, y_train, y_test = train_test_split(
@@ -237,14 +254,10 @@ def main():
     y_pred = rf.predict(X_te_sel)
 
     overall = accuracy_score(y_test, y_pred)
-    macro, per_class = macro_class_accuracy(y_test, y_pred)
+    macro = fast_macro_f1(y_test, y_pred)
 
     print("Overall accuracy:", overall)
-    print("Macro accuracy:", macro)
-    print("Per-class:")
-    for k in sorted(per_class.keys()):
-        print(f"  class {k}: {per_class[k]:.4f}")
-
+    print("Macro F1-Score:", macro)
     print("\nDONE. Time: %.1f sec" % (time.time() - t0))
 
 
