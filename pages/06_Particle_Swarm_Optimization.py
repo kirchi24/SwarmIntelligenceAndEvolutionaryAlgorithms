@@ -8,11 +8,11 @@ from src.ParticleSwarm.pso_algorithm import run_pso   # <-- DU IMPLEMENTIERST di
 
 # Streamlit-Konfiguration
 st.set_page_config(
-    page_title="Particle Swarm Optimization (PSO) – Feature Selection",
+    page_title="Particle Swarm Optimization (PSO) - Feature Selection",
     layout="wide",
 )
 
-st.title("Particle Swarm Optimization (PSO) für Feature Selection – Covertype Dataset")
+st.title("Particle Swarm Optimization (PSO) für Feature Selection - Covertype Dataset")
 
 # Tabs
 tabs = st.tabs(["Introduction", "Methods", "Results", "Discussion"])
@@ -70,7 +70,7 @@ with tabs[0]:
 # TAB 2 — METHODS
 # =====================================================================
 with tabs[1]:
-    st.markdown("## Methoden – PSO für Feature Selection")
+    st.markdown("## Methoden - PSO für Feature Selection")
 
     st.subheader("1. Repräsentation der Partikel")
     st.markdown(
@@ -105,10 +105,10 @@ with tabs[1]:
 
     st.markdown(
         """
-        - **ω** = Trägheitsgewicht  
-        - **c₁** = kognitiver Faktor (eigene Erfahrung)  
-        - **c₂** = sozialer Faktor (beste Partikel im Schwarm)  
-        - **r₁, r₂** = Zufallszahlen  
+        - **$\\omega$** = Trägheitsgewicht  
+        - **$c_1$** = kognitiver Faktor (eigene Erfahrung)  
+        - **$c_2$** = sozialer Faktor (beste Partikel im Schwarm)  
+        - **$r_1, r_2$** = Zufallszahlen  
         """
     )
 
@@ -129,7 +129,7 @@ with tabs[1]:
     )
 
     # Plot: Beispielhafte Visualisierung von Velocity Updates
-    st.subheader("Beispiel: Einfluss von w, c₁, c₂ auf die Bewegung eines Partikels")
+    st.subheader("Beispiel: Einfluss von $\\omega, c_1, c_2$ auf die Bewegung eines Partikels")
 
     iterations = np.arange(30)
     inertia = np.exp(-0.15 * iterations)
@@ -153,16 +153,16 @@ with tabs[1]:
 # TAB 3 — RESULTS (PSO ausführen)
 # =====================================================================
 with tabs[2]:
-    st.markdown("## PSO – Simulation & Ergebnisse")
+    st.markdown("## PSO - Simulation & Ergebnisse")
 
     # Sidebar Parameters
     st.sidebar.markdown("### PSO Parameter")
 
     n_particles = st.sidebar.slider("Anzahl Partikel", 5, 50, 20)
     iterations = st.sidebar.slider("Iterationen", 5, 100, 20)
-    w = st.sidebar.slider("Inertia (ω)", 0.1, 1.0, 0.7)
-    c1 = st.sidebar.slider("c1 (kognitiv)", 0.0, 3.0, 1.5)
-    c2 = st.sidebar.slider("c2 (sozial)", 0.0, 3.0, 1.5)
+    w = st.sidebar.slider("Inertia ($\\omega$)", 0.1, 1.0, 0.7)
+    c1 = st.sidebar.slider("$c_1$ (kognitiv)", 0.0, 3.0, 1.5)
+    c2 = st.sidebar.slider("$c_2$ (sozial)", 0.0, 3.0, 1.5)
     alpha = st.sidebar.slider("Alpha (Accuracy-Gewicht)", 0.3, 1.0, 0.7)
 
     st.sidebar.markdown("### RandomForest Parameter")
@@ -178,7 +178,7 @@ with tabs[2]:
         def progress_callback(current_iter, total_iters, best_fitness):
             progress.progress(current_iter / total_iters)
             status.text(
-                f"Iteration {current_iter}/{total_iters} – aktueller bester Score: {best_fitness:.4f}"
+                f"Iteration {current_iter}/{total_iters} - aktueller bester Score: {best_fitness:.4f}"
             )
 
         # Algorithmus starten
@@ -246,7 +246,7 @@ with tabs[3]:
 
         ### Verbesserungspotenzial
         - Parallelisierung über GPU-RandomForest (cuML)  
-        - Hyperparameter-Tuning für (ω, c1, c2)  
+        - Hyperparameter-Tuning für ($\\omega, c_1, c_2$)  
         - Kombination mit genetischen Algorithmen  
         - Modifizierte Binary-PSO-Varianten  
         """
