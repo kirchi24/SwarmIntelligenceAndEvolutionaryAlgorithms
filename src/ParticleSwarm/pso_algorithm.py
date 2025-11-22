@@ -1,4 +1,3 @@
-import os
 import time
 import warnings
 from collections import Counter
@@ -10,7 +9,7 @@ from sklearn.datasets import fetch_covtype
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import ExtraTreesClassifier
 
 warnings.filterwarnings("ignore")
 
@@ -19,7 +18,8 @@ warnings.filterwarnings("ignore")
 # ==========================================================
 try:
     import cudf
-    from cuml.ensemble import RandomForestClassifier as CuRF
+    from cuml.ensemble import ExtraTreesClassifier as CuRF
+
     GPU_AVAILABLE = True
 except Exception:
     GPU_AVAILABLE = False
@@ -29,7 +29,7 @@ except Exception:
 # Utility-Funktionen
 # ==========================================================
 def fast_macro_f1(y_true, y_pred):
-    """ Optimized macro F1-score calculation """
+    """Optimized macro F1-score calculation"""
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
 
@@ -45,8 +45,8 @@ def fast_macro_f1(y_true, y_pred):
     FP = cm.sum(axis=0) - TP
     FN = cm.sum(axis=1) - TP
 
-    denom = 2*TP + FP + FN
-    f1 = 2*TP / np.where(denom == 0, 1, denom)
+    denom = 2 * TP + FP + FN
+    f1 = 2 * TP / np.where(denom == 0, 1, denom)
 
     return float(f1.mean())
 
@@ -76,7 +76,9 @@ def quick_exploratory_data_analysis(X, y, top_n=10):
 # ------------------------------------
 # Fitness function
 # ------------------------------------
-def evaluate(position, X_train, X_test, y_train, y_test, alpha=0.7, n_estimators=50):
+def evaluate(
+    position, X_train, X_test, y_train, y_test, alpha=0.7, n_estimators=50, max_depth=5
+):
     """
     Evaluates a particle's position.
     Position is a real-valued vector; apply sigmoid and threshold at 0.5 to get feature mask.
@@ -92,10 +94,8 @@ def evaluate(position, X_train, X_test, y_train, y_test, alpha=0.7, n_estimators
     Xtr = X_train[:, selected]
     Xte = X_test[:, selected]
 
-    clf = RandomForestClassifier(
-        n_estimators=n_estimators,
-        random_state=42,
-        n_jobs=1
+    clf = ExtraTreesClassifier(
+        n_estimators=n_estimators, max_depth=max_depth, random_state=42, n_jobs=-1
     )
     clf.fit(Xtr, y_train)
     pred = clf.predict(Xte)
@@ -118,6 +118,7 @@ def run_pso(
     c2: float,
     alpha: float,
     n_estimators: int,
+    max_depth: int = 5,
     progress_callback=None,
 ):
     """
@@ -166,7 +167,16 @@ def run_pso(
     for it in range(iterations):
         # evaluate particles
         for i in range(n_particles):
-            fitness, mask = evaluate(positions[i], X_train, X_test, y_train, y_test, alpha, n_estimators)
+            fitness, mask = evaluate(
+                positions[i],
+                X_train,
+                X_test,
+                y_train,
+                y_test,
+                alpha,
+                n_estimators,
+                max_depth,
+            )
 
             # update personal best
             if fitness > personal_best_scores[i]:
@@ -233,7 +243,7 @@ def main():
         c2=1.5,
         alpha=0.7,
         n_estimators=20,
-        progress_callback=None
+        progress_callback=None,
     )
 
     selected = np.where(best_features == 1)[0]
@@ -249,7 +259,7 @@ def main():
     X_te_sel = X_test[:, selected]
 
     # CPU fallback is default
-    rf = RandomForestClassifier(n_estimators=200, random_state=42, n_jobs=-1)
+    rf = ExtraTreesClassifier(n_estimators=200, random_state=42, n_jobs=-1)
     rf.fit(X_tr_sel, y_train)
     y_pred = rf.predict(X_te_sel)
 
