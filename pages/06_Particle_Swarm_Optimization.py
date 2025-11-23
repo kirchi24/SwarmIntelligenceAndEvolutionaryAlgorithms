@@ -85,7 +85,7 @@ with tabs[1]:
 
         Wir verwenden **kontinuierliche Werte** für die Optimierung:
         - PSO arbeitet besser in einem kontinuierlichen Raum als in einem binären Raum.
-        - Jeder Wert $x_i \in \mathbb{R}$ beschreibt die "Stärke", mit der Feature $i$ ausgewählt wird.
+        - Jeder Wert $x_i \\in \\mathbb{R}$ beschreibt die "Stärke", mit der Feature $i$ ausgewählt wird.
         - Durch die Sigmoid-Funktion wird daraus eine binäre Maske für die Feature-Auswahl.
         """
     )
