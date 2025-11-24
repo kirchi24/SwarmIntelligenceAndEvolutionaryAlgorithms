@@ -287,22 +287,88 @@ with tabs[3]:
 
     st.markdown(
         """
-        ### Erkenntnisse aus der PSO-Feature-Selection
+        ### Analyse der Ergebnisse
 
-        **Vorteile:**
-        - PSO findet auch bei 54 Dimensionen robuste Subsets  
-        - Gute Balance zwischen Genauigkeit und Feature-Reduktion  
-        - Flexibel an Klassifikator (RF) anbinden  
+        Die Ergebnisse aus Tab 3 zeigen, dass PSO in der Lage ist, aus den 54 ursprünglichen Features ein deutlich kleineres, aber trotzdem leistungsfähiges Subset auszuwählen. In unserem Lauf wurden **20 Features** ausgewählt, was einer Reduktion von rund **63 %** entspricht.  
 
-        **Nachteile:**
-        - Rechenintensiv (RF-Training pro Partikel)  
-        - Häufig viele Iterationen notwendig  
-        - Keine Garantie für globales Optimum  
+        Der daraus resultierende **F1-Score** und eine **Fitness** entsprechen in etwa dem, was bei einer datensatzunabhängigen, heuristischen Feature-Selection mit PSO zu erwarten ist. Der F1-Score steigt anfangs sichtbar an, stabilisiert sich aber relativ früh, was darauf hindeutet, dass der Schwarm eine geeignete Region im Suchraum gefunden hat und danach eher Feintuning stattfindet.
 
-        ### Verbesserungspotenzial
-        - Parallelisierung über GPU-RandomForest (cuML)  
-        - Hyperparameter-Tuning für ($\\omega, c_1, c_2$)  
-        - Kombination mit genetischen Algorithmen  
-        - Modifizierte Binary-PSO-Varianten  
+        ### Erwartete vs. unerwartete Beobachtungen
+
+        **Erwartet:**
+        - Die Fitness verbessert sich hauptsächlich in den ersten Iterationen und flacht danach ab.
+        - PSO bevorzugt kleinere Feature-Subsets, da die Fitness eine Sparsity-Komponente enthält.
+        - Die Varianz im F1-Score bleibt moderat, da ExtraTrees relativ stabil ist.
+
+        **Unerwartet:**
+        - Die Verbesserung des F1-Scores fällt geringer aus als die Verbesserung der Gesamtfitness.  
+        → Das deutet darauf hin, dass PSO stärker von der Sparsity-Komponente profitiert als von der Modellperformance.
+        - Trotz 20 Iterationen gibt es nur kleine Sprünge im globalen F1-Score.  
+        → Vermutlich liegt dies daran, dass das Klassifikationsproblem (Covertype) sehr komplex und stark nichtlinear ist.
+
+        ### Effizienz und Rechenaufwand
+
+        Der größte Engpass des PSO-Ansatzes ist eindeutig die **Rechenzeit**.  
+        In jeder Iteration müssen alle Partikel **einen kompletten ExtraTrees-Classifier trainieren** – und das bei einem Datensatz mit **581.000 Beobachtungen**.
+
+        Dies führt zu:
+
+        - **Lange Gesamtlaufzeit** für n Partikel × i Iterationen  
+        - **~500 ms pro Klassifikator-Training**, trotz ExtraTrees (der bereits zu den schnelleren Baummodellen gehört)
+        - Einem quadratischen Wachstumsverhalten:  
+        mehr Partikel × mehr Iterationen × viele Beobachtungen = exponentiell steigender Aufwand
+
+        Das erklärt auch, warum PSO in der Literatur häufig *nicht* auf großen Tabellendaten eingesetzt wird, sondern eher in Bereichen wie Hyperparameter-Optimierung oder Feature-Selection für kleinere Datensätze.
+
+        ### Qualität der Lösung
+
+        Die finale Lösung (20 Features, F1-Score ~0.32) ist angesichts der Datensatzgröße, der Nichtlinearität und der Komplexität des Problems durchaus solide.  
+        Sie zeigt:
+
+        - PSO findet **kompaktere Feature-Subsets**, ohne zu viel predictive power zu verlieren.
+        - Die Mischung aus F1 und Sparsity führt zu einem sinnvollen Trade-off.
+        - Der Algorithmus konvergiert stabil.
+
+        Allerdings liegt die Performance etwas unter dem, was ein voll trainiertes, komplexeres Modell mit allen Features erreichen könnte.
+
+        ### Limitierungen des Ansatzes
+
+        1. **Hoher Rechenaufwand**  
+        Jede PSO-Iteration erfordert ein erneutes Training des Klassifikators → O(Particles × Iterations × TrainingTime).
+
+        2. **Hohe Dimensionalität + große Datenmenge**  
+        Der Covertype-Datensatz ist für Black-Box-Optimierer sehr anspruchsvoll.
+
+        3. **Keine Qualitätssicherung bei lokaler Konvergenz**  
+        PSO bietet keine Garantie, dass die Lösung global optimal ist.
+
+        4. **Sigmoid-Binarisierung kann rauschig sein**  
+        Kleine Änderungen in den Positionswerten können Features ein/aus schalten.
+
+        ### Verbesserungsmöglichkeiten
+
+        1. **GPU-Beschleunigung**  
+        - Einsatz von cuML ExtraTrees → 10–20× schnellere Trainingszeit  
+        - Reduziert PSO-Laufzeiten dramatisch
+
+        2. **Surrogate Modeling**  
+        - Statt den Klassifikator jedes Mal neu zu trainieren  
+        - Nutzung eines LightGBM-Surrogates oder Approximationsmodells für die Fitness  
+        - Danach Feinoptimierung nur auf guten Kandidaten
+
+        3. **Downsampling / Mini-Batch-Evaluation**  
+        - Klassifikator nur auf einem Teil des Datensatzes trainieren, um Fitness schnell zu approximieren
+
+        4. **Binarer PSO oder hybride Algorithmen**  
+        - BPSO, GA-PSO-Mix, oder Sparse-PSO können bei Feature Selection bessere Ergebnisse liefern
+
+        5. **Adaptive Parametersteuerung**  
+        - w, c1, c2 können iterativ angepasst werden (z.B. lineare Reduktion von w)
+
+        6. **Feature Pre-Ranking vor PSO**  
+        - Z. B. über ExtraTrees-Importances  
+        - PSO muss dann nicht bei 54 Features starten, sondern nur bei den Top-30  
+
+        ---
         """
     )
