@@ -288,4 +288,4 @@ if __name__ == "__main__":
     corridor = construct_corridor()
     sofa_shape = hammersley_sofa()
     possible, max_rot, path = move_and_rotate_smooth(corridor, sofa_shape)
-    ani = animate_shape(corridor, sofa_shape, path)
+    ani = animate_shape(corridor, sofa_shape, path, interval=5)
