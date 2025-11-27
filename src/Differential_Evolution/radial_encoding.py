@@ -89,15 +89,18 @@ def place_polygon_against_corridor(poly, corridor):
     return translate(poly, xoff=shift_x, yoff=0.0)
 
 
-def place_polygon_at_start(poly, corridor, x_offset: float = 0.0):
+def place_polygon_at_start(poly, corridor, x_offset: float = 0.0, y_offset: float = 0.0):
     """Place polygon at the beginning (left side) of the corridor.
 
-    Aligns the polygon's leftmost x to the corridor's left bound plus optional x_offset.
+    Aligns the polygon's leftmost x to the corridor's left bound plus optional
+    `x_offset`, and aligns the polygon's bottom (min y) to the corridor's
+    bottom plus optional `y_offset`.
     """
-    minx_c, _, _, _ = corridor.bounds
-    minx_p, _, _, _ = poly.bounds
+    minx_c, miny_c, _, _ = corridor.bounds
+    minx_p, miny_p, _, _ = poly.bounds
     shift_x = (minx_c + x_offset) - minx_p
-    return translate(poly, xoff=shift_x, yoff=0.0)
+    shift_y = (miny_c + y_offset) - miny_p
+    return translate(poly, xoff=shift_x, yoff=shift_y)
 
 
 def rectangle_radii(width: float, height: float, k: int):
