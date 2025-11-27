@@ -144,15 +144,15 @@ if __name__ == "__main__":
         import matplotlib.pyplot as plt
 
         fig, ax = plt.subplots()
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
         ax.set_axis_off()
         ax.set_frame_on(False)
 
         cx, cy = corridor.exterior.xy
-        ax.fill(cx, cy, color='lightgray', alpha=0.6)
+        ax.fill(cx, cy, color="lightgray", alpha=0.6)
 
         px, py = placed.exterior.xy
-        ax.fill(px, py, color='blue', alpha=0.7)
+        ax.fill(px, py, color="blue", alpha=0.7)
 
-        ax.set_title('Radial-encoded candidate placed in corridor')
+        ax.set_title("Radial-encoded candidate placed in corridor")
         plt.show()

@@ -41,26 +41,27 @@ The key takeaways here are:
 
 
 def construct_corridor(
-    corridor_width: float = 1.01, 
+    corridor_width: float = 1.01,
     horizontal_length: float = 6.01,
-    vertical_length: float = 6.01):
+    vertical_length: float = 6.01,
+):
     # constructs an L-shaped corridor as a shapely polygon
 
     horizontal_leg = box(-0.01, -0.01, horizontal_length, corridor_width)
-    vertical_leg = box(horizontal_length - corridor_width, -0.01, horizontal_length, 
-        vertical_length)
+    vertical_leg = box(
+        horizontal_length - corridor_width, -0.01, horizontal_length, vertical_length
+    )
     full_corridor = horizontal_leg.union(vertical_leg)
     return full_corridor
 
 
-
 def hammersley_sofa(disk_radius: float = 0.98, number_points: int = 30):
     # constructs the Hammersley sofa shape as a shapely polygon
-    
-    rectangle_width = 4/np.pi       
-    removed_disk_radius = 2/np.pi         
 
-    theta_left = np.linspace(np.pi/2, np.pi, number_points)
+    rectangle_width = 4 / np.pi
+    removed_disk_radius = 2 / np.pi
+
+    theta_left = np.linspace(np.pi / 2, np.pi, number_points)
     x_left = disk_radius * np.cos(theta_left)
     y_left = disk_radius * np.sin(theta_left)
 
@@ -68,14 +69,16 @@ def hammersley_sofa(disk_radius: float = 0.98, number_points: int = 30):
     y_bottom_left = np.zeros(number_points)
 
     theta_bottom = np.linspace(np.pi, 0, number_points)
-    x_bottom_bow = -removed_disk_radius+removed_disk_radius * np.cos(theta_bottom)
+    x_bottom_bow = -removed_disk_radius + removed_disk_radius * np.cos(theta_bottom)
     y_bottom_bow = removed_disk_radius * np.sin(theta_bottom)
 
-    x_bottom_right = np.linspace(2*removed_disk_radius, disk_radius + 2*removed_disk_radius, number_points)
+    x_bottom_right = np.linspace(
+        2 * removed_disk_radius, disk_radius + 2 * removed_disk_radius, number_points
+    )
     y_bottom_right = np.zeros(number_points)
 
-    theta_right = np.linspace(0, np.pi/2, number_points)
-    x_offset = disk_radius + 2*removed_disk_radius - 1
+    theta_right = np.linspace(0, np.pi / 2, number_points)
+    x_offset = disk_radius + 2 * removed_disk_radius - 1
     x_right = x_offset + disk_radius * np.cos(theta_right)
     y_right = disk_radius * np.sin(theta_right)
 
@@ -95,10 +98,11 @@ def hammersley_sofa(disk_radius: float = 0.98, number_points: int = 30):
 
 
 def move_and_rotate_smooth(
-    corridor: Polygon, 
-    polygon: Polygon, 
-    step_size: float = 0.05, 
-    rotation_increment: float = 1):
+    corridor: Polygon,
+    polygon: Polygon,
+    step_size: float = 0.05,
+    rotation_increment: float = 1,
+):
     # move and rotate your polygon smoothly within the corridor
 
     path = []
@@ -120,7 +124,9 @@ def move_and_rotate_smooth(
 
             else:
                 pivot = (current_poly.bounds[2], current_poly.bounds[3])
-                rotated = rotate(current_poly, rotation_increment, origin=pivot, use_radians=False)
+                rotated = rotate(
+                    current_poly, rotation_increment, origin=pivot, use_radians=False
+                )
                 total_rotation += rotation_increment
 
                 _, miny, maxx, maxy = rotated.bounds
@@ -161,9 +167,8 @@ def move_and_rotate_smooth(
 
 
 def check_feasibility(
-    corridor: Polygon,
-    polygon: Polygon,
-    rotation_increment: float = 3):
+    corridor: Polygon, polygon: Polygon, rotation_increment: float = 3
+):
     # reuses the logic of move_and_rotate_smooth to just check feasibility
 
     _, _, maxx_c, _ = corridor.bounds
@@ -201,7 +206,7 @@ def check_feasibility(
 
             if not rotated.within(corridor):
                 maximum_rotation = total_rotation / 90
-                return False, maximum_rotation  
+                return False, maximum_rotation
             else:
                 current = rotated
                 maximum_rotation = total_rotation / 90
@@ -212,44 +217,42 @@ def check_feasibility(
     return True, 1.0
 
 
-
-def animate_shape(corridor: Polygon, shape: Polygon, path: list[Polygon], interval=1, repeat=False):
+def animate_shape(
+    corridor: Polygon, shape: Polygon, path: list[Polygon], interval=1, repeat=False
+):
     # animate the movement of the shape within the corridor
     fig, ax = plt.subplots()
 
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
     ax.set_axis_off()
     ax.set_frame_on(False)
 
     cx, cy = corridor.exterior.xy
     ax.set_xlim(min(cx) - 0.5, max(cx) + 1)
     ax.set_ylim(min(cy) - 0.5, max(cy) + 1)
-    ax.fill(cx, cy, color='lightgray', alpha=0.5)
+    ax.fill(cx, cy, color="lightgray", alpha=0.5)
     sx, sy = shape.exterior.xy
-    ax.fill(sx, sy, color='blue', alpha=0.2)
+    ax.fill(sx, sy, color="blue", alpha=0.2)
 
-    shape_patch = ax.fill([], [], color='blue', alpha=0.4)[0]
+    shape_patch = ax.fill([], [], color="blue", alpha=0.4)[0]
 
     def animate(frame):
         poly = path[frame]
         x, y = poly.exterior.xy
         shape_patch.set_xy(np.column_stack([x, y]))
-        return shape_patch,
+        return (shape_patch,)
 
     animation = FuncAnimation(
-        fig,
-        animate,
-        frames=len(path),
-        blit=True,
-        interval=interval,
-        repeat=repeat
+        fig, animate, frames=len(path), blit=True, interval=interval, repeat=repeat
     )
 
     plt.show()
     return animation
 
 
-def objective_function(corridor: Polygon, shape: Polygon, weights: tuple = (1.0, 1.0, 1.0)):
+def objective_function(
+    corridor: Polygon, shape: Polygon, weights: tuple = (1.0, 1.0, 1.0)
+):
     # some ideas for an objective (cost) function..
 
     # what we want to maximize: area of the shape
@@ -270,17 +273,19 @@ def objective_function(corridor: Polygon, shape: Polygon, weights: tuple = (1.0,
     # with circular shapes - not the best solution..)
     cx, cy = shape.centroid.x, shape.centroid.y
     x, y = shape.exterior.xy
-    radial_distances = np.sqrt((np.array(x) - cx)**2 + (np.array(y) - cy)**2)
+    radial_distances = np.sqrt((np.array(x) - cx) ** 2 + (np.array(y) - cy) ** 2)
     noncircularity = np.std(radial_distances)
 
     # .... many more ....
 
     # combine everything into a single objective function with weights
-    total_cost = weights[0]*rotation_penalty + weights[1]*placement_penalty \
-        - weights[2]*(area + noncircularity)
-    
-    return total_cost
+    total_cost = (
+        weights[0] * rotation_penalty
+        + weights[1] * placement_penalty
+        - weights[2] * (area + noncircularity)
+    )
 
+    return total_cost
 
 
 if __name__ == "__main__":
