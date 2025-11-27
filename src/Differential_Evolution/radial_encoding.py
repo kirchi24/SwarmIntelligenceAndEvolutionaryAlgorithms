@@ -125,37 +125,152 @@ def rectangle_radii(width: float, height: float, k: int):
     return radii
 
 
+def circle_radii(radius: float, k: int):
+    """Constant radius for a circle approximation."""
+    return np.full(k, float(radius))
+
+
+def ellipse_radii(a: float, b: float, k: int):
+    """Radii for an ellipse centered at origin with semi-axes a (x) and b (y).
+
+    r(theta) = 1 / sqrt((cos(theta)/a)^2 + (sin(theta)/b)^2)
+    """
+    angles = np.linspace(0.0, 2.0 * np.pi, k, endpoint=False)
+    cos = np.cos(angles)
+    sin = np.sin(angles)
+    denom = (cos / a) ** 2 + (sin / b) ** 2
+    radii = 1.0 / np.sqrt(denom)
+    return radii
+
+
+def regular_polygon_radii(n_sides: int, circumradius: float, k: int, rotation: float = 0.0):
+    """Compute radial distances from center to edges of a regular n-gon.
+
+    - n_sides: number of polygon sides (3 = triangle)
+    - circumradius: distance from center to vertices
+    - k: number of sample angles
+    - rotation: rotation in degrees applied to the polygon
+
+    Uses apothem-based formula: r(theta) = apothem / cos(alpha)
+    where alpha is the signed angle between ray and nearest edge normal.
+    """
+    if n_sides < 3:
+        raise ValueError("n_sides must be >= 3")
+    apothem = circumradius * np.cos(np.pi / n_sides)
+    sector = 2.0 * np.pi / n_sides
+    angles = np.linspace(0.0, 2.0 * np.pi, k, endpoint=False)
+    # apply rotation
+    angles = angles - np.deg2rad(rotation)
+    # compute alpha = angle relative to sector center in [-sector/2, sector/2]
+    mod_angles = (angles + sector / 2.0) % sector - sector / 2.0
+    # avoid numerical issues when cos(alpha) is very small
+    cos_alpha = np.cos(mod_angles)
+    cos_alpha = np.where(np.abs(cos_alpha) < 1e-8, 1e-8, cos_alpha)
+    radii = apothem / cos_alpha
+    return radii
+
+
+def star_radii(points: int, inner_r: float, outer_r: float, k: int):
+    """Approximate a star-shaped polygon (radial sinusoidal modulation).
+
+    - points: number of star points
+    - inner_r, outer_r: inner and outer radii
+    - k: samples
+    """
+    angles = np.linspace(0.0, 2.0 * np.pi, k, endpoint=False)
+    amp = (outer_r - inner_r) / 2.0
+    mid = (outer_r + inner_r) / 2.0
+    radii = mid + amp * np.cos(points * angles)
+    # ensure non-negative
+    radii = np.maximum(radii, 1e-6)
+    return radii
+
+
 if __name__ == "__main__":
-    # Simple static visualization demo (no animation, no feasibility calculations)
+    # Simple multi-sample visualization demo: draw several random candidates
+    import os
+    import matplotlib.pyplot as plt
+
+    """Draw one example per generator function with representative parameters.
+
+    Shows: rectangle, circle, ellipse, regular polygon, star, and a random sample.
+    """
     corridor = construct_corridor()
+    examples = [
+        ("rectangle_radii", rectangle_radii, {"width": 1.3, "height": 0.8, "k": 24}),
+        ("circle_radii", circle_radii, {"radius": 0.9, "k": 24}),
+        ("ellipse_radii", ellipse_radii, {"a": 1.1, "b": 0.6, "k": 24}),
+        ("regular_polygon_radii", regular_polygon_radii, {"n_sides": 5, "circumradius": 1.0, "k": 24, "rotation": 0.0}),
+        ("star_radii", star_radii, {"points": 5, "inner_r": 0.4, "outer_r": 1.0, "k": 24}),
+        ("random_radii", generate_random_radii, {"k": 24, "r_min": 0.2, "r_max": 1.4, "seed": 123}),
+    ]
 
-    K = 24
-    r_min, r_max = 0.2, 1.4
+    import math
+    import matplotlib.pyplot as plt
 
-    # generate a single candidate and show it
-    radii = generate_random_radii(K, r_min=r_min, r_max=r_max, seed=42)
-    radii = smooth_radii(radii, window=5)
-    poly = radii_to_polygon(radii)
-
-    if not validate_polygon(poly):
-        print("Generated polygon is invalid — increase smoothing or adjust bounds.")
+    n = len(examples)
+    cols = min(3, n)
+    rows = math.ceil(n / cols)
+    fig, axs = plt.subplots(rows, cols, figsize=(cols * 4, rows * 3))
+    if isinstance(axs, plt.Axes):
+        axs = [axs]
     else:
-        # place the candidate at the beginning (left) of the corridor
-        placed = place_polygon_at_start(poly, corridor, x_offset=0.0)
+        axs = axs.flatten()
 
-        # static matplotlib figure: corridor + placed polygon
-        import matplotlib.pyplot as plt
-
-        fig, ax = plt.subplots()
+    for i, (name, func, kwargs) in enumerate(examples):
+        ax = axs[i]
         ax.set_aspect("equal")
         ax.set_axis_off()
         ax.set_frame_on(False)
 
+        # draw corridor
         cx, cy = corridor.exterior.xy
         ax.fill(cx, cy, color="lightgray", alpha=0.6)
 
-        px, py = placed.exterior.xy
-        ax.fill(px, py, color="blue", alpha=0.7)
+        # build radii depending on signature
+        try:
+            if name == "rectangle_radii":
+                radii = func(kwargs["width"], kwargs["height"], kwargs["k"])
+            elif name == "circle_radii":
+                radii = func(kwargs["radius"], kwargs["k"])
+            elif name == "ellipse_radii":
+                radii = func(kwargs["a"], kwargs["b"], kwargs["k"])
+            elif name == "regular_polygon_radii":
+                radii = func(kwargs["n_sides"], kwargs["circumradius"], kwargs["k"], kwargs.get("rotation", 0.0))
+            elif name == "star_radii":
+                radii = func(kwargs["points"], kwargs["inner_r"], kwargs["outer_r"], kwargs["k"])
+            else:
+                # random or other
+                radii = func(**kwargs)
+        except Exception as exc:
+            ax.text(0.5, 0.5, f"error: {exc}", ha="center", va="center", transform=ax.transAxes)
+            continue
 
-        ax.set_title("Radial-encoded candidate placed in corridor")
-        plt.show()
+        # optional smoothing for visualization clarity
+        radii_s = smooth_radii(radii, window=1)
+        poly = radii_to_polygon(radii_s)
+        valid = validate_polygon(poly)
+
+        if not valid:
+            try:
+                poly = poly.buffer(0)
+                valid = validate_polygon(poly)
+            except Exception:
+                valid = False
+
+        if valid:
+            placed = place_polygon_at_start(poly, corridor, x_offset=0.0)
+            px, py = placed.exterior.xy
+            ax.fill(px, py, color="teal", alpha=0.8)
+        else:
+            ax.text(0.5, 0.5, "invalid", ha="center", va="center", transform=ax.transAxes)
+
+        title_params = ", ".join(f"{k}={v}" for k, v in kwargs.items() if k != "k")
+        ax.set_title(f"{name} ({title_params})", fontsize=9)
+
+    # hide any remaining axes
+    for j in range(len(examples), len(axs)):
+        axs[j].set_visible(False)
+
+    plt.tight_layout()
+    plt.show()
