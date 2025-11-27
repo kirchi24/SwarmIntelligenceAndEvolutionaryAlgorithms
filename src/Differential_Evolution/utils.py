@@ -249,43 +249,97 @@ def animate_shape(
     plt.show()
     return animation
 
+def smoothness_penalty(shape):
+    x, y = shape.exterior.xy
+    pts = np.column_stack([x, y])
+    diffs = np.linalg.norm(np.roll(pts, 1, axis=0) - pts, axis=1)
+    return np.std(diffs)  # kleine Schwankungen = gut
+
+def bilateral_symmetry_penalty(shape):
+    x, y = shape.exterior.xy
+    pts = np.column_stack([x, y])
+    n = len(pts)
+    mids = n // 2
+    diffs = np.linalg.norm(pts - np.roll(pts, mids, axis=0), axis=1)
+    return np.mean(diffs)
+
+from shapely.geometry import Polygon
+
+def concavity_penalty(shape):
+    hull = shape.convex_hull
+    # Fläche, die dem Hull fehlt → Maß für Konkavität
+    return hull.area - shape.area
+
+def aspect_ratio_penalty(shape):
+    minx, miny, maxx, maxy = shape.bounds
+    w = maxx - minx
+    h = maxy - miny
+    ratio = max(w, h) / max(min(w, h), 1e-6)
+    return max(0, ratio - 3)  # erlaubt Aspect Ratio bis 3
+
+
 
 def objective_function(
-    corridor: Polygon, shape: Polygon, weights: tuple = (1.0, 1.0, 1.0)
+    corridor: Polygon, 
+    shape: Polygon, 
+    weights: dict = {
+        "rotation": 1.0,
+        "placement": 1.0,
+        "area": 1.0,
+        "noncircular": 0.5,
+        "smoothness": 1.0,
+        "symmetry": 1.0,
+        "concavity": 2.0,
+        "aspect": 0.3,
+    }
 ):
-    # some ideas for an objective (cost) function..
 
-    # what we want to maximize: area of the shape
+    # ---------- area ----------
     area = shape.area
 
-    # penalize placement outside the corridor ('through the walls')
+    # ---------- placement penalty ----------
     if corridor.covers(shape):
         placement_penalty = 0.0
     else:
         outside_area = shape.difference(corridor)
         placement_penalty = outside_area.area if not outside_area.is_empty else 0
 
-    # penalize insufficient rotation around the corner
+    # ---------- rotation feasibility ----------
     feasible, max_rot_fraction = check_feasibility(corridor, shape)
     rotation_penalty = 0.0 if feasible else (1 - max_rot_fraction)
 
-    # penalize circular shapes (if you initialize in polar coordinates, you may end up
-    # with circular shapes - not the best solution..)
+    # ---------- noncircularity ----------
     cx, cy = shape.centroid.x, shape.centroid.y
     x, y = shape.exterior.xy
-    radial_distances = np.sqrt((np.array(x) - cx) ** 2 + (np.array(y) - cy) ** 2)
-    noncircularity = np.std(radial_distances)
+    radial = np.sqrt((np.array(x) - cx)**2 + (np.array(y) - cy)**2)
+    noncircularity = np.std(radial)
 
-    # .... many more ....
+    # ---------- smoothness penalty ----------
+    smooth_pen = smoothness_penalty(shape)
 
-    # combine everything into a single objective function with weights
+    # ---------- anti-bow-tie symmetry penalty ----------
+    symmetry_pen = bilateral_symmetry_penalty(shape)
+
+    # ---------- concavity penalty ----------
+    concave_pen = concavity_penalty(shape)
+
+    # ---------- aspect ratio penalty ----------
+    aspect_pen = aspect_ratio_penalty(shape)
+
+    # combine everything
     total_cost = (
-        weights[0] * rotation_penalty
-        + weights[1] * placement_penalty
-        - weights[2] * (area + noncircularity)
+        weights["rotation"] * rotation_penalty +
+        weights["placement"] * placement_penalty +
+        weights["smoothness"] * smooth_pen +
+        weights["symmetry"] * symmetry_pen +
+        weights["concavity"] * concave_pen +
+        weights["aspect"] * aspect_pen -
+        weights["area"] * area -
+        weights["noncircular"] * noncircularity
     )
 
     return total_cost
+
 
 
 if __name__ == "__main__":
