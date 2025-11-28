@@ -286,12 +286,10 @@ with tabs[3]:
         - klein: glatte Formen  
         - groß: komplexe konkave Strukturen möglich  
 
-        ---  
-
         ### Fazit
-
+        
         Das Moving-Sofa-Problem ist stark nichtkonvex und hochgradig schwierig.  
         Selbst moderne Evolutionsalgorithmen nähern sich nur *lokalen Optimen*.  
-        ---
+        
         """
     )
