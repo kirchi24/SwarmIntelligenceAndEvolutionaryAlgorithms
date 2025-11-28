@@ -41,7 +41,7 @@ The key takeaways here are:
 
 
 def construct_corridor(
-    corridor_width: float = 1.01,
+    corridor_width: float = 1.5,
     horizontal_length: float = 6.01,
     vertical_length: float = 6.01,
 ):
@@ -282,15 +282,15 @@ def aspect_ratio_penalty(shape):
 def objective_function(
     corridor: Polygon, 
     shape: Polygon, 
-    weights: dict = {
-        "rotation": 1.0,
-        "placement": 1.0,
-        "area": 1.0,
-        "noncircular": 0.5,
-        "smoothness": 1.0,
-        "symmetry": 1.0,
-        "concavity": 2.0,
-        "aspect": 0.3,
+    weights = {
+        "rotation": 5.0,       
+        "placement": 1.0,      
+        "area": 1.0,           
+        "noncircular": 0.1,    
+        "smoothness": 0.0,
+        "symmetry": 0.0,
+        "concavity": 0.0,
+        "aspect": 0.0,
     }
 ):
 
