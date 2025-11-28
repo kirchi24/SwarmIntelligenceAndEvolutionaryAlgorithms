@@ -41,7 +41,7 @@ The key takeaways here are:
 
 
 def construct_corridor(
-    corridor_width: float = 1.5,
+    corridor_width: float = 1.51,
     horizontal_length: float = 6.01,
     vertical_length: float = 6.01,
 ):
@@ -283,14 +283,14 @@ def objective_function(
     corridor: Polygon, 
     shape: Polygon, 
     weights = {
-        "rotation": 5.0,       
+        "rotation": 1.0,       
         "placement": 1.0,      
         "area": 1.0,           
-        "noncircular": 0.1,    
-        "smoothness": 0.0,
-        "symmetry": 0.0,
-        "concavity": 0.0,
-        "aspect": 0.0,
+        "noncircular": 0.2,    
+        "smoothness": 0.2,
+        "symmetry": 0.2,
+        "concavity": 0.01,
+        "aspect": 0.01,
     }
 ):
 
@@ -298,21 +298,21 @@ def objective_function(
     area = shape.area
 
     # ---------- placement penalty ----------
-    if corridor.covers(shape):
-        placement_penalty = 0.0
-    else:
-        outside_area = shape.difference(corridor)
-        placement_penalty = outside_area.area if not outside_area.is_empty else 0
+    if not corridor.covers(shape):
+        return 1e6
+    placement_penalty = 0.0
 
     # ---------- rotation feasibility ----------
     feasible, max_rot_fraction = check_feasibility(corridor, shape)
-    rotation_penalty = 0.0 if feasible else (1 - max_rot_fraction)
+    if not feasible:
+        return 1e6
+    rotation_penalty = (1 - max_rot_fraction)
 
     # ---------- noncircularity ----------
     cx, cy = shape.centroid.x, shape.centroid.y
     x, y = shape.exterior.xy
     radial = np.sqrt((np.array(x) - cx)**2 + (np.array(y) - cy)**2)
-    noncircularity = np.std(radial)
+    noncircularity = np.std(radial)     
 
     # ---------- smoothness penalty ----------
     smooth_pen = smoothness_penalty(shape)
@@ -325,7 +325,7 @@ def objective_function(
 
     # ---------- aspect ratio penalty ----------
     aspect_pen = aspect_ratio_penalty(shape)
-
+    
     # combine everything
     total_cost = (
         weights["rotation"] * rotation_penalty +
