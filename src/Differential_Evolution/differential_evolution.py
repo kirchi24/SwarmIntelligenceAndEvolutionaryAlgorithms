@@ -1,12 +1,17 @@
 import numpy as np
 from copy import deepcopy
-from .radial_encoding import (
+
+# imports from our radial encoding and utils
+from radial_encoding import (
     generate_random_radii,
     smooth_radii,
     radii_to_polygon,
     validate_polygon,
     place_polygon_at_start,
     place_polygon_against_corridor,
+)
+
+from radial_encoding import (
     rectangle_radii,
     circle_radii,
     ellipse_radii,
@@ -14,12 +19,13 @@ from .radial_encoding import (
     star_radii,
 )
 
-from .utils import (
+from utils import (
     construct_corridor,
     objective_function,
     move_and_rotate_smooth,
     animate_shape,
 )
+
 
 def evaluate_candidate(radii, corridor, K, r_min, r_max, smooth_window=3, penalty=1e6):
     """Build polygon from radii, place at corridor start and evaluate objective.
@@ -32,8 +38,8 @@ def evaluate_candidate(radii, corridor, K, r_min, r_max, smooth_window=3, penalt
     poly = radii_to_polygon(radii)
     if not validate_polygon(poly):
         return penalty, None
-    placed = place_polygon_at_start(poly, corridor, x_offset=0.02)
-    #placed = place_polygon_against_corridor(poly, corridor)
+    #placed = place_polygon_at_start(poly, corridor, x_offset=0.02)
+    placed = place_polygon_against_corridor(poly, corridor)
     cost = objective_function(corridor, placed)
     return float(cost), placed
 
@@ -173,7 +179,7 @@ if __name__ == "__main__":
     best_radii, best_poly, history = differential_evolution(
         K=K,
         r_min=0.1,
-        r_max=1.3,
+        r_max=1,
         popsize=32,
         F=0.6,
         CR=0.8,
@@ -186,7 +192,8 @@ if __name__ == "__main__":
 
     corridor = construct_corridor()
     placed = (
-       place_polygon_at_start(best_poly, corridor, x_offset=0.02)
+       place_polygon_against_corridor(best_poly, corridor)
+    #   place_polygon_at_start(best_poly, corridor, x_offset=0.02)
         if best_poly is not None
         else None
     )

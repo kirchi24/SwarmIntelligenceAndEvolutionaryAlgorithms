@@ -2,14 +2,14 @@ import numpy as np
 from shapely.geometry import Polygon
 from shapely.affinity import translate, rotate
 
-from .utils import (
+# use the utils for corridor, feasibility and visualization
+from utils import (
     construct_corridor,
     check_feasibility,
     move_and_rotate_smooth,
     animate_shape,
     objective_function,
 )
-
 
 
 def generate_random_radii(k=24, r_min=0.1, r_max=1.5, seed=None):
