@@ -49,12 +49,11 @@ with tabs[0]:
         r"""
 Das **Moving-Sofa-Problem** ist ein klassisches geometrisches Optimierungsproblem:
 
-$$
-\text{Finde die Form maximaler Fläche, die um eine 90^\circ\text{-Kante eines L-Korridors bewegt werden kann.}}
-$$
+Finde die Form maximaler Fläche, die um eine 90 Grad - Kante eines L-Korridors bewegt werden kann.
+
 
 Dieses Projekt verwendet **Differential Evolution (DE)** zur Optimierung der Form,
-kodiert über eine radiale Repräsentation \( r(\theta) \).
+kodiert über eine radiale Repräsentation $r(\\theta)$.
 
 ---
 
@@ -173,13 +172,13 @@ with tabs[2]:
 
     # DE Parameter
     st.sidebar.markdown("#### DE-Parameter")
-    K = st.sidebar.slider("K (Radienanzahl)", 12, 80, 40)
+    K = st.sidebar.slider("K (Radienanzahl)", 10, 100, 50)
     r_min = st.sidebar.slider("r_min", 0.05, 0.5, 0.1)
-    r_max = st.sidebar.slider("r_max", 0.5, 2.0, 1.2)
-    popsize = st.sidebar.slider("popsize", 10, 100, 30)
+    r_max = st.sidebar.slider("r_max", 0.5, 2.0, 1.3)
+    popsize = st.sidebar.slider("popsize", 10, 100, 32)
     F = st.sidebar.slider("F (Mutation)", 0.1, 1.5, 0.6)
     CR = st.sidebar.slider("CR (Crossover)", 0.1, 1.0, 0.8)
-    generations = st.sidebar.slider("Generations", 10, 2000, 500)
+    generations = st.sidebar.slider("Generations", 10, 2000, 1000)
     smooth_window = st.sidebar.slider("Smoothing Window", 1, 8, 2)
     seed = st.sidebar.number_input("Seed", value=1)
 
@@ -293,12 +292,6 @@ with tabs[3]:
 
         Das Moving-Sofa-Problem ist stark nichtkonvex und hochgradig schwierig.  
         Selbst moderne Evolutionsalgorithmen nähern sich nur *lokalen Optimen*.  
-
-        Diese Streamlit-App erlaubt:
-        - Visualisierung der Bewegung  
-        - Untersuchung der Parameterwirkung  
-        - Verständnis der Geometrie-Constraints  
-
         ---
         """
     )
