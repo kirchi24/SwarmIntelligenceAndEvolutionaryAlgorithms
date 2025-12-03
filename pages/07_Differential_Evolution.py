@@ -25,11 +25,11 @@ from src.Differential_Evolution.utils import (
 # ========================================================
 
 st.set_page_config(
-    page_title="Differential Evolution – Moving Sofa Problem",
+    page_title="Differential Evolution - Moving Sofa Problem",
     layout="wide"
 )
 
-st.title("Moving Sofa Problem – Differential Evolution Optimizer")
+st.title("Moving Sofa Problem - Differential Evolution Optimizer")
 
 
 # ========================================================
@@ -40,7 +40,7 @@ tabs = st.tabs(["Introduction", "Methods", "Results", "Discussion"])
 
 
 # ========================================================
-# TAB 1 – INTRODUCTION
+# TAB 1 - INTRODUCTION
 # ========================================================
 with tabs[0]:
     st.markdown("## Einführung")
@@ -52,8 +52,7 @@ Das **Moving-Sofa-Problem** ist ein klassisches geometrisches Optimierungsproble
 Finde die Form maximaler Fläche, die um eine 90 Grad - Kante eines L-Korridors bewegt werden kann.
 
 
-Dieses Projekt verwendet **Differential Evolution (DE)** zur Optimierung der Form,
-kodiert über eine radiale Repräsentation $r(\\theta)$.
+Dieses Projekt verwendet **Differential Evolution (DE)** zur Optimierung der Form, kodiert über eine radiale Repräsentation $r (\theta)$.
 
 ---
 
@@ -79,7 +78,7 @@ Diese Lösung ist stark konkav und analytisch schwierig herzuleiten.
 
 
 # ========================================================
-# TAB 2 – METHODS
+# TAB 2 - METHODS
 # ========================================================
 with tabs[1]:
     st.markdown("## Methoden")
@@ -88,7 +87,7 @@ with tabs[1]:
         r"""
 ### 1. Radiale Repräsentation
 
-Eine Form wird durch \( K \) Radien beschrieben:
+Eine Form wird durch $(K)$ Radien beschrieben:
 
 $$
 r = [r_1, r_2, \ldots, r_K]
@@ -116,6 +115,11 @@ $$
 v_i = x_a + F \cdot (x_b - x_c)
 $$
 
+- $x_i$: aktueller Kandidat (Partikel) i
+- $x_a, x_b, x_c$: drei verschiedene Kandidaten aus der Population, zufällig gewählt
+- $F$: Skalierungsfaktor, steuert die Schrittweite der Mutation
+- $v_i$: mutierter Kandidat, der die Differenz zwischen $x_b$ und $x_c$ in Richtung $x_a$ verschiebt
+
 **Crossover:**
 
 $$
@@ -126,6 +130,11 @@ x_{i,k}, & \text{sonst}
 \end{cases}
 $$
 
+- $u_i$: Trial-Vektor nach Crossover
+- $k$: Index der Dimension (Feature, Radii-Komponente, …)
+- $rand$: Zufallszahl in [0,1] für jede Dimension
+- $CR$: Crossover-Wahrscheinlichkeit.
+
 **Selektion:**
 
 $$
@@ -135,6 +144,10 @@ u_i, & f(u_i) < f(x_i)\\
 x_i, & \text{sonst}
 \end{cases}
 $$
+
+- $x_i$: nächster Kandidat in der Population
+- $f$: Ziel- oder Kostenfunktion
+- $u_i$: Trial-Kandidat vom Crossover
 
 ---
 
@@ -156,11 +169,11 @@ Die Form soll:
     )
 
 # ========================================================
-# TAB 3 – RESULTS – RUN DE + Animation
+# TAB 3 - RESULTS - RUN DE + Animation
 # ========================================================
 with tabs[2]:
 
-    st.markdown("## Differential Evolution – Simulation")
+    st.markdown("## Differential Evolution - Simulation")
 
     st.sidebar.markdown("### Parameter konfigurieren")
 
@@ -228,7 +241,7 @@ with tabs[2]:
 
             fig, ax = plt.subplots()
             if len(path) == 0:
-                st.error("Keine Animation verfügbar – Pfad ist leer. Die Form konnte sich nicht bewegen.")
+                st.error("Keine Animation verfügbar - Pfad ist leer. Die Form konnte sich nicht bewegen.")
             else:
                 frames = []
                 for poly in path:
@@ -256,7 +269,7 @@ with tabs[2]:
 
 
 # ========================================================
-# TAB 4 – DISCUSSION
+# TAB 4 - DISCUSSION
 # ========================================================
 with tabs[3]:
 
@@ -289,7 +302,7 @@ with tabs[3]:
         ### Fazit
         
         Das Moving-Sofa-Problem ist stark nichtkonvex und hochgradig schwierig.  
-        Selbst moderne Evolutionsalgorithmen nähern sich nur *lokalen Optimen*.  
+        Selbst moderne Evolutionsalgorithmen nähern sich nur *lokalen Optima*.  
         
         """
     )
