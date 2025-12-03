@@ -61,7 +61,7 @@ Dieses Projekt verwendet **Differential Evolution (DE)** zur Optimierung der For
 Die aktuell beste bekannte Lösung hat eine Fläche:
 
 $$
-A \approx 2.2074
+A \approx 2.2074 \, \text{Einheiten}^2
 $$
 
 Diese Lösung ist stark konkav und analytisch schwierig herzuleiten.
