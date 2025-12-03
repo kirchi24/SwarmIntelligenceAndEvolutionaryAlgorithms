@@ -153,20 +153,40 @@ $$
 
 ### 3. Fitnessfunktion
 
-$$
-\text{cost} =
-w_r \cdot p_\text{rotation}
-+ w_p \cdot p_\text{placement}
-- w_A \cdot A(r)
-$$
+## Objective Function – Fitness Erklärung
 
-Die Form soll:
+Die Fitness eines Shapes wird als gewichtete Summe von Penalties und positiven Beiträgen berechnet.  
+Ziel ist es, Shapes zu finden, die:
 
-- in den Korridor passen  
-- rotieren können  
+- vollständig in den Korridor passen  
+- gut rotieren können  
 - möglichst große Fläche haben  
+- leicht unregelmäßig (nicht perfekt kreisförmig) sind  
+- glatt und symmetrisch sind  
+- nicht zu konkav oder extrem geformt sind  
+
+### Mathematische Darstellung
+
+Die Fitness $F$ eines Shapes lässt sich schreiben als:
+
+$$
+F = 
+\sum_{i \in \{\text{rotation, placement, smoothness, symmetry, concavity, aspect}\}} 
+- w_i \cdot p_i
++ w_\text{area} \cdot A(r)
++ w_\text{noncircular} \cdot N(r)
+$$
+
+- $p_i$ = Penalty für den Faktor $i$  
+- $w_i$ = Gewicht, das die Wichtigkeit des Faktors steuert  
+- $A(r)$ = Fläche des Shapes  
+- $N(r)$ = Maß für die Noncircularity  
+
+**Interpretation:**  
+- Penalties werden negativ in die Fitness eingebracht → geringere Strafen = bessere Fitness  
+- Fläche und Noncircularity werden positiv eingebracht → größere Shapes + leicht unregelmäßige Shapes = bessere Fitness
 """
-    )
+)
 
 # ========================================================
 # TAB 3 - RESULTS - RUN DE + Animation
