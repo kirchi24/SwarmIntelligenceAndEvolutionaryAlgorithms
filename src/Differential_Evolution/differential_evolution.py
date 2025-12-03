@@ -111,6 +111,7 @@ def differential_evolution(
     generations=100,
     smooth_window=3,
     seed=42,
+    progress_callback=None,
 ):
     rng = np.random.default_rng(seed)
     corridor = construct_corridor()
@@ -160,6 +161,9 @@ def differential_evolution(
                     best_cost = trial_cost
                     best_radii = trial.copy()
                     best_poly = trial_poly
+
+        if progress_callback:
+            progress_callback(gen + 1, generations, best_cost)
 
         history.append(best_cost)
         if (gen + 1) % max(1, generations // 10) == 0:

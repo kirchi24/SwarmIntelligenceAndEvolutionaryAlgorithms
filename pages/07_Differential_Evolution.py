@@ -199,6 +199,16 @@ with tabs[2]:
 
         st.info("Optimierung läuft… das kann dauern.")
 
+        # Fortschrittsanzeige
+        progress = st.progress(0)
+        status = st.empty()
+
+        def progress_callback(current_iter, total_iters, best_fitness):
+            progress.progress(current_iter / total_iters)
+            status.text(
+                f"Iteration {current_iter}/{total_iters} - aktueller bester Score: {best_fitness:.4f}"
+            )
+
         corridor = construct_corridor(
             corridor_width=corridor_width,
             horizontal_length=horizontal_length,
@@ -217,6 +227,7 @@ with tabs[2]:
             generations=generations,
             smooth_window=smooth_window,
             seed=seed,
+            progress_callback=progress_callback,
         )
 
         end_t = time.time()
