@@ -21,7 +21,16 @@ from .utils import (
     animate_shape,
 )
 
-def evaluate_candidate(radii, corridor, K, r_min, r_max, smooth_window=3, penalty=1e6):
+def evaluate_candidate(radii, corridor, K, r_min, r_max, smooth_window=3, penalty=1e6, weights= {
+            "rotation": 1.0,
+            "placement": 1.0,
+            "area": 3.0,
+            "noncircular": 0.2,
+            "smoothness": 0.2,
+            "symmetry": 0.2,
+            "concavity": 0.1,
+            "aspect": 0.1,
+        }):
     """Build polygon from radii, place at corridor start and evaluate objective.
 
     Returns scalar cost (lower is better).
@@ -34,7 +43,7 @@ def evaluate_candidate(radii, corridor, K, r_min, r_max, smooth_window=3, penalt
         return penalty, None
     placed = place_polygon_at_start(poly, corridor, x_offset=0.02)
     #placed = place_polygon_against_corridor(poly, corridor)
-    cost = objective_function(corridor, placed)
+    cost = objective_function(corridor, placed, weights=weights)
     return float(cost), placed
 
 
@@ -112,9 +121,18 @@ def differential_evolution(
     smooth_window=3,
     seed=42,
     progress_callback=None,
+    weights=None,
+    corridor_width=1.51,
+    horizontal_length=6.01,
+    vertical_length=6.01,
+
 ):
     rng = np.random.default_rng(seed)
-    corridor = construct_corridor()
+    corridor = construct_corridor(
+    corridor_width=corridor_width,
+    horizontal_length=horizontal_length,
+    vertical_length=vertical_length,
+)
 
     pop = init_population_balanced_shapes(popsize, K, r_min, r_max, rng)
     costs = np.zeros(popsize)
@@ -122,7 +140,7 @@ def differential_evolution(
 
     for i in range(popsize):
         costs[i], placed_polys[i] = evaluate_candidate(
-            pop[i], corridor, K, r_min, r_max, smooth_window=smooth_window
+            pop[i], corridor, K, r_min, r_max, smooth_window=smooth_window, weights=weights
         )
 
     best_idx = int(np.argmin(costs))
@@ -131,6 +149,7 @@ def differential_evolution(
     best_poly = placed_polys[best_idx]
 
     history = [best_cost]
+    best_area_history = [best_poly.area if best_poly else 0]
 
     for gen in range(generations):
         for i in range(popsize):
@@ -149,7 +168,7 @@ def differential_evolution(
             trial = np.where(cross, mutant, pop[i])
 
             trial_cost, trial_poly = evaluate_candidate(
-                trial, corridor, K, r_min, r_max, smooth_window=smooth_window
+                trial, corridor, K, r_min, r_max, smooth_window=smooth_window, weights=weights
             )
 
             if trial_cost < costs[i]:
@@ -162,6 +181,9 @@ def differential_evolution(
                     best_radii = trial.copy()
                     best_poly = trial_poly
 
+            history.append(best_cost)
+            best_area_history.append(best_poly.area if best_poly else 0)
+
         if progress_callback:
             progress_callback(gen + 1, generations, best_cost)
 
@@ -169,7 +191,7 @@ def differential_evolution(
         if (gen + 1) % max(1, generations // 10) == 0:
             print(f"Gen {gen+1}/{generations} best_cost={best_cost:.3f}")
 
-    return best_radii, best_poly, history
+    return best_radii, best_poly, history, best_area_history
 
 
 if __name__ == "__main__":
@@ -190,7 +212,7 @@ if __name__ == "__main__":
 
     corridor = construct_corridor()
     placed = (
-       place_polygon_at_start(best_poly, corridor, x_offset=0.02)
+       place_polygon_at_start(best_poly, corridor, x_offset=0.2)
         if best_poly is not None
         else None
     )

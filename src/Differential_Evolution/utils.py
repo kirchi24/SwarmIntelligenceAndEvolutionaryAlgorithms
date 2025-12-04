@@ -39,6 +39,16 @@ The key takeaways here are:
 
 """
 
+DEFAULT_WEIGHTS = {
+    "rotation": 1.0,
+    "placement": 1.0,
+    "area": 3.0,
+    "noncircular": 0.2,
+    "smoothness": 0.2,
+    "symmetry": 0.2,
+    "concavity": 0.1,
+    "aspect": 0.1,
+}
 
 def construct_corridor(
     corridor_width: float = 1.51,
@@ -285,12 +295,12 @@ def objective_function(
     weights = {
         "rotation": 1.0,       
         "placement": 1.0,      
-        "area": 1.0,           
+        "area": 3.0,           
         "noncircular": 0.2,    
         "smoothness": 0.2,
         "symmetry": 0.2,
-        "concavity": 0.01,
-        "aspect": 0.01,
+        "concavity": 0.1,
+        "aspect": 0.1,
     }
 ):
 
@@ -299,13 +309,16 @@ def objective_function(
 
     # ---------- placement penalty ----------
     if not corridor.covers(shape):
-        return 1e6
+        return 1000
     placement_penalty = 0.0
-
+    
     # ---------- rotation feasibility ----------
     feasible, max_rot_fraction = check_feasibility(corridor, shape)
     if not feasible:
-        return 1e6
+        return 1000
+    
+    if max_rot_fraction < 1.0:
+        return 1000
     rotation_penalty = (1 - max_rot_fraction)
 
     # ---------- noncircularity ----------

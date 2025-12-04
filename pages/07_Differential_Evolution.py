@@ -12,6 +12,7 @@ from src.Differential_Evolution.differential_evolution import (
 from src.Differential_Evolution.radial_encoding import (
     radii_to_polygon,
     place_polygon_against_corridor,
+    place_polygon_at_start
 )
 from src.Differential_Evolution.utils import (
     construct_corridor,
@@ -205,15 +206,26 @@ with tabs[2]:
 
     # DE Parameter
     st.sidebar.markdown("#### DE-Parameter")
-    K = st.sidebar.slider("K (Radienanzahl)", 10, 100, 50)
+    K = st.sidebar.slider("K (Radienanzahl)", 10, 100, 20)
     r_min = st.sidebar.slider("r_min", 0.05, 0.5, 0.1)
-    r_max = st.sidebar.slider("r_max", 0.5, 2.0, 1.3)
-    popsize = st.sidebar.slider("popsize", 10, 100, 32)
+    r_max = st.sidebar.slider("r_max", 0.5, 2.0, 1.5)
+    popsize = st.sidebar.slider("popsize", 10, 100, 25)
     F = st.sidebar.slider("F (Mutation)", 0.1, 1.5, 0.6)
     CR = st.sidebar.slider("CR (Crossover)", 0.1, 1.0, 0.8)
-    generations = st.sidebar.slider("Generations", 10, 2000, 1000)
+    generations = st.sidebar.slider("Generations", 100, 2000, 300,100)
     smooth_window = st.sidebar.slider("Smoothing Window", 1, 8, 2)
-    seed = st.sidebar.number_input("Seed", value=1)
+    seed = st.sidebar.number_input("Seed", value=42)
+    
+    st.sidebar.markdown("### Penalty Gewichte")
+
+    w_rotation = st.sidebar.slider("Gewicht Rotation", 0.0, 5.0, 1.0)
+    w_placement = st.sidebar.slider("Gewicht Placement", 0.0, 5.0, 1.0)
+    w_area = st.sidebar.slider("Gewicht Fläche", 0.0, 5.0, 3.0)
+    w_noncirc = st.sidebar.slider("Gewicht Noncircularity", 0.0, 5.0, 0.2)
+    w_smooth = st.sidebar.slider("Gewicht Smoothness", 0.0, 5.0, 0.2)
+    w_sym = st.sidebar.slider("Gewicht Symmetry", 0.0, 5.0, 0.2)
+    w_conc = st.sidebar.slider("Gewicht Concavity", 0.0, 5.0, 0.1)
+    w_aspect = st.sidebar.slider("Gewicht Aspect Ratio", 0.0, 5.0, 0.1)
 
     if st.button("Diff Evol starten"):
 
@@ -237,31 +249,49 @@ with tabs[2]:
 
         start_t = time.time()
 
-        best_radii, best_poly, history = differential_evolution(
-            K=K,
-            r_min=r_min,
-            r_max=r_max,
-            popsize=popsize,
-            F=F,
-            CR=CR,
-            generations=generations,
-            smooth_window=smooth_window,
-            seed=seed,
-            progress_callback=progress_callback,
-        )
+        weights = {
+            "rotation": w_rotation,
+            "placement": w_placement,
+            "area": w_area,
+            "noncircular": w_noncirc,
+            "smoothness": w_smooth,
+            "symmetry": w_sym,
+            "concavity": w_conc,
+            "aspect": w_aspect,
+        }
 
+
+        best_radii, best_poly, history, best_area_history = differential_evolution(
+            K=K, r_min=r_min, r_max=r_max, popsize=popsize,
+            F=F, CR=CR, generations=generations,
+            smooth_window=smooth_window, seed=seed,
+            progress_callback=progress_callback,
+            weights=weights,
+            corridor_width=corridor_width,
+            horizontal_length=horizontal_length,
+            vertical_length=vertical_length,
+        )
         end_t = time.time()
 
         st.success(f"Fertig! Laufzeit: {end_t - start_t:.2f} Sekunden")
         st.write("### Kostenverlauf")
         st.line_chart(history)
 
+        st.write("### Beste Fläche (Area) pro Generation")
+        st.line_chart(best_area_history)
+        
         st.write("### Beste gefundene Form")
 
         # Bewegung simulieren
-        placed = place_polygon_against_corridor(best_poly, corridor)
+        #placed = place_polygon_against_corridor(best_poly, corridor)
+        placed = place_polygon_at_start(best_poly, corridor, x_offset=0.02)
+
         feasible, max_rot, path = move_and_rotate_smooth(corridor, placed)
 
+        # UND ERST JETZT darfst du outputs machen:
+        st.write("Feasible:", feasible)
+        st.write("Max_rot:", max_rot)
+        st.write("Path length:", len(path))
         if len(path) == 0:
             st.warning("Diese Form konnte nicht durch den Korridor bewegt werden.")
         else:
@@ -293,7 +323,7 @@ with tabs[2]:
                     plt.close(fig)
 
                 gif_path = "sofa_animation.gif"
-                imageio.mimsave(gif_path, frames, fps=10)
+                imageio.mimsave(gif_path, frames, fps=10, loop = 0)
 
                 st.image(gif_path, caption="Optimierte Bewegung")
 
