@@ -17,4 +17,6 @@ dependencies = [
     "shapely>=2.1.2",
     "streamlit>=1.50.0",
     "threadpoolctl>=3.6.0",
+    "torch>=2.9.1",
+    "torchvision>=0.24.1",
 ]
