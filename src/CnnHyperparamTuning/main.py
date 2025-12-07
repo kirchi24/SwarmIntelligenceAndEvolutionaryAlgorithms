@@ -102,8 +102,7 @@ def evaluate_individual(params, num_epochs, train_loader, test_loader, device, f
         test_loader,
         device,
         fitness_objectives,
-        weights,
-        [1.0, -0.01],
+        weights
     )
 
 
@@ -155,7 +154,7 @@ def main():
     for gen in range(num_generations):  # Only a few generations for demo
         print(f"Generation {gen+1}")
         for i, params in enumerate(population):
-            score = evaluate_individual(params, num_epochs, train_loader, test_loader, device)
+            score = evaluate_individual(params, num_epochs, train_loader, test_loader, device, fitness_objectives, weights)
             print(f"Individual {i+1}: Fitness = {score:.4f}")
             if score > best_score:
                 best_score = score
@@ -182,7 +181,7 @@ def main():
         improved = False
         neighbors = get_neighbors(best_params)
         for n_params in neighbors:
-            score = evaluate_individual(n_params, train_loader, test_loader, device)
+            score = evaluate_individual(n_params, num_epochs, train_loader, test_loader, device, fitness_objectives, weights)
             if score > best_score:
                 best_score = score
                 best_params = n_params
