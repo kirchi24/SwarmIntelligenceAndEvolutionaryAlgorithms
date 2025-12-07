@@ -75,7 +75,7 @@ def build_model(params, device):
 
 
 # --- Fitness evaluation ---
-def evaluate_individual(params, num_epochs, train_loader, test_loader, device, fitness_objectives=None, weights=None):
+def evaluate_individual(params, num_epochs, train_loader, test_loader, device, quick_run = False, fitness_objectives=None, weights=None):
 
     # default objectives: maximize F1 score, minimize L2 regularization
     if fitness_objectives is None:
@@ -96,6 +96,10 @@ def evaluate_individual(params, num_epochs, train_loader, test_loader, device, f
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+
+            # Break early for quick run/testing
+            if quick_run:
+                break
 
     return fitness(
         model,
@@ -154,7 +158,7 @@ def main():
     for gen in range(num_generations):  # Only a few generations for demo
         print(f"Generation {gen+1}")
         for i, params in enumerate(population):
-            score = evaluate_individual(params, num_epochs, train_loader, test_loader, device, fitness_objectives, weights)
+            score = evaluate_individual(params, num_epochs, train_loader, test_loader, device, True, fitness_objectives, weights)
             print(f"Individual {i+1}: Fitness = {score:.4f}")
             if score > best_score:
                 best_score = score
@@ -181,7 +185,7 @@ def main():
         improved = False
         neighbors = get_neighbors(best_params)
         for n_params in neighbors:
-            score = evaluate_individual(n_params, num_epochs, train_loader, test_loader, device, fitness_objectives, weights)
+            score = evaluate_individual(n_params, num_epochs, train_loader, test_loader, device, True, fitness_objectives, weights)
             if score > best_score:
                 best_score = score
                 best_params = n_params
