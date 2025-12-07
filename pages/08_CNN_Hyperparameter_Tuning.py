@@ -171,7 +171,7 @@ with tabs[1]:
     - **Skalierung:** Jedes Objective wird mittels globaler Min-/Max-Werte auf `[0,1]` skaliert (siehe `GLOBAL_OBJECTIVE_MINS/MAXS`).
     - **Kombination:** Gewichtete Summe der skalierten Objectives:
     $$
-    \\text{Fitness} = \sum_i w_i \\cdot \\text{scaled\_objective}_i
+    \\text{Fitness} =  \\sum_i w_i \\cdot \\text{scaled\\_objective}_i
     $$
     Standard-Gewichtung: `weights = [1.0, -0.01]` (F1 hoch, L2 niedrig).
 
@@ -222,13 +222,6 @@ with tabs[1]:
     - **Performance-Tradeoffs:** Für schnelle Iterationen wird `quick_run=True` verwendet (nur ein Batch pro Epoch), für finale Evaluierung sollten mehrere Epochen / kompletter Trainingslauf gewählt werden.
     - **Reproduzierbarkeit:** Durch UI-geführten Search-Space und deterministische Auswahl/Neighbour-Generierung lässt sich das Experiment gut reproduzieren.
     - **Erweiterbarkeit:** Die Architektur- und Fitness-Module sind modular; neue Objectives (z. B. validation loss, inference latency) lassen sich leicht hinzufügen und in die gewichtete Fitness einfließen.
-
-    ---
-
-    ### 7. Fazit
-
-    Die gewählte Kombination aus einer globalen Suchstrategie (DE) und einem lokalen Refinement (HC) ist pragmatisch und wirkungsvoll für diskrete, gemischt-typige Architektursuchräume (wie CNNs).  
-    DE ermöglicht breite Exploration, HC sorgt für effiziente Feinanpassung — zusammen bietet das eine gute Balance zwischen Robustheit und Rechenaufwand.
     """)
 # ========================================================
 # TAB 3 - RESULTS - RUN DE + Animation
@@ -236,7 +229,7 @@ with tabs[1]:
 with tabs[2]:
     st.header("Hyperparameter konfigurieren & Optimierung starten")
 
-    st.subheader("CNN Search Space anpassen")
+    st.sidebar.subheader("CNN Search Space anpassen")
 
     # --- Editable Search Space (with multiselect) ---
     num_conv_layers = st.sidebar.multiselect(
@@ -337,6 +330,24 @@ with tabs[2]:
             model = build_model(indiv, device)
             fig = visualize_predictions(model, test_loader, device)
             st.pyplot(fig)
+            st.markdown("""
+            ### Legende
+
+            **T:** True Label (echtes Label)  
+            **P:** Predicted Label (vom Modell vorhergesagt)
+
+            **Fashion-MNIST Klassen:**
+            - **0** - T-shirt/top  
+            - **1** - Trouser  
+            - **2** - Pullover  
+            - **3** - Dress  
+            - **4** - Coat  
+            - **5** - Sandal  
+            - **6** - Shirt  
+            - **7** - Sneaker  
+            - **8** - Bag  
+            - **9** - Ankle boot  
+            """)
 
         # =======================================================
         # MODE 2: FULL DE + HILL CLIMBING
@@ -482,9 +493,9 @@ with tabs[3]:
         - Jedes Individuum entspricht einem **Trainingslauf eines CNNs** - selbst „quick runs“ sind teuer.  
         - Die Gesamtzeit eines DE-Durchlaufs ist:  
 
-        \[
-        T_{\text{total}} = \text{Population Size} \times \text{Generations} \times T_{\text{Training}}
-        \]
+        $$
+        T_{\\text{total}} = \\text{Population Size} \\times \\text{Generations} \\times T_{\\text{Training}}
+        $$
 
         - Hill Climbing führt zusätzliche Modelltrainings auf Nachbararchitekturen aus.  
         - Schon kleine Anpassungen der Parameter (z. B. mehr Generationen oder volle statt schnelle Trainingsläufe) erhöhen die Laufzeit signifikant.
