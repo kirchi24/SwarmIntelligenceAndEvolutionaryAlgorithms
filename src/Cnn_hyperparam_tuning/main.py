@@ -75,26 +75,34 @@ def build_model(params, device):
 
 
 # --- Fitness evaluation ---
-def evaluate_individual(params, train_loader, test_loader, device):
+def evaluate_individual(params, num_epochs, train_loader, test_loader, device, fitness_objectives=None, weights=None):
+
+    # default objectives: maximize F1 score, minimize L2 regularization
+    if fitness_objectives is None:
+        fitness_objectives = [objective_f1, penalty_l2_regularization]
+    if weights is None:
+        weights = [1.0, -0.01]
+
     model = build_model(params, device)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = torch.nn.CrossEntropyLoss()
     model.train()
-    # Train for 1 epoch (quick)
-    for images, labels in train_loader:
-        images, labels = images.to(device), labels.to(device)
-        optimizer.zero_grad()
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-        break  # Only one batch for speed
-    # Fitness: F1 score minus regularization penalty
+
+    for _ in range(num_epochs):
+        for images, labels in train_loader:
+            images, labels = images.to(device), labels.to(device)
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
     return fitness(
         model,
         test_loader,
         device,
-        [objective_f1, penalty_l2_regularization],
+        fitness_objectives,
+        weights,
         [1.0, -0.01],
     )
 
@@ -132,15 +140,22 @@ def main():
     os.makedirs(data_dir, exist_ok=True)
     train_loader, test_loader = get_data_loaders(data_dir)
 
+    num_generations = 5  # Reduced for quick testing
+    num_epochs = 3  # Reduced for quick testing
+    fitness_objectives = [objective_f1, penalty_l2_regularization]
+    weights = [1.0, -0.01]
+
+
     # Differential Evolution: population initialization
     population_size = 10
     population = [random_individual() for _ in range(population_size)]
     best_score = float("-inf")
     best_params = None
-    for gen in range(5):  # Only a few generations for demo
+
+    for gen in range(num_generations):  # Only a few generations for demo
         print(f"Generation {gen+1}")
         for i, params in enumerate(population):
-            score = evaluate_individual(params, train_loader, test_loader, device)
+            score = evaluate_individual(params, num_epochs, train_loader, test_loader, device)
             print(f"Individual {i+1}: Fitness = {score:.4f}")
             if score > best_score:
                 best_score = score
