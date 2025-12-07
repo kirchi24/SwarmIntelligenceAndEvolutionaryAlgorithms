@@ -210,4 +210,4 @@ __marimo__/
 .secrets.*
 
 # do not save mnist data
-src/Cnn_hyperparam_tuning/data/
+src/CnnHyperparamTuning/data/
