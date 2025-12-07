@@ -208,3 +208,6 @@ __marimo__/
 
 # Ignore dynaconf secret files
 .secrets.*
+
+# do not save mnist data
+src/Cnn_hyperparam_tuning/data/
