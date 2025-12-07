@@ -4,8 +4,12 @@ import random
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
-from cnn import ConfigurableCNN
-from fitness_objectives import fitness, objective_f1, penalty_l2_regularization
+#from cnn import ConfigurableCNN
+#from fitness_objectives import fitness, objective_f1, penalty_l2_regularization
+
+from src.CnnHyperparamTuning.cnn import ConfigurableCNN
+from src.CnnHyperparamTuning.fitness_objectives import fitness, objective_f1, penalty_l2_regularization
+
 
 # --- Search space definition ---
 SEARCH_SPACE = {
