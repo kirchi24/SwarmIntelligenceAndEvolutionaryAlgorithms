@@ -7,9 +7,9 @@ from src.CnnHyperparamTuning.fitness_objectives import (
     objective_f1,
     penalty_l2_regularization,
 )
-from src.CnnHyperparamTuning.cnn import ConfigurableCNN
 from src.CnnHyperparamTuning.main import (
-    random_individual,
+    differential_evolution,
+    hill_climbing,
     evaluate_individual,
     build_model,
     get_data_loaders,
@@ -372,79 +372,54 @@ with tabs[2]:
         # =======================================================
         else:
             st.info("DE + HC Optimierung läuft …")
-            # --- initial population ---
-            population = [random_individual() for _ in range(pop_size)]
-            best_score = float("-inf")
-            best_params = None
+
+            # --- Parameters für Fitness & Gewichtung ---
             fitness_objectives = [objective_f1, penalty_l2_regularization]
             weights = [1.0, -0.01]
 
-            total_iters = de_gens * pop_size
-            iteration = 0
-
             # --- Differential Evolution ---
-            for gen in range(de_gens):
-                st.write(f"DE Generation {gen+1}")
-                for i, indiv in enumerate(population):
-                    score = evaluate_individual(
-                        indiv,
-                        num_epochs,
-                        train_loader,
-                        test_loader,
-                        device,
-                        quick_run=quick_evaluation,
-                        fitness_objectives=fitness_objectives,
-                        weights=weights,
-                    )
-                    iteration += 1
-                    print(
-                        f"Individual {i+1}/{pop_size}, Progress: {iteration}/{total_iters}, Fitness: {score:.4f}"
-                    )
-
-                    if score > best_score:
-                        best_score = score
-                        best_params = indiv
-
+            best_params, best_score = differential_evolution(
+                pop_size=pop_size,
+                de_gens=de_gens,
+                num_epochs=num_epochs,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                device=device,
+                fitness_objectives=fitness_objectives,
+                weights=weights,
+                quick_run=quick_evaluation,
+                local_search_space=LOCAL_SEARCH_SPACE,
+            )
             st.info(f"DE abgeschlossen. Bester Score: {best_score:.4f}")
 
             # --- Hill Climbing ---
             st.info("Starte Hill Climbing...")
+            best_params = hill_climbing(
+                best_params=best_params,
+                hc_steps=hc_steps,
+                num_epochs=num_epochs,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                device=device,
+                fitness_objectives=fitness_objectives,
+                weights=weights,
+                quick_run=quick_evaluation,
+                local_search_space=LOCAL_SEARCH_SPACE,
+            )
 
-            def neighbors(params, space):
-                neigh = []
-                for k in params:
-                    for v in space[k]:
-                        if v != params[k]:
-                            new = params.copy()
-                            new[k] = v
-                            neigh.append(new)
-                return neigh
+            # --- Best Score nach HC ---
+            best_score = evaluate_individual(
+                best_params,
+                num_epochs=num_epochs,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                device=device,
+                quick_run=quick_evaluation,
+                fitness_objectives=fitness_objectives,
+                weights=weights,
+            )
 
-            for step in range(hc_steps):
-                improved = False
-                for n in neighbors(best_params, SEARCH_SPACE):
-                    score = evaluate_individual(
-                        n,
-                        num_epochs,
-                        train_loader,
-                        test_loader,
-                        device,
-                        quick_run=quick_evaluation,
-                        fitness_objectives=fitness_objectives,
-                        weights=weights,
-                    )
-                    if score > best_score:
-                        best_score = score
-                        best_params = n
-                        improved = True
-                        st.write(f"HC Schritt {step+1}: Verbesserung → {best_score:.4f}")
-                        break
-
-                if not improved:
-                    st.write(f"HC Schritt {step+1}: Keine Verbesserung gefunden, Stopp.")
-                    break
-
-            st.info("Optimierung abgeschlossen!")
+            st.info(f"Optimierung abgeschlossen! Bester Score: {best_score:.4f}")
 
             st.subheader("Beste gefundene Parameter")
             st.table({k: [v] for k, v in best_params.items()})

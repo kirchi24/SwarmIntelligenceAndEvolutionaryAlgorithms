@@ -37,10 +37,10 @@ def get_data_loaders(data_dir, batch_size=128):
 
 
 # --- Helper functions ---
-def random_individual():
+def random_individual(local_search_space=SEARCH_SPACE):
     return {
         k: random.choice(v) if isinstance(v[0], int) else random.choice(v)
-        for k, v in SEARCH_SPACE.items()
+        for k, v in local_search_space.items()
     }
 
 
@@ -103,6 +103,7 @@ def differential_evolution(
     fitness_objectives,
     weights,
     quick_run=False,
+    local_search_space=SEARCH_SPACE,
 ):
     F, CR = 0.8, 0.7
     population = [random_individual() for _ in range(pop_size)]
@@ -118,16 +119,16 @@ def differential_evolution(
             x_a, x_b, x_c = population[a], population[b], population[c]
 
             mutant = {}
-            for key in SEARCH_SPACE:
-                if isinstance(SEARCH_SPACE[key][0], int):
+            for key in local_search_space:
+                if isinstance(local_search_space[key][0], int):
                     val = x_a[key] + F * (x_b[key] - x_c[key])
-                    mutant[key] = min(SEARCH_SPACE[key], key=lambda x: abs(x - val))
+                    mutant[key] = min(local_search_space[key], key=lambda x: abs(x - val))
                 else:
                     mutant[key] = random.choice([x_a[key], x_b[key], x_c[key]])
 
             trial = {
                 k: (mutant[k] if random.random() < CR else target[k])
-                for k in SEARCH_SPACE
+                for k in local_search_space
             }
             f_trial = evaluate_individual(
                 trial,
@@ -175,12 +176,13 @@ def hill_climbing(
     fitness_objectives,
     weights,
     quick_run=False,
+    local_search_space = SEARCH_SPACE,
 ):
     for step in range(hc_steps):
         improved = False
         neighbors = []
-        for key in SEARCH_SPACE:
-            for val in SEARCH_SPACE[key]:
+        for key in local_search_space:
+            for val in local_search_space[key]:
                 if val != best_params[key]:
                     n = best_params.copy()
                     n[key] = val
