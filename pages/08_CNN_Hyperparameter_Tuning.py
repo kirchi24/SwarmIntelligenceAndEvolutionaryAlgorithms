@@ -187,14 +187,17 @@ with tabs[1]:
     Standard-Gewichtung: `weights = [1.0, -0.01]` (F1 hoch, L2 niedrig).
 
     ---
+    
+    ### 3. Differential Evolution
 
-    ### 3. Differential Evolution (vereinfachte Implementierung)
+    - Ziel der DE-Phase: Breite, globale Exploration des Suchraums (Architektur-Parameter).
+    - Initialisierung: Population von Konfigurationen wird erzeugt. In der Implementierung werden Optionen aus dem UI-/Search-Space zufällig kombiniert (je Parameter eine Auswahl).
+    - Evaluation: Jedes Individuum → CNN bauen → kurz trainieren (parameter `num_epochs`, evtl. `quick_run`) → Fitness berechnen.
+    - Selektion / Speicherung: Nur die Konfigurationen mit der besten Fitness werden in der neuen Generation übernommen. Diskrete Parameter (z.B. num_conv_layers) werden immer auf die nächsten erlaubten Werte gerundet.
+    - Mutation / Crossover: Für jedes Individuum werden drei weitere Kandidaten ausgewählt, um den Mutanten zu erzeugen (Faktor F). Anschließend wird durch Crossover entschieden, welche Werte aus dem Mutanten übernommen werden.
+    - New Generation: Die nächste Generation besteht aus den Individuen, die sich nach der Selektion durchgesetzt haben (bessere Fitness).
+    - **Compute-Kosten: Laufzeit ∝ Population x Generations x Trainingsdauer pro Individuum.
 
-    - **Ziel der DE-Phase:** Breite, globale Exploration des Suchraums (Architektur-Parameter).
-    - **Initialisierung:** Population von Konfigurationen wird erzeugt. In der Implementierung werden Optionen aus dem UI-/Search-Space zufällig kombiniert (je Parameter eine Auswahl).
-    - **Evaluation:** Jedes Individuum → CNN bauen → kurz trainieren (parameter `num_epochs`, evtl. `quick_run`) → Fitness berechnen.
-    - **Selektion / Speicherung:** Für das Demo/Projekt werden die besten Individuen nach Fitness bestimmt; klassische DE-Operatoren (Mutation/Crossover) wurden in vereinfachter Form nicht vollständig abgebildet — eher: generate & evaluate mit Auswahl des Besten.
-    - **Compute-Kosten:** Laufzeit ∝ Population x Generations x Trainingsdauer pro Individuum.
 
     ---
 
