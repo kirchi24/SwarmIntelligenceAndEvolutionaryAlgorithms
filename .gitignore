@@ -211,4 +211,4 @@ __marimo__/
 
 # do not save mnist data
 src/CnnHyperparamTuning/data/
-FashionMNIST/*
+*/FashionMNIST/*
