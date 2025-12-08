@@ -187,7 +187,7 @@ with tabs[1]:
     Standard-Gewichtung: `weights = [1.0, -0.01]` (F1 hoch, L2 niedrig).
 
     ---
-    
+
     ### 3. Differential Evolution
 
     - Ziel der DE-Phase: Breite, globale Exploration des Suchraums (Architektur-Parameter).
@@ -405,10 +405,10 @@ with tabs[2]:
                         best_score = score
                         best_params = indiv
 
-            print(f"DE abgeschlossen. Bester Score: {best_score:.4f}")
+            st.info(f"DE abgeschlossen. Bester Score: {best_score:.4f}")
 
             # --- Hill Climbing ---
-            print("Starte Hill Climbing...")
+            st.info("Starte Hill Climbing...")
 
             def neighbors(params, space):
                 neigh = []
@@ -437,14 +437,14 @@ with tabs[2]:
                         best_score = score
                         best_params = n
                         improved = True
-                        print(f"HC Schritt {step+1}: Verbesserung → {best_score:.4f}")
+                        st.write(f"HC Schritt {step+1}: Verbesserung → {best_score:.4f}")
                         break
 
                 if not improved:
-                    print(f"HC Schritt {step+1}: Keine Verbesserung gefunden, Stopp.")
+                    st.write(f"HC Schritt {step+1}: Keine Verbesserung gefunden, Stopp.")
                     break
 
-            print("Optimierung abgeschlossen!")
+            st.info("Optimierung abgeschlossen!")
 
             st.subheader("Beste gefundene Parameter")
             st.table({k: [v] for k, v in best_params.items()})
