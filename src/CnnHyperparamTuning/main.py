@@ -203,6 +203,16 @@ def hill_climbing(
     quick_run=False,
     local_search_space=SEARCH_SPACE,
 ):
+    best_fitness = evaluate_individual(
+                best_params,
+                num_epochs,
+                train_loader,
+                test_loader,
+                device,
+                quick_run,
+                fitness_objectives,
+                weights,)
+    
     for step in range(hc_steps):
         improved = False
         neighbors = []
@@ -225,8 +235,9 @@ def hill_climbing(
                 weights,
             )
             model = build_model(best_params, device)
-            if score > fitness(model, test_loader, device, fitness_objectives, weights):
+            if score > best_fitness:
                 best_params = n_params
+                best_fitness = score
                 improved = True
                 st.write(
                     f"Hill Climbing step {step+1}: Improved fitness to {score:.4f}"
