@@ -301,6 +301,7 @@ with tabs[2]:
     hc_steps = st.slider("Hill Climbing Steps", 1, 30, 10)
     num_epochs = st.slider("Training Epochs per Individuum", 1, 5, 2)
     quick_evaluation = st.checkbox("Quick Evaluation (nur 1 Batch pro Epoche)", value=True)
+    little_dataset = st.checkbox("Kleiner Datensatz (10%)", value=True)
 
     # Prepare UI Search Space
     LOCAL_SEARCH_SPACE = {
@@ -322,7 +323,7 @@ with tabs[2]:
         st.write(f"Device: {device}")
         data_dir = os.path.join("src", "CnnHyperparamTuning", "data")
         os.makedirs(data_dir, exist_ok=True)
-        train_loader, test_loader = get_data_loaders(data_dir)
+        train_loader, test_loader = get_data_loaders(data_dir, little_dataset=little_dataset)
 
         # =======================================================
         # MODE 1: ONLY ONE INDIVIDUAL
