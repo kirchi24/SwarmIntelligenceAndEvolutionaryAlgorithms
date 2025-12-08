@@ -3,19 +3,29 @@ import os
 import torch
 import random
 
-from src.CnnHyperparamTuning.cnn  import ConfigurableCNN
+from src.CnnHyperparamTuning.fitness_objectives import (
+    objective_f1,
+    penalty_l2_regularization,
+)
+from src.CnnHyperparamTuning.cnn import ConfigurableCNN
 from src.CnnHyperparamTuning.main import (
-    random_individual, evaluate_individual, build_model,get_data_loaders,visualize_predictions,
-    SEARCH_SPACE
+    random_individual,
+    evaluate_individual,
+    build_model,
+    get_data_loaders,
+    visualize_predictions,
+    SEARCH_SPACE,
 )
 
 import ast
+
 
 def safe_eval_list(v):
     """Konvertiert '[8,8,8]' sauber zu [8,8,8]."""
     if isinstance(v, list):
         return v
     return ast.literal_eval(v)
+
 
 def build_individual_from_space(space):
     """Erstellt ein zufälliges Individuum aus dem UI-Suchraum."""
@@ -26,17 +36,15 @@ def build_individual_from_space(space):
         "pool_types": random.choice(space["pool_types"]),
         "use_dropout": random.choice(space["use_dropout"]),
         "dropout_rates": random.choice(space["dropout_rates"]),
-        "fc_neurons": random.choice(space["fc_neurons"])
+        "fc_neurons": random.choice(space["fc_neurons"]),
     }
+
 
 # ========================================================
 # Streamlit Page Setup
 # ========================================================
 
-st.set_page_config(
-    page_title="CNN Hyperparameter Tuning",
-    layout="wide"
-)
+st.set_page_config(page_title="CNN Hyperparameter Tuning", layout="wide")
 
 st.title("CNN Hyperparameter Tuning")
 
@@ -119,7 +127,9 @@ with tabs[0]:
     from torchvision import datasets, transforms
 
     transform = transforms.Compose([transforms.ToTensor()])
-    sample_data = datasets.FashionMNIST(root="data", train=True, download=True, transform=transform)
+    sample_data = datasets.FashionMNIST(
+        root="data", train=True, download=True, transform=transform
+    )
 
     fig, axes = plt.subplots(1, 10, figsize=(12, 2))
     for i in range(10):
@@ -146,7 +156,8 @@ with tabs[0]:
 with tabs[1]:
     st.header("Methoden")
 
-    st.markdown("""
+    st.markdown(
+        """
     ### 1. Konfigurierbare CNN-Architektur (`ConfigurableCNN`)
 
     - **Ziel:** Ermöglichen, beliebige CNN-Varianten (innerhalb definierter Grenzen) automatisch zu bauen.
@@ -222,7 +233,8 @@ with tabs[1]:
     - **Performance-Tradeoffs:** Für schnelle Iterationen wird `quick_run=True` verwendet (nur ein Batch pro Epoch), für finale Evaluierung sollten mehrere Epochen / kompletter Trainingslauf gewählt werden.
     - **Reproduzierbarkeit:** Durch UI-geführten Search-Space und deterministische Auswahl/Neighbour-Generierung lässt sich das Experiment gut reproduzieren.
     - **Erweiterbarkeit:** Die Architektur- und Fitness-Module sind modular; neue Objectives (z. B. validation loss, inference latency) lassen sich leicht hinzufügen und in die gewichtete Fitness einfließen.
-    """)
+    """
+    )
 # ========================================================
 # TAB 3 - RESULTS - RUN DE + Animation
 # ========================================================
@@ -277,7 +289,7 @@ with tabs[2]:
     # --- Mode Selection: only 1 or full optimization ---
     mode = st.radio(
         "Was möchtest du ausführen?",
-        ["Nur ein Individuum testen", "DE + Hill Climbing Optimierung"]
+        ["Nur ein Individuum testen", "DE + Hill Climbing Optimierung"],
     )
 
     st.subheader("Optimierungsparameter (DE + HC)")
@@ -285,6 +297,7 @@ with tabs[2]:
     pop_size = st.slider("Population Size", 5, 30, 10)
     hc_steps = st.slider("Hill Climbing Steps", 1, 30, 10)
     num_epochs = st.slider("Training Epochs per Individuum", 1, 5, 2)
+    quick_evaluation = st.checkbox("Quick Evaluation (nur 1 Batch pro Epoche)", value=True)
 
     # Prepare UI Search Space
     LOCAL_SEARCH_SPACE = {
@@ -303,7 +316,7 @@ with tabs[2]:
     # ========================= RUN ===============================
     if st.button("Starten"):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        st.write(f"Device: {device}")
         data_dir = os.path.join("src", "CnnHyperparamTuning", "data")
         os.makedirs(data_dir, exist_ok=True)
         train_loader, test_loader = get_data_loaders(data_dir)
@@ -330,7 +343,8 @@ with tabs[2]:
             model = build_model(indiv, device)
             fig = visualize_predictions(model, test_loader, device)
             st.pyplot(fig)
-            st.markdown("""
+            st.markdown(
+                """
             ### Legende
 
             **T:** True Label (echtes Label)  
@@ -347,41 +361,51 @@ with tabs[2]:
             - **7** - Sneaker  
             - **8** - Bag  
             - **9** - Ankle boot  
-            """)
+            """
+            )
 
         # =======================================================
         # MODE 2: FULL DE + HILL CLIMBING
         # =======================================================
         else:
             st.info("DE + HC Optimierung läuft …")
-
             # --- initial population ---
-            population = [
-                build_individual_from_space(LOCAL_SEARCH_SPACE)
-                for _ in range(pop_size)
-            ]
-
+            population = [random_individual() for _ in range(pop_size)]
             best_score = float("-inf")
             best_params = None
+            fitness_objectives = [objective_f1, penalty_l2_regularization]
+            weights = [1.0, -0.01]
 
-            progress = st.progress(0)
-            iteration = 0
             total_iters = de_gens * pop_size
+            iteration = 0
 
+            # --- Differential Evolution ---
             for gen in range(de_gens):
-                for indiv in population:
+                st.write(f"DE Generation {gen+1}")
+                for i, indiv in enumerate(population):
                     score = evaluate_individual(
-                        indiv, num_epochs, train_loader, test_loader, device, quick_run=True
+                        indiv,
+                        num_epochs,
+                        train_loader,
+                        test_loader,
+                        device,
+                        quick_run=quick_evaluation,
+                        fitness_objectives=fitness_objectives,
+                        weights=weights,
                     )
                     iteration += 1
-                    progress.progress(iteration / total_iters)
+                    print(
+                        f"Individual {i+1}/{pop_size}, Progress: {iteration}/{total_iters}, Fitness: {score:.4f}"
+                    )
 
                     if score > best_score:
                         best_score = score
                         best_params = indiv
 
-            # ---------- Hill Climbing ----------
-            st.info("Hill Climbing...")
+            print(f"DE abgeschlossen. Bester Score: {best_score:.4f}")
+
+            # --- Hill Climbing ---
+            print("Starte Hill Climbing...")
 
             def neighbors(params, space):
                 neigh = []
@@ -395,21 +419,29 @@ with tabs[2]:
 
             for step in range(hc_steps):
                 improved = False
-                for n in neighbors(best_params, LOCAL_SEARCH_SPACE):
+                for n in neighbors(best_params, SEARCH_SPACE):
                     score = evaluate_individual(
-                        n, num_epochs, train_loader, test_loader, device, quick_run=True
+                        n,
+                        num_epochs,
+                        train_loader,
+                        test_loader,
+                        device,
+                        quick_run=quick_evaluation,
+                        fitness_objectives=fitness_objectives,
+                        weights=weights,
                     )
                     if score > best_score:
                         best_score = score
                         best_params = n
                         improved = True
-                        st.write(f"HC Schritt {step+1}: Verbesserung → {best_score:.4f}")
+                        print(f"HC Schritt {step+1}: Verbesserung → {best_score:.4f}")
                         break
 
                 if not improved:
+                    print(f"HC Schritt {step+1}: Keine Verbesserung gefunden, Stopp.")
                     break
 
-            st.success("Optimierung abgeschlossen!")
+            print("Optimierung abgeschlossen!")
 
             st.subheader("Beste gefundene Parameter")
             st.table({k: [v] for k, v in best_params.items()})
@@ -422,7 +454,8 @@ with tabs[2]:
             fig = visualize_predictions(model, test_loader, device)
             st.pyplot(fig)
 
-            st.markdown("""
+            st.markdown(
+                """
             ### Legende
 
             **T:** True Label (echtes Label)  
@@ -439,7 +472,8 @@ with tabs[2]:
             - **7** - Sneaker  
             - **8** - Bag  
             - **9** - Ankle boot  
-            """)
+            """
+            )
 
 # ========================================================
 # TAB 4 - DISCUSSION
@@ -448,7 +482,8 @@ with tabs[3]:
 
     st.markdown("## Diskussion")
 
-    st.markdown("""
+    st.markdown(
+        """
         ### Warum Differential Evolution (DE) + Hill Climbing (HC)?
 
         Die Kombination aus **Differential Evolution** und **Hill Climbing** ist besonders attraktiv für die Optimierung von Convolutional Neural Networks (CNNs), da sie die Stärken beider Verfahren vereint:
