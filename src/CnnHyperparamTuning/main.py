@@ -234,7 +234,6 @@ def hill_climbing(
                 fitness_objectives,
                 weights,
             )
-            model = build_model(best_params, device)
             if score > best_fitness:
                 best_params = n_params
                 best_fitness = score

@@ -420,7 +420,7 @@ with tabs[2]:
                 weights=weights,
             )
 
-            st.info(f"Optimierung abgeschlossen! Bester Score: {best_score:.4f}")
+            st.info(f"Optimierung abgeschlossen!")
 
             st.subheader("Beste gefundene Parameter")
             st.table({k: [v] for k, v in best_params.items()})
@@ -430,6 +430,19 @@ with tabs[2]:
             # Final model visualization
             st.subheader("Vorhersagen des finalen Modells")
             model = build_model(best_params, device)
+            optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+            criterion = torch.nn.CrossEntropyLoss()
+            model.train()
+
+            for _ in range(num_epochs):
+                for images, labels in train_loader:
+                    images, labels = images.to(device), labels.to(device)
+                    optimizer.zero_grad()
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+                    loss.backward()
+                    optimizer.step()
+
             fig = visualize_predictions(model, test_loader, device)
             st.pyplot(fig)
 
