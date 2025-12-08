@@ -6,7 +6,11 @@ import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from src.CnnHyperparamTuning.cnn import ConfigurableCNN
-from src.CnnHyperparamTuning.fitness_objectives import fitness, objective_f1, penalty_l2_regularization
+from src.CnnHyperparamTuning.fitness_objectives import (
+    fitness,
+    objective_f1,
+    penalty_l2_regularization,
+)
 
 # --- Search space ---
 SEARCH_SPACE = {
@@ -14,8 +18,20 @@ SEARCH_SPACE = {
     "filters_per_layer": [[8, 8, 8], [16, 16, 16], [32, 32, 32]],
     "kernel_sizes": [[3, 3, 3], [5, 5, 5]],
     "pool_types": [["max", "max", "max"], ["avg", "avg", "avg"]],
-    "use_dropout": [[False, False, False], [False, True, True], [False, False, True], [True, True, True]],
-    "dropout_rates": [[0.0, 0.0, 0.0], [0.1, 0.1, 0.1], [0.2, 0.2, 0.2], [0.3, 0.3, 0.3], [0.4, 0.4, 0.4], [0.5, 0.5, 0.5]],
+    "use_dropout": [
+        [False, False, False],
+        [False, True, True],
+        [False, False, True],
+        [True, True, True],
+    ],
+    "dropout_rates": [
+        [0.0, 0.0, 0.0],
+        [0.1, 0.1, 0.1],
+        [0.2, 0.2, 0.2],
+        [0.3, 0.3, 0.3],
+        [0.4, 0.4, 0.4],
+        [0.5, 0.5, 0.5],
+    ],
     "fc_neurons": [16, 32, 64, 128],
 }
 
@@ -122,7 +138,9 @@ def differential_evolution(
             for key in local_search_space:
                 if isinstance(local_search_space[key][0], int):
                     val = x_a[key] + F * (x_b[key] - x_c[key])
-                    mutant[key] = min(local_search_space[key], key=lambda x: abs(x - val))
+                    mutant[key] = min(
+                        local_search_space[key], key=lambda x: abs(x - val)
+                    )
                 else:
                     mutant[key] = random.choice([x_a[key], x_b[key], x_c[key]])
 
@@ -176,7 +194,7 @@ def hill_climbing(
     fitness_objectives,
     weights,
     quick_run=False,
-    local_search_space = SEARCH_SPACE,
+    local_search_space=SEARCH_SPACE,
 ):
     for step in range(hc_steps):
         improved = False
@@ -199,9 +217,8 @@ def hill_climbing(
                 fitness_objectives,
                 weights,
             )
-            if score > fitness(
-                best_params, test_loader, device, fitness_objectives, weights
-            ):
+            model = build_model(best_params, device)
+            if score > fitness(model, test_loader, device, fitness_objectives, weights):
                 best_params = n_params
                 improved = True
                 st.write(
