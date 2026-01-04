@@ -1,9 +1,10 @@
 [project]
 name = "swarmintelligenceandevolutionaryalgorithms"
 version = "0.1.0"
-description = "Add your description here"
+description = "Swarm Intelligence and Evolutionary Algorithms"
 readme = "README.md"
 requires-python = ">=3.13"
+
 dependencies = [
     "dynaconf>=3.2.12",
     "geopandas>=1.1.1",
@@ -17,6 +18,11 @@ dependencies = [
     "shapely>=2.1.2",
     "streamlit>=1.50.0",
     "threadpoolctl>=3.6.0",
-    "torch>=2.9.1",
-    "torchvision>=0.24.1",
+]
+
+[project.optional-dependencies]
+torch = [
+    "torch",
+    "torchvision",
+    "torchaudio",
 ]
