@@ -116,6 +116,107 @@ def evaluate_individual(
 
 
 # --- Optimization algorithms ---
+def genetic_algorithm(
+    pop_size,
+    generations,
+    num_epochs,
+    train_loader,
+    test_loader,
+    device,
+    fitness_objectives,
+    weights,
+    mutation_rate=0.2,
+    crossover_rate=0.8,
+    elite_size=2,
+    quick_run=False,
+    local_search_space=SEARCH_SPACE,
+):
+    # --- Initial population ---
+    population = [random_individual(local_search_space) for _ in range(pop_size)]
+
+    def fitness_of(ind):
+        return evaluate_individual(
+            ind,
+            num_epochs,
+            train_loader,
+            test_loader,
+            device,
+            quick_run,
+            fitness_objectives,
+            weights,
+        )
+
+    # --- Evaluate initial ---
+    scores = [fitness_of(ind) for ind in population]
+
+    for gen in range(generations):
+        # --- Selection (tournament) ---
+        selected = []
+        for _ in range(pop_size):
+            i, j = random.sample(range(pop_size), 2)
+            selected.append(population[i] if scores[i] > scores[j] else population[j])
+
+        # --- Crossover ---
+        offspring = []
+        for i in range(0, pop_size, 2):
+            p1 = selected[i]
+            p2 = selected[(i + 1) % pop_size]
+
+            if random.random() < crossover_rate:
+                child1, child2 = {}, {}
+                for key in local_search_space:
+                    if random.random() < 0.5:
+                        child1[key] = p1[key]
+                        child2[key] = p2[key]
+                    else:
+                        child1[key] = p2[key]
+                        child2[key] = p1[key]
+                offspring.extend([child1, child2])
+            else:
+                offspring.extend([p1.copy(), p2.copy()])
+
+        # --- Mutation ---
+        for ind in offspring:
+            for key in local_search_space:
+                if random.random() < mutation_rate:
+                    ind[key] = random.choice(local_search_space[key])
+
+        # --- Elitism ---
+        elite_indices = sorted(
+            range(pop_size), key=lambda i: scores[i], reverse=True
+        )[:elite_size]
+        elites = [population[i] for i in elite_indices]
+
+        population = offspring[: pop_size - elite_size] + elites
+        scores = [fitness_of(ind) for ind in population]
+
+        best_score = max(scores)
+        st.write(f"GA Generation {gen+1}: Best Fitness = {best_score:.4f}")
+
+    best_idx = scores.index(max(scores))
+    return population[best_idx], scores[best_idx]
+
+
+def ga_with_hill_climbing(
+    ga_params,
+    hc_steps,
+    *args,
+    **kwargs
+):
+    best_params, best_score = genetic_algorithm(*args, **kwargs)
+
+    st.info("Starte Hill Climbing auf GA-Bestem Individuum")
+
+    best_params = hill_climbing(
+        best_params=best_params,
+        hc_steps=hc_steps,
+        *ga_params
+    )
+
+    return best_params
+
+
+
 def differential_evolution(
     pop_size,
     de_gens,
