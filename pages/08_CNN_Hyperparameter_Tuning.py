@@ -12,7 +12,7 @@ from src.CnnHyperparamTuning.main import (
     hill_climbing,
     evaluate_individual,
     build_model,
-    get_data_loaders,
+    genetic_algorithm,    get_data_loaders,
     visualize_predictions,
     SEARCH_SPACE,
 )
@@ -244,9 +244,11 @@ with tabs[1]:
 with tabs[2]:
     st.header("Hyperparameter konfigurieren & Optimierung starten")
 
+    # =========================================================
+    # SIDEBAR - SEARCH SPACE
+    # =========================================================
     st.sidebar.subheader("CNN Search Space anpassen")
 
-    # --- Editable Search Space (with multiselect) ---
     num_conv_layers = st.sidebar.multiselect(
         "Anzahl Convolution-Layer",
         options=[1, 2, 3],
@@ -289,21 +291,52 @@ with tabs[2]:
         default=SEARCH_SPACE["fc_neurons"],
     )
 
-    # --- Mode Selection: only 1 or full optimization ---
+    # =========================================================
+    # MODE SELECTION
+    # =========================================================
+    st.subheader("Optimierungsmodus")
+
     mode = st.radio(
         "Was möchtest du ausführen?",
-        ["Nur ein Individuum testen", "DE + Hill Climbing Optimierung"],
+        [
+            "Nur ein Individuum testen",
+            "Genetischer Algorithmus (GA)",
+            "GA + Hill Climbing (Memetic)",
+        ],
     )
 
-    st.subheader("Optimierungsparameter (DE + HC)")
-    de_gens = st.slider("DE Generationen", min_value=1, max_value=20, value=5)
+    # =========================================================
+    # GA PARAMETER
+    # =========================================================
+    st.subheader("GA Parameter")
+
     pop_size = st.slider("Population Size", 5, 30, 10)
-    hc_steps = st.slider("Hill Climbing Steps", 1, 30, 10)
-    num_epochs = st.slider("Training Epochs per Individuum", 1, 5, 2)
-    quick_evaluation = st.checkbox("Quick Evaluation (nur 1 Batch pro Epoche)", value=True)
+    ga_gens = st.slider("GA Generationen", 1, 30, 10)
+    mutation_rate = st.slider("Mutation Rate", 0.0, 1.0, 0.2)
+    crossover_rate = st.slider("Crossover Rate", 0.0, 1.0, 0.8)
+    elite_size = st.slider("Elite Size", 1, 5, 2)
+
+    # =========================================================
+    # HC PARAMETER (nur relevant für GA+HC)
+    # =========================================================
+    if mode == "GA + Hill Climbing (Memetic)":
+        st.subheader("Hill Climbing Parameter")
+        hc_steps = st.slider("Hill Climbing Steps", 1, 30, 10)
+
+    # =========================================================
+    # TRAINING / SYSTEM
+    # =========================================================
+    st.subheader("Training & System")
+
+    num_epochs = st.slider("Training Epochs pro Individuum", 1, 5, 2)
+    quick_evaluation = st.checkbox(
+        "Quick Evaluation (nur 1 Batch pro Epoche)", value=True
+    )
     little_dataset = st.checkbox("Kleiner Datensatz (10%)", value=True)
 
-    # Prepare UI Search Space
+    # =========================================================
+    # SEARCH SPACE FINAL
+    # =========================================================
     LOCAL_SEARCH_SPACE = {
         "num_conv_layers": num_conv_layers,
         "filters_per_layer": [safe_eval_list(f) for f in filters],
@@ -317,84 +350,90 @@ with tabs[2]:
     st.write("### Aktiver Search Space")
     st.table({k: [str(v)] for k, v in LOCAL_SEARCH_SPACE.items()})
 
-    # ========================= RUN ===============================
+    # =========================================================
+    # RUN
+    # =========================================================
     if st.button("Starten"):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         st.write(f"Device: {device}")
+
         data_dir = os.path.join("src", "CnnHyperparamTuning", "data")
         os.makedirs(data_dir, exist_ok=True)
-        train_loader, test_loader = get_data_loaders(data_dir, little_dataset=little_dataset)
 
-        # =======================================================
-        # MODE 1: ONLY ONE INDIVIDUAL
-        # =======================================================
+        train_loader, test_loader = get_data_loaders(
+            data_dir, little_dataset=little_dataset
+        )
+
+        fitness_objectives = [objective_f1, penalty_l2_regularization]
+        weights = [1.0, -0.01]
+
+        # =====================================================
+        # MODE 1 - SINGLE INDIVIDUAL
+        # =====================================================
         if mode == "Nur ein Individuum testen":
-            st.info("Ein Individuum wird getestet...")
+            st.info("Ein zufälliges Individuum wird getestet")
 
             indiv = build_individual_from_space(LOCAL_SEARCH_SPACE)
 
             score = evaluate_individual(
-                indiv, num_epochs, train_loader, test_loader, device, quick_run=True
+                indiv,
+                num_epochs,
+                train_loader,
+                test_loader,
+                device,
+                quick_run=True,
+                fitness_objectives=fitness_objectives,
+                weights=weights,
             )
 
             st.success(f"Fitness Score: {score:.4f}")
-
-            st.subheader("Parameter dieses Individuums")
+            st.subheader("Parameter")
             st.table({k: [v] for k, v in indiv.items()})
 
-            # Visualization
-            st.subheader("Vorhersagen des Modells")
-            model = build_model(indiv, device)
-            fig = visualize_predictions(model, test_loader, device)
-            st.pyplot(fig)
-            st.markdown(
-                """
-            ### Legende
+        # =====================================================
+        # MODE 2 - GA
+        # =====================================================
+        elif mode == "Genetischer Algorithmus (GA)":
+            st.info("Genetischer Algorithmus läuft …")
 
-            **T:** True Label (echtes Label)  
-            **P:** Predicted Label (vom Modell vorhergesagt)
-
-            **Fashion-MNIST Klassen:**
-            - **0** - T-shirt/top  
-            - **1** - Trouser  
-            - **2** - Pullover  
-            - **3** - Dress  
-            - **4** - Coat  
-            - **5** - Sandal  
-            - **6** - Shirt  
-            - **7** - Sneaker  
-            - **8** - Bag  
-            - **9** - Ankle boot  
-            """
-            )
-
-        # =======================================================
-        # MODE 2: FULL DE + HILL CLIMBING
-        # =======================================================
-        else:
-            st.info("DE + HC Optimierung läuft …")
-
-            # --- Parameters für Fitness & Gewichtung ---
-            fitness_objectives = [objective_f1, penalty_l2_regularization]
-            weights = [1.0, -0.01]
-
-            # --- Differential Evolution ---
-            best_params, best_score = differential_evolution(
+            best_params, best_score = genetic_algorithm(
                 pop_size=pop_size,
-                de_gens=de_gens,
+                generations=ga_gens,
                 num_epochs=num_epochs,
                 train_loader=train_loader,
                 test_loader=test_loader,
                 device=device,
                 fitness_objectives=fitness_objectives,
                 weights=weights,
+                mutation_rate=mutation_rate,
+                crossover_rate=crossover_rate,
+                elite_size=elite_size,
                 quick_run=quick_evaluation,
                 local_search_space=LOCAL_SEARCH_SPACE,
             )
-            st.info(f"DE abgeschlossen. Bester Score: {best_score:.4f}")
 
-            # --- Hill Climbing ---
-            st.info("Starte Hill Climbing...")
+        # =====================================================
+        # MODE 3 - GA + HC (MEMETIC)
+        # =====================================================
+        else:
+            st.info("GA + Hill Climbing (Memetic Algorithm) läuft …")
+
+            best_params, best_score = genetic_algorithm(
+                pop_size=pop_size,
+                generations=ga_gens,
+                num_epochs=num_epochs,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                device=device,
+                fitness_objectives=fitness_objectives,
+                weights=weights,
+                mutation_rate=mutation_rate,
+                crossover_rate=crossover_rate,
+                elite_size=elite_size,
+                quick_run=quick_evaluation,
+                local_search_space=LOCAL_SEARCH_SPACE,
+            )
+
             best_params = hill_climbing(
                 best_params=best_params,
                 hc_steps=hc_steps,
@@ -408,28 +447,28 @@ with tabs[2]:
                 local_search_space=LOCAL_SEARCH_SPACE,
             )
 
-            # --- Best Score nach HC ---
             best_score = evaluate_individual(
                 best_params,
-                num_epochs=num_epochs,
-                train_loader=train_loader,
-                test_loader=test_loader,
-                device=device,
+                num_epochs,
+                train_loader,
+                test_loader,
+                device,
                 quick_run=quick_evaluation,
                 fitness_objectives=fitness_objectives,
                 weights=weights,
             )
 
-            st.info(f"Optimierung abgeschlossen!")
-
+        # =====================================================
+        # RESULT VISUALIZATION (GA / GA+HC)
+        # =====================================================
+        if mode != "Nur ein Individuum testen":
+            st.success(f"Optimierung abgeschlossen - Best Fitness: {best_score:.4f}")
             st.subheader("Beste gefundene Parameter")
             st.table({k: [v] for k, v in best_params.items()})
 
-            st.subheader(f"Bester Fitness Score: {best_score:.4f}")
-
-            # Final model visualization
             st.subheader("Vorhersagen des finalen Modells")
             model = build_model(best_params, device)
+            model = model.to(device)
             optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
             criterion = torch.nn.CrossEntropyLoss()
             model.train()
@@ -446,27 +485,7 @@ with tabs[2]:
             fig = visualize_predictions(model, test_loader, device)
             st.pyplot(fig)
 
-            st.markdown(
-                """
-            ### Legende
-
-            **T:** True Label (echtes Label)  
-            **P:** Predicted Label (vom Modell vorhergesagt)
-
-            **Fashion-MNIST Klassen:**
-            - **0** - T-shirt/top  
-            - **1** - Trouser  
-            - **2** - Pullover  
-            - **3** - Dress  
-            - **4** - Coat  
-            - **5** - Sandal  
-            - **6** - Shirt  
-            - **7** - Sneaker  
-            - **8** - Bag  
-            - **9** - Ankle boot  
-            """
-            )
-
+        
 # ========================================================
 # TAB 4 - DISCUSSION
 # ========================================================
