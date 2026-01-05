@@ -130,6 +130,7 @@ def genetic_algorithm(
     elite_size=2,
     quick_run=False,
     local_search_space=SEARCH_SPACE,
+    use_streamlit=False,
 ):
     # --- Initial population ---
     population = [random_individual(local_search_space) for _ in range(pop_size)]
@@ -191,105 +192,14 @@ def genetic_algorithm(
         scores = [fitness_of(ind) for ind in population]
 
         best_score = max(scores)
-        st.write(f"GA Generation {gen+1}: Best Fitness = {best_score:.4f}")
+        msg = f"GA Generation {gen+1}: Best Fitness = {best_score:.4f}"
+        if use_streamlit:
+            st.write(msg)
+        else:
+            print(msg)
 
     best_idx = scores.index(max(scores))
     return population[best_idx], scores[best_idx]
-
-
-def ga_with_hill_climbing(
-    ga_params,
-    hc_steps,
-    *args,
-    **kwargs
-):
-    best_params, best_score = genetic_algorithm(*args, **kwargs)
-
-    st.info("Starte Hill Climbing auf GA-Bestem Individuum")
-
-    best_params = hill_climbing(
-        best_params=best_params,
-        hc_steps=hc_steps,
-        *ga_params
-    )
-
-    return best_params
-
-
-
-def differential_evolution(
-    pop_size,
-    de_gens,
-    num_epochs,
-    train_loader,
-    test_loader,
-    device,
-    fitness_objectives,
-    weights,
-    quick_run=False,
-    local_search_space=SEARCH_SPACE,
-):
-    F, CR = 0.8, 0.7
-    population = [random_individual() for _ in range(pop_size)]
-    best_score = float("-inf")
-    best_params = None
-
-    for gen in range(de_gens):
-        new_population = []
-        for i, target in enumerate(population):
-            idxs = list(range(pop_size))
-            idxs.remove(i)
-            a, b, c = random.sample(idxs, 3)
-            x_a, x_b, x_c = population[a], population[b], population[c]
-
-            mutant = {}
-            for key in local_search_space:
-                if isinstance(local_search_space[key][0], int):
-                    val = x_a[key] + F * (x_b[key] - x_c[key])
-                    mutant[key] = min(
-                        local_search_space[key], key=lambda x: abs(x - val)
-                    )
-                else:
-                    mutant[key] = random.choice([x_a[key], x_b[key], x_c[key]])
-
-            trial = {
-                k: (mutant[k] if random.random() < CR else target[k])
-                for k in local_search_space
-            }
-            f_trial = evaluate_individual(
-                trial,
-                num_epochs,
-                train_loader,
-                test_loader,
-                device,
-                quick_run,
-                fitness_objectives,
-                weights,
-            )
-            f_target = evaluate_individual(
-                target,
-                num_epochs,
-                train_loader,
-                test_loader,
-                device,
-                quick_run,
-                fitness_objectives,
-                weights,
-            )
-
-            if f_trial > f_target:
-                new_population.append(trial)
-                if f_trial > best_score:
-                    best_score, best_params = f_trial, trial
-            else:
-                new_population.append(target)
-                if f_target > best_score:
-                    best_score, best_params = f_target, target
-
-        population = new_population
-        st.write(f"Generation {gen+1}: Best fitness so far: {best_score:.4f}")
-
-    return best_params, best_score
 
 
 def hill_climbing(
@@ -303,6 +213,7 @@ def hill_climbing(
     weights,
     quick_run=False,
     local_search_space=SEARCH_SPACE,
+    use_streamlit=False,
 ):
     best_fitness = evaluate_individual(
                 best_params,
@@ -339,13 +250,19 @@ def hill_climbing(
                 best_params = n_params
                 best_fitness = score
                 improved = True
-                st.write(
-                    f"Hill Climbing step {step+1}: Improved fitness to {score:.4f}"
-                )
+                msg = f"Hill Climbing step {step+1}: Improved fitness to {score:.4f}"
+                if use_streamlit:
+                    st.write(msg)
+                else:
+                    print(msg)
                 break
 
         if not improved:
-            st.write(f"Hill Climbing step {step+1}: No improvement found, stopping.")
+            msg = f"Hill Climbing step {step+1}: No improvement found, stopping."
+            if use_streamlit:
+                st.write(msg)
+            else:
+                print(msg)
             break
 
     return best_params
@@ -384,43 +301,64 @@ def main():
     # --- Data ---
     data_dir = "./data"
     os.makedirs(data_dir, exist_ok=True)
-    train_loader, test_loader = get_data_loaders(data_dir)
+    train_loader, test_loader = get_data_loaders(data_dir, little_dataset=True)
 
     # --- Parameters ---
     num_epochs = 3  # pro Individuum
-    pop_size = 10  # Population für DE
-    de_gens = 5  # Generationen für DE
+    pop_size = 10  # Population für GA
+    ga_gens = 5  # Generationen für GA
     hc_steps = 10  # Schritte für Hill Climbing
+    mutation_rate = 0.2
+    crossover_rate = 0.8
+    elite_size = 2
+    quick_run = True
     fitness_objectives = [objective_f1, penalty_l2_regularization]
     weights = [1.0, -0.01]
 
     # --- Choose method ---
-    method = input("Choose optimization method (DE, HC, DE+HC): ").strip().upper()
+    method = input("Choose optimization method (GA, GA+HC): ").strip().upper()
 
-    if method == "DE":
-        best_params, best_score = differential_evolution(
-            pop_size,
-            de_gens,
-            num_epochs,
-            train_loader,
-            test_loader,
-            device,
-            fitness_objectives,
-            weights,
-            True,
+    if method == "GA":
+        best_params, best_score = genetic_algorithm(
+            pop_size=pop_size,
+            generations=ga_gens,
+            num_epochs=num_epochs,
+            train_loader=train_loader,
+            test_loader=test_loader,
+            device=device,
+            fitness_objectives=fitness_objectives,
+            weights=weights,
+            mutation_rate=mutation_rate,
+            crossover_rate=crossover_rate,
+            elite_size=elite_size,
+            quick_run=quick_run,
         )
-    elif method == "HC":
-        best_params = random_individual()
+    elif method == "GA+HC":
+        best_params, best_score = genetic_algorithm(
+            pop_size=pop_size,
+            generations=ga_gens,
+            num_epochs=num_epochs,
+            train_loader=train_loader,
+            test_loader=test_loader,
+            device=device,
+            fitness_objectives=fitness_objectives,
+            weights=weights,
+            mutation_rate=mutation_rate,
+            crossover_rate=crossover_rate,
+            elite_size=elite_size,
+            quick_run=quick_run,
+        )
+        print("\nStarting Hill Climbing on best GA individual...")
         best_params = hill_climbing(
-            best_params,
-            hc_steps,
-            num_epochs,
-            train_loader,
-            test_loader,
-            device,
-            fitness_objectives,
-            weights,
-            True,
+            best_params=best_params,
+            hc_steps=hc_steps,
+            num_epochs=num_epochs,
+            train_loader=train_loader,
+            test_loader=test_loader,
+            device=device,
+            fitness_objectives=fitness_objectives,
+            weights=weights,
+            quick_run=quick_run,
         )
         best_score = evaluate_individual(
             best_params,
@@ -428,69 +366,21 @@ def main():
             train_loader,
             test_loader,
             device,
-            True,
-            fitness_objectives,
-            weights,
-        )
-    elif method == "DE+HC":
-        best_params, _ = differential_evolution(
-            pop_size,
-            de_gens,
-            num_epochs,
-            train_loader,
-            test_loader,
-            device,
-            fitness_objectives,
-            weights,
-            True,
-        )
-        best_params = hill_climbing(
-            best_params,
-            hc_steps,
-            num_epochs,
-            train_loader,
-            test_loader,
-            device,
-            fitness_objectives,
-            weights,
-            True,
-        )
-        best_score = evaluate_individual(
-            best_params,
-            num_epochs,
-            train_loader,
-            test_loader,
-            device,
-            True,
+            quick_run,
             fitness_objectives,
             weights,
         )
     else:
-        print("Invalid method! Choose DE, HC, or DE+HC.")
+        print("Invalid method! Choose GA or GA+HC.")
         return
 
     # --- Results ---
-    print("Best parameters found:", best_params)
+    print("\nBest parameters found:", best_params)
     print(f"Best fitness: {best_score:.4f}")
 
     # --- Visualize predictions ---
     best_model = build_model(best_params, device)
-    best_model.eval()
-    images, labels = next(iter(test_loader))
-    images, labels = images.to(device), labels.to(device)
-    with torch.no_grad():
-        outputs = best_model(images)
-        _, preds = torch.max(outputs, 1)
-
-    import matplotlib.pyplot as plt
-
-    fig, axes = plt.subplots(1, 8, figsize=(16, 2))
-    for i in range(8):
-        ax = axes[i]
-        ax.imshow(images[i].cpu()[0], cmap="gray")
-        ax.set_title(f"T:{labels[i].item()}\nP:{preds[i].item()}", fontsize=8)
-        ax.axis("off")
-    plt.tight_layout()
+    fig = visualize_predictions(best_model, test_loader, device)
     plt.show()
 
 

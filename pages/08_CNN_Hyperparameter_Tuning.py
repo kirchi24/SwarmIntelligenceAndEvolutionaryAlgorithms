@@ -8,11 +8,11 @@ from src.CnnHyperparamTuning.fitness_objectives import (
     penalty_l2_regularization,
 )
 from src.CnnHyperparamTuning.main import (
-    differential_evolution,
     hill_climbing,
     evaluate_individual,
     build_model,
-    genetic_algorithm,    get_data_loaders,
+    genetic_algorithm,
+    get_data_loaders,
     visualize_predictions,
     SEARCH_SPACE,
 )
@@ -239,7 +239,7 @@ with tabs[1]:
     """
     )
 # ========================================================
-# TAB 3 - RESULTS - RUN DE + Animation
+# TAB 3 - RESULTS - RUN GA + Animation
 # ========================================================
 with tabs[2]:
     st.header("Hyperparameter konfigurieren & Optimierung starten")
@@ -301,7 +301,7 @@ with tabs[2]:
         [
             "Nur ein Individuum testen",
             "Genetischer Algorithmus (GA)",
-            "GA + Hill Climbing (Memetic)",
+            "GA + Hill Climbing",
         ],
     )
 
@@ -319,7 +319,7 @@ with tabs[2]:
     # =========================================================
     # HC PARAMETER (nur relevant für GA+HC)
     # =========================================================
-    if mode == "GA + Hill Climbing (Memetic)":
+    if mode == "GA + Hill Climbing":
         st.subheader("Hill Climbing Parameter")
         hc_steps = st.slider("Hill Climbing Steps", 1, 30, 10)
 
@@ -410,10 +410,11 @@ with tabs[2]:
                 elite_size=elite_size,
                 quick_run=quick_evaluation,
                 local_search_space=LOCAL_SEARCH_SPACE,
+                use_streamlit=True,
             )
 
         # =====================================================
-        # MODE 3 - GA + HC (MEMETIC)
+        # MODE 3 - GA + HC
         # =====================================================
         else:
             st.info("GA + Hill Climbing (Memetic Algorithm) läuft …")
@@ -432,6 +433,7 @@ with tabs[2]:
                 elite_size=elite_size,
                 quick_run=quick_evaluation,
                 local_search_space=LOCAL_SEARCH_SPACE,
+                use_streamlit=True,
             )
 
             best_params = hill_climbing(
@@ -445,6 +447,7 @@ with tabs[2]:
                 weights=weights,
                 quick_run=quick_evaluation,
                 local_search_space=LOCAL_SEARCH_SPACE,
+                use_streamlit=True,
             )
 
             best_score = evaluate_individual(
