@@ -69,10 +69,14 @@ with tabs[0]:
 
     In diesem Projekt wurde eine hybride Strategie gewählt, bestehend aus:
 
-    - **Differential Evolution (DE)** als globaler Optimierer  
+    - **Genetischer Algorithmus (GA)** als globaler Optimierer  
     - **Hill Climbing (HC)** als lokaler Feinschliff  
 
     Diese Kombination ermöglicht eine effektive Balance aus breiter Exploration des Suchraums und gezielter lokaler Verbesserung vielversprechender Lösungen.
+
+    **Warum ein Genetischer Algorithmus?**  
+    Die CNN-Hyperparameter sind überwiegend **diskret** (z.B. Anzahl Layer: 1, 2 oder 3; Kernel-Größen: 3 oder 5; Pooling-Typ: max oder avg).  
+    GAs sind besonders gut geeignet für solche diskreten Suchräume, da sie natürlich mit kategorischen Variablen umgehen können.
 
     ---
 
@@ -189,34 +193,80 @@ with tabs[1]:
     ---
 
     ### 3. Genetischer Algorithmus (globale Suche)
-    TODO:
+
+    - **Ziel der GA-Phase:** Breite, globale Exploration des diskreten Suchraums (Architektur-Parameter).
+    - **Warum GA statt DE?** Der Suchraum besteht fast ausschließlich aus **diskreten/kategorischen Variablen**:
+      - `num_conv_layers`: {1, 2, 3}
+      - `kernel_sizes`: {[3,3,3], [5,5,5]}
+      - `pool_types`: {max, avg}
+      - `use_dropout`: {True, False} pro Layer
+      - etc.
+      
+      GAs sind für solche diskreten Räume besser geeignet als DE, da Crossover und Mutation direkt auf den kategorischen Werten operieren.
+    
+    - **Initialisierung:** Zufällige Population aus dem UI-Search-Space.
+    - **Selektion:** Tournament Selection (2 Kandidaten, besserer gewinnt).
+    - **Crossover:** Uniform Crossover - für jeden Parameter wird zufällig entschieden, von welchem Elternteil er stammt.
+    - **Mutation:** Mit Wahrscheinlichkeit `mutation_rate` wird ein Parameter durch einen zufälligen Wert aus dem Search-Space ersetzt.
+    - **Elitismus:** Die besten `elite_size` Individuen werden direkt in die nächste Generation übernommen.
+
+    #### Fitness-Caching (Hashable Elitism)
+    
+    Um Rechenzeit zu sparen, werden bereits evaluierte Individuen **gecacht**:
+    - Jedes Individuum wird in ein hashbares Tupel konvertiert (`make_hashable`).
+    - Ein `fitness_cache` Dictionary speichert bereits berechnete Fitness-Werte.
+    - **Vorteil:** Eliten und wiederholte Konfigurationen müssen nicht erneut trainiert werden.
 
 
     ---
 
     ### 4. Hill Climbing (lokale Verfeinerung)
 
-    - **Ziel der HC-Phase:** Lokale Verbesserung der besten von DE gefundenen Lösung.
+    - **Ziel der HC-Phase:** Lokale Verbesserung der besten vom GA gefundenen Lösung.
+    - **Warum HC nach GA?**  
+      Der GA exploriert den Suchraum breit, kann aber lokale Optima überspringen.  
+      HC verfeinert die beste gefundene Lösung durch systematisches Testen aller Nachbarn.
     - **Nachbarerzeugung:** Alle Kandidaten, die entstehen, wenn man **einen** Parameter des aktuellen Best-Params zu einer anderen erlaubten Option ändert.
     - **Strategie:** First-ascent Hill Climbing:
-    - Iteriere über Nachbarn; nimm die **erste** gefundene Verbesserung an.
-    - Falls keine Verbesserung gefunden wird → Stop.
+      - Iteriere über Nachbarn; nimm die **erste** gefundene Verbesserung an.
+      - Falls keine Verbesserung gefunden wird → Stop (lokales Optimum erreicht).
     - **Vorteil:** Sehr effizient, um nahegelegene bessere Architekturen schnell zu entdecken.
+    - **Caching:** Auch HC nutzt den `fitness_cache`, um bereits evaluierte Nachbarn nicht erneut zu trainieren.
 
     ---
 
     ### 5. Gesamt-Workflow (End-to-end)
 
     1. **UI / Search Space:** Benutzer wählt per Streamlit die erlaubten Werte für jeden Parameter (mehrere Optionen pro Parameter sind möglich).
-    2. **GA-Phase:** 
-    TODO:
-    3. **HC-Phase:**  
-    - Erzeuge Nachbarn des besten Individuums (eine Änderung pro Nachbar).  
-    - Evaluieren & Akzeptieren der ersten Verbesserung; iterativ wiederholen.
+    2. **GA-Phase:**  
+       - Erzeuge initiale Population (Kombinationen aus den ausgewählten Optionen).  
+       - Tournament Selection, Crossover, Mutation über mehrere Generationen.  
+       - Elitismus bewahrt die besten Individuen.  
+       - Fitness-Caching vermeidet redundante Evaluierungen.
+    3. **HC-Phase (optional):**  
+       - Erzeuge Nachbarn des besten Individuums (eine Änderung pro Nachbar).  
+       - Evaluieren & Akzeptieren der ersten Verbesserung; iterativ wiederholen.
     4. **Finales Training & Visualisierung:**  
-    - Baue das finale Modell aus den besten Parametern.  
-    - Trainiere es (ein Batch / oder kompletter Epochendurchlauf wie in `main.py`).  
-    - Zeige Vorhersagen (Bilder mit True `T:` und Predicted `P:` Labels) in der Streamlit-Oberfläche.
+       - Baue das finale Modell aus den besten Parametern.  
+       - Trainiere es (ein Batch / oder kompletter Epochendurchlauf).  
+       - Zeige Vorhersagen (Bilder mit True `T:` und Predicted `P:` Labels) in der Streamlit-Oberfläche.
+
+    ---
+
+    ### Wichtiger Hinweis: Stochastische Fitness-Funktion
+
+    Die Fitness-Funktion ist **nicht deterministisch**, da:
+    - Das CNN-Training stochastisch ist (zufällige Gewichtsinitialisierung, Batch-Shuffling, Dropout).
+    - Bei `quick_run=True` wird nur ein zufälliger Batch pro Epoche verwendet.
+    
+    **Konsequenzen:**
+    - Dasselbe Individuum kann bei erneuter Evaluierung einen **anderen Fitness-Score** erhalten.
+    - Ein Individuum kann nach Re-Evaluierung sogar einen **niedrigeren** Score haben als zuvor.
+    - Der Fitness-Cache hilft hier nur teilweise: Er verhindert Re-Evaluierung desselben Individuums, aber neue Individuen mit gleichen Parametern werden neu trainiert.
+    
+    **Empfehlung:**
+    - Für robustere Ergebnisse: `quick_run=False` und mehr Epochen verwenden.
+    - Bei stochastischer Fitness: Mehrere Läufe durchführen und Ergebnisse mitteln.
 
     ---
 
@@ -490,40 +540,99 @@ with tabs[3]:
 
     st.markdown(
         """
-        ### Warum Differential Evolution (DE) + Hill Climbing (HC)?
+        ### Warum Genetischer Algorithmus (GA) + Hill Climbing (HC)?
 
-        Die Kombination aus **Differential Evolution** und **Hill Climbing** ist besonders attraktiv für die Optimierung von Convolutional Neural Networks (CNNs), da sie die Stärken beider Verfahren vereint:
+        #### Ursprüngliche Überlegung: Differential Evolution (DE)
 
-        1. **Differential Evolution (DE)**  
-        - Ist ein robuster, globaler Optimierer, der ohne Gradienteninformationen arbeitet.  
-        - Funktioniert gut in *gemischt-diskreten* und *nicht-konvexen* Suchräumen - typisch für CNN-Architekturen.  
-        - Benötigt im Vergleich zu anderen evolutionären Verfahren weniger Hyperparameter (Mutation, Crossover).  
-        - Kann komplexe Architekturentscheidungen wie Kernelgrößen, Dropout-Konfigurationen oder Anzahl der Convolution-Layer explorieren.
+        Anfangs wurde **Differential Evolution (DE)** als globaler Optimierer in Betracht gezogen.
+        DE ist ein leistungsfähiger evolutionärer Algorithmus, der besonders gut für **kontinuierliche** Optimierungsprobleme geeignet ist.
 
-        2. **Hill Climbing (HC)**  
-        - Ein schneller lokaler Optimierer, der die von DE gefundene Lösung effizient weiter verbessert.  
-        - Arbeitet deterministisch: Änderungen im Suchraum werden strukturiert evaluiert.  
-        - Ideal, um nahegelegene Varianten der Architektur zu testen und die globale Lösung zu verfeinern.
+        **Das Problem:** Unser CNN-Hyperparameter-Suchraum besteht fast ausschließlich aus **diskreten/kategorischen Variablen**:
+        - `num_conv_layers`: {1, 2, 3} — nur 3 Werte
+        - `kernel_sizes`: {[3,3,3], [5,5,5]} — nur 2 Optionen
+        - `pool_types`: {"max", "avg"} — nur 2 Optionen
+        - `use_dropout`: {True, False} pro Layer
+        - `fc_neurons`: {16, 32, 64, 128} — nur 4 Werte
 
-        Die Kombination ermöglicht damit **globale Exploration (DE)** und **lokale Exploitation (HC)** - ein entscheidender Vorteil in hochdimensionalen Architektursuchräumen.
+        **Warum DE hier weniger geeignet ist:**
+        - DE arbeitet mit **Differenzvektoren** zwischen Individuen.
+        - Bei diskreten Variablen mit wenigen Optionen ergeben diese Differenzen **wenig Sinn**.
+        - Beispiel: Die "Differenz" zwischen `kernel_size=3` und `kernel_size=5` ist mathematisch 2, aber als Vektor-Operation im DE-Sinne nicht sinnvoll interpretierbar.
+        - DE erfordert zusätzliche **Diskretisierung/Rundung**, was zu suboptimalem Verhalten führt.
+
+        **Wann wäre DE sinnvoll?**
+        - Wenn die Hyperparameter **quasi-kontinuierlich** wären (viele nahe diskrete Werte).
+        - Beispiel: `learning_rate` in {0.0001, 0.0002, ..., 0.01} oder `num_filters` in {8, 9, 10, ..., 128}.
+        - In solchen Fällen approximieren die diskreten Werte einen kontinuierlichen Raum, und DE-Differenzen ergeben sinnvolle Suchrichtungen.
+
+        #### Unsere Lösung: Genetischer Algorithmus (GA)
+
+        **GAs sind für diskrete Suchräume besser geeignet**, weil:
+        - **Crossover** tauscht direkt kategorische Werte zwischen Eltern aus (keine Differenzen nötig).
+        - **Mutation** ersetzt einen Wert durch einen anderen aus der diskreten Menge.
+        - **Tournament Selection** ist robust und funktioniert unabhängig vom Wertebereich.
+        - **Elitismus** bewahrt die besten Lösungen über Generationen hinweg.
+
+        #### Hill Climbing (HC) als lokale Verfeinerung
+
+        **Warum HC nach GA?**
+        - Der GA exploriert den Suchraum **breit**, kann aber lokale Optima überspringen.
+        - HC **verfeinert** die beste gefundene Lösung durch systematisches Testen aller Nachbarn.
+        - Die Kombination ermöglicht **globale Exploration (GA)** + **lokale Exploitation (HC)**.
 
         ---
 
-        ### Warum nicht andere Algorithmen?
+        ### Fitness-Caching (Hashable Elitism)
 
-        | Algorithmus | Warum weniger geeignet? |
-        |-------------|--------------------------|
-        | **Genetische Algorithmen (GA)** | Höherer Konfigurationsaufwand (Selektion, Mutation, Crossover), oft langsamer, empfindlich gegenüber Designentscheidungen. |
-        | **Simulated Annealing (SA)** | Gut für das Entkommen aus lokalen Minima, aber ineffizient in hochdimensionalen, kombinierten Parameterlandschaften. |
-        | **Ant Colony Optimization (ACO)** | Ursprünglich für kombinatorische Wegeprobleme; schwer anzupassen für CNN-Architekturen mit multiplen Parameterarten. |
-        | **Particle Swarm Optimization (PSO)** | Funktioniert exzellent für kontinuierliche Räume, aber schwach bei diskreten, kategorischen Parametern. |
+        Eine wichtige Optimierung in unserer Implementierung ist das **Fitness-Caching**:
 
-        Gerade beim Design von CNNs, wo Parameter wie  
-        - Anzahl Convolution-Layer  
-        - Pooling-Typ  
-        - Kernel-Größen  
-        - Dropout-Konfigurationen  
-        diskret und stark eingeschränkt sind, spielt DE seine Vorteile voll aus.
+        ```python
+        fitness_cache = {}
+        def fitness_of(ind):
+            key = individual_key(ind)  # Konvertiert zu hashbarem Tupel
+            if key not in fitness_cache:
+                fitness_cache[key] = evaluate_individual(...)
+            return fitness_cache[key]
+        ```
+
+        **Vorteile:**
+        - Eliten müssen nicht erneut evaluiert werden → erhebliche Zeitersparnis.
+        - Identische Konfigurationen (durch Crossover entstanden) werden nur einmal trainiert.
+        - Der Cache bleibt über alle GA-Generationen und HC-Schritte erhalten.
+
+        ---
+
+        ### Stochastische Fitness-Funktion
+
+        **Kritischer Punkt:** Die Fitness-Funktion ist **nicht deterministisch**!
+
+        Das liegt an mehreren Faktoren:
+        - **Zufällige Gewichtsinitialisierung** des CNN bei jedem Training.
+        - **Batch-Shuffling** während des Trainings.
+        - **Dropout** führt zu unterschiedlichen Aktivierungen.
+        - Bei `quick_run=True` wird nur ein **zufälliger Batch** pro Epoche verwendet.
+
+        **Konsequenzen:**
+        1. Dasselbe Individuum kann bei erneuter Evaluierung einen **anderen Fitness-Score** erhalten.
+        2. Ein Individuum kann nach Re-Evaluierung sogar einen **niedrigeren Score** haben.
+        3. Der Fitness-Cache mildert das Problem: Er speichert den **ersten** berechneten Wert.
+
+        **Empfehlungen für robustere Ergebnisse:**
+        - `quick_run=False` verwenden (vollständiges Training pro Epoche).
+        - Mehr Epochen (`num_epochs >= 3`) für stabilere Konvergenz.
+        - Bei kritischen Anwendungen: Mehrere Läufe durchführen und Ergebnisse mitteln.
+
+        ---
+
+        ### Algorithmen-Vergleich
+
+        | Algorithmus | Eignung für unser Problem |
+        |-------------|---------------------------|
+        | **Genetischer Algorithmus (GA)** | Ideal für diskrete/kategorische Variablen. Crossover und Mutation operieren direkt auf den Werten. |
+        | **Differential Evolution (DE)** | Für kontinuierliche Räume optimiert. Differenzen zwischen diskreten Werten wenig sinnvoll. |
+        | **Simulated Annealing (SA)** | Einzelner Suchpfad; ineffizient bei vielen Parametern. |
+        | **Particle Swarm Optimization (PSO)** | Geschwindigkeitsvektoren für kontinuierliche Räume; schlecht für kategorische Parameter. |
+        | **Ant Colony Optimization (ACO)** | Für Wegprobleme; aufwändig anzupassen für CNN-Architekturen. |
 
         ---
 
@@ -532,7 +641,7 @@ with tabs[3]:
         Ein wesentlicher Faktor in der Wahl der Optimierungsstrategie ist die **Rechenzeit**, denn:
 
         - Jedes Individuum entspricht einem **Trainingslauf eines CNNs** - selbst „quick runs“ sind teuer.  
-        - Die Gesamtzeit eines DE-Durchlaufs ist:  
+        - Die Gesamtzeit eines GA-Durchlaufs ist:  
 
         $$
         T_{\\text{total}} = \\text{Population Size} \\times \\text{Generations} \\times T_{\\text{Training}}
@@ -554,13 +663,13 @@ with tabs[3]:
 
         ### Interpretation der Ergebnisse
 
-        Die DE + HC Optimierung zeigt:
+        Die GA + HC Optimierung zeigt:
 
-        - Die gefundenen Parameter spiegeln oft eine Balance zwischen **Modellkomplexität** und **Generalierungsleistung** wider.  
-        - Hill Climbing verbessert häufig subtil einzelne Aspekte der Netzwerkstruktur, was zu kleinen, aber signifikanten Leistungsgewinnen führt.  
-        - Visualisierte Vorhersagen geben unmittelbare Einblicke in Stärken und Schwächen des finalen Modells.
+        - Gefundene Parameter balancieren **Modellkomplexität** und **Generalisierung**.
+        - Hill Climbing verbessert oft subtil einzelne Aspekte der Netzwerkstruktur.
+        - Durch die stochastische Fitness können Ergebnisse zwischen Läufen variieren.
 
-        Insgesamt bietet der Ansatz eine **effektive, gut kontrollierbare und rechenschonende Methode**, um CNN-Hyperparameter zu optimieren - besonders in einem Lern- oder Forschungsumfeld, wo Interpretierbarkeit und reproduzierbare Optimierungsschritte essentiell sind.
+        Insgesamt bietet der Ansatz eine **effektive, gut kontrollierbare Methode** für CNN-Hyperparameter-Optimierung mit diskreten Suchräumen.
 
         ---"""
     )
