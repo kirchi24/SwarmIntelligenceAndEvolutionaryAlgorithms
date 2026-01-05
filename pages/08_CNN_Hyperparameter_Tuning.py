@@ -188,15 +188,8 @@ with tabs[1]:
 
     ---
 
-    ### 3. Differential Evolution
-
-    - Ziel der DE-Phase: Breite, globale Exploration des Suchraums (Architektur-Parameter).
-    - Initialisierung: Population von Konfigurationen wird erzeugt. In der Implementierung werden Optionen aus dem UI-/Search-Space zufällig kombiniert (je Parameter eine Auswahl).
-    - Evaluation: Jedes Individuum → CNN bauen → kurz trainieren (parameter `num_epochs`, evtl. `quick_run`) → Fitness berechnen.
-    - Selektion / Speicherung: Nur die Konfigurationen mit der besten Fitness werden in der neuen Generation übernommen. Diskrete Parameter (z.B. num_conv_layers) werden immer auf die nächsten erlaubten Werte gerundet.
-    - Mutation / Crossover: Für jedes Individuum werden drei weitere Kandidaten ausgewählt, um den Mutanten zu erzeugen (Faktor F). Anschließend wird durch Crossover entschieden, welche Werte aus dem Mutanten übernommen werden.
-    - New Generation: Die nächste Generation besteht aus den Individuen, die sich nach der Selektion durchgesetzt haben (bessere Fitness).
-    - **Compute-Kosten: Laufzeit ∝ Population x Generations x Trainingsdauer pro Individuum.
+    ### 3. Genetischer Algorithmus (globale Suche)
+    TODO:
 
 
     ---
@@ -215,10 +208,8 @@ with tabs[1]:
     ### 5. Gesamt-Workflow (End-to-end)
 
     1. **UI / Search Space:** Benutzer wählt per Streamlit die erlaubten Werte für jeden Parameter (mehrere Optionen pro Parameter sind möglich).
-    2. **DE-Phase:**  
-    - Erzeuge initiale Population (Kombinationen aus den ausgewählten Optionen).  
-    - Trainiere/werte Individuen aus (kurze Trainingsläufe für Exploration).  
-    - Speichere das beste Individuum.
+    2. **GA-Phase:** 
+    TODO:
     3. **HC-Phase:**  
     - Erzeuge Nachbarn des besten Individuums (eine Änderung pro Nachbar).  
     - Evaluieren & Akzeptieren der ersten Verbesserung; iterativ wiederholen.
@@ -417,7 +408,7 @@ with tabs[2]:
         # MODE 3 - GA + HC
         # =====================================================
         else:
-            st.info("GA + Hill Climbing (Memetic Algorithm) läuft …")
+            st.info("GA + Hill Climbing läuft …")
 
             best_params, best_score = genetic_algorithm(
                 pop_size=pop_size,
@@ -436,7 +427,7 @@ with tabs[2]:
                 use_streamlit=True,
             )
 
-            best_params = hill_climbing(
+            best_params, best_score_hc = hill_climbing(
                 best_params=best_params,
                 hc_steps=hc_steps,
                 num_epochs=num_epochs,
@@ -450,6 +441,7 @@ with tabs[2]:
                 use_streamlit=True,
             )
 
+            # Fitness function is not deterministic due to training, re-evaluate can give lower score!
             best_score = evaluate_individual(
                 best_params,
                 num_epochs,
